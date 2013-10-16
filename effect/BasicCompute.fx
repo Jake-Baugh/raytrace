@@ -20,7 +20,6 @@ cbuffer EveryFrameBuffer : register(c0)
 	float padding2;
 }
 
-
 /*
 cbuffer PrimitivesBuffer: register(c1)
 {
@@ -34,28 +33,25 @@ cbuffer PrimitivesBuffer: register(c1)
 }
 */
 
-
-struct CircleStruct
+struct SphereStruct
 {
-	float4	circleMidPos;
-	float3	circleColor;
-	float	circleRadius;
+	float4	midPos;
+	float3	color;
+	float	radius;
 };
 
 
 struct TriangleStruct
-{
-	
-	float4  trianglePos1;
-	float4  trianglePos2;
-	float4  trianglePos3;
-	float4  triangleColor;			//float4 for padding reasons 
-	
+{	
+	float4  pos1;
+	float4  pos2;
+	float4  pos3;
+	float4  color;			//float4 for padding reasons 
 };
 
 cbuffer PrimitiveBuffer: register(c1)
 {
-	CircleStruct	Circle[2];
+	SphereStruct	Sphere[2];
 	TriangleStruct	Triangle[2];
 }
 
@@ -65,6 +61,7 @@ struct Ray
 	float4 direction;
 	float4 color;
 	float distance;
+	bool hit;
 };
 
 Ray createRay(int x, int y)
@@ -84,21 +81,19 @@ Ray createRay(int x, int y)
 	l_ray.direction = normalize(l_ray.direction);
 	l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	//l_ray.direction = float4(normalized_x, normalized_y, 0.0f, 1.0f);
+	l_ray.hit = false;
 	return l_ray;
 }
 
-
-float SphereIntersect(Ray p_ray, float4 p_circleMid, int index)		//Kod från lab1 3D1
+float SphereIntersect(Ray p_ray, int index)		//Kod från lab1 3D1
 {	
-	float4 l_distance = p_ray.origin - p_circleMid;
+	float4 l_distance = p_ray.origin - Sphere[index].midPos;
 	float a, b, t, t1, t2;
 	b = dot(p_ray.direction, l_distance);
-	a = dot(l_distance, l_distance ) - (Circle[index].circleRadius * Circle[index].circleRadius);
-//	a = dot(l_distance, l_distance ) - (circleRadius * circleRadius);
-
+	a = dot(l_distance, l_distance ) - (Sphere[index].radius * Sphere[index].radius);
 	if(b * b - a >= 0)
 	{
-		t = sqrt(b * b -a);
+		t = sqrt(b * b - a);
 		t1 = -b + t;  
 		t2 = -b - t;
 		if( t1 > 0.0f || t2 > 0.0f) // checks so atleast one of the values are infront of the camera
@@ -114,11 +109,6 @@ float SphereIntersect(Ray p_ray, float4 p_circleMid, int index)		//Kod från lab1
 }
 
 
-//float4  Triangle_Pos1;
-//	float4  Triangle_Pos2;
-//	float4  Triangle_Pos3;
-//	float4  Triangle_Color;	
-
 float3 VecInverse(float3 p_vec)
 {
 	p_vec.x *= -1;
@@ -127,7 +117,7 @@ float3 VecInverse(float3 p_vec)
 	return p_vec;
 }
 
-static float Determinant(float3 p_vec1, float3 p_vec2, float3 p_vec3)
+float Determinant(float3 p_vec1, float3 p_vec2, float3 p_vec3)
 {
 	float a =	p_vec1.x * p_vec2.y * p_vec3.z +
 				p_vec1.y * p_vec2.z * p_vec3.x +
@@ -140,48 +130,119 @@ static float Determinant(float3 p_vec1, float3 p_vec2, float3 p_vec3)
 	return a-b;
 }	
 
-float TriangleIntersect(Ray p_ray, int index)			//Kod från http://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+float veclen(float4 p_vec)
 {
-	
-	float3 e1 = Triangle[index].trianglePos2.xyz - Triangle[index].trianglePos1.xyz;
-	float3 e2 = Triangle[index].trianglePos3.xyz - Triangle[index].trianglePos1.xyz;
-	float3 l_distance = p_ray.origin.xyz - Triangle[index].trianglePos1.xyz;
-	
-
-	/*
-	float3 e1 = trianglePos2.xyz - trianglePos1.xyz;
-	float3 e2 = trianglePos3.xyz - trianglePos1.xyz;
-	float3 l_distance = p_ray.origin.xyz - trianglePos1.xyz;
-	*/
-
-	float3 firstDet = Determinant(VecInverse(p_ray.direction), e1, e2);
-	return 1.0f; // HERE
+	float a = p_vec.x * p_vec.x + p_vec.y * p_vec.y + p_vec.z * p_vec.z;
+	a = sqrt(a);
+	return a;
 }
+
+
+float TriangleIntersect(Ray p_ray, int index)
+{
+	float3 edge1 = Triangle[index].pos2.xyz - Triangle[index].pos1.xyz;
+	float3 edge2 = Triangle[index].pos3.xyz - Triangle[index].pos1.xyz;
+	float3 l_distance = p_ray.origin.xyz - Triangle[index].pos1.xyz;
+
+	float firstDet = Determinant(VecInverse(p_ray.direction), edge1, edge2);
+
+	if(firstDet > -0.0000001 && firstDet < 0.0000001)
+	{
+		return 0.0f; // No hit
+	}
+
+	float secondDet	 = Determinant(l_distance, edge1, edge2);
+	float thirdDet	 = Determinant(VecInverse(p_ray.direction), l_distance, edge2);
+	float fourthDet	 = Determinant(VecInverse(p_ray.direction), edge1, l_distance);
+
+	float t = secondDet * 1/firstDet;
+	float u = thirdDet	* 1/firstDet;
+	float v = fourthDet * 1/firstDet;
+
+	if(u < 0 || v < 0 || u + v >= 1)
+	{
+		return 0.0f;
+	}
+	if(u < 0.00001f || v < 0.00001f)
+		return 0.0f;
+
+	float3 l_normal = cross(edge1, edge2);
+	float plane_def = dot(l_normal, (float3)Triangle[index].pos1);
+
+	float ta  =  - (dot(l_normal, p_ray.origin) + plane_def) / dot(l_normal, p_ray.direction); //http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-9-ray-triangle-intersection/ray-triangle-intersection-geometric-solution/
+	
+	float4 P = p_ray.origin + ta * p_ray.direction;
+	float rvalue = veclen(P);
+	return rvalue;
+
+//return 1.0f;
+}
+
 
 Ray RayUpdate(Ray p_ray, int p_Bounces, int index)
 {	
 	// Variables used by all intersections
-	float4 l_tempColor = float4(0,0,0,1);
+	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 l_collidePos;
 
 	// Sphere specific variable
-	float t_circlehit;
+	float l_circlehit = 0.0f;
+	float l_trianglehit = 0.0f;
+
+	l_circlehit	  = SphereIntersect(p_ray, index);
+	l_trianglehit = TriangleIntersect(p_ray, index);
 	
-//	t_circlehit = SphereIntersect(p_ray, circleMidPos);
-	t_circlehit = SphereIntersect(p_ray, Circle[index].circleMidPos, index);
-	if(/*t_trianglehit != 0.0f ||*/ t_circlehit != 0.0f)
+	if(l_trianglehit == 0.0f && l_circlehit == 0.0f)
 	{
-		//if((t_circlehit < t_trianglehit && t_circlehit != 0.0f)  || t_trianglehit == 0.0f )
-			l_tempColor = float4(Circle[index].circleColor, 1.0f);
-		//	l_tempColor = float4(circleColor, 1.0f);
-			//bounce the ray   ## This seems to glitch at about half of the rays, abit odd mmyesss
-			l_collidePos = p_ray.origin + t_circlehit * p_ray.direction;
-			p_ray.origin = l_collidePos;
-			float4 l_collideNormal  = normalize( Circle[index].circleMidPos - p_ray.origin);
-		//	float4 l_collideNormal  = normalize( circleMidPos - p_ray.origin);
-			p_ray.direction			= reflect(p_ray.direction, l_collideNormal);
+			return p_ray; // It hit nothing, return direct
 	}
 
+	//////////////////////////////
+	
+	if(0.0f != l_circlehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_circlehit < l_trianglehit))
+	{
+		l_tempColor = float4(Sphere[index].color.xyz, 1);
+		p_ray.hit = true;
+	}
+	else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_circlehit == 0.0f || l_trianglehit < l_circlehit))
+	{
+		l_tempColor = Triangle[index].color;
+
+		p_ray.hit = true;
+	}
+	else
+	{
+		l_tempColor = float4(0.0f, 0.0f, 1.0f, 1.0f);
+	}
+
+	
+			
+	////////////////////////////// ---------- End of 1
+
+/*	
+	if(l_trianglehit == 0.0f)
+	{
+		if(l_circlehit != 0.0f)
+		{
+			l_tempColor = float4(Circle[index].circleColor, 1);
+		}
+	}
+	else if(l_circlehit == 0.0f)
+	{
+		if(l_trianglehit != 0.0f)
+		{
+			l_tempColor = Triangle[index].triangleColor;
+		}
+	}	
+	else if(l_trianglehit != 0.0f && l_circlehit != 0.0f)
+	{
+		if(l_trianglehit < l_circlehit)
+			//l_tempColor = triangleColor;
+		//if(l_circlehit < l_trianglehit)
+			l_tempColor = float4(0.0f, 0.0f, 1.0f, 1.0f);
+	}
+*/
+	////////////////////////////// ---------- End of 2
 
 	//float t_trianglehit;
 	//float4 t_triangleHitData;
@@ -207,6 +268,13 @@ Ray RayUpdate(Ray p_ray, int p_Bounces, int index)
 			p_ray.Direction = reflect(p_ray.Direction, l_collideNormal); */
 	//}
 
+	//	l_tempColor = (float4(circleColor, 1));
+	/*float b = TriangleIntersect(p_ray);
+	if(b != 0.0f)
+	{
+		l_tempColor = triangleColor;
+	}*/
+
 	p_ray.color += l_tempColor;
 
 	return p_ray;
@@ -225,6 +293,9 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	}
 	l_ray = RayUpdate(l_ray, 1, 0);
 	l_ray = RayUpdate(l_ray, 1, 1);
+
+	if(l_ray.hit == false)
+		l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
 
 	output[threadID.xy] = l_ray.color;
