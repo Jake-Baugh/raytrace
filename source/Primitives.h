@@ -33,8 +33,8 @@ namespace CustomStruct
 
 	struct Primitive
 	{
-		Circle		Circle[1];
-		Triangle	Triangle[1];
+		Circle		Circle[2];
+		Triangle	Triangle[2];
 	};
 }
 

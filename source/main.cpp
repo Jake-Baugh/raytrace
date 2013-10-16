@@ -159,13 +159,23 @@ HRESULT Init()
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
 	CustomStruct::Primitive l_primitive;
 	l_primitive.Circle[0].MidPosition			= D3DXVECTOR4 (0, 0, 700, 1);
-	l_primitive.Circle[0].Radius				= 500;
+	l_primitive.Circle[0].Radius				= 200;
 	l_primitive.Circle[0].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
 
 	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
 	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,-200.0f ,500.0f, 1.0f);
 	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,400.0f ,800.0f, 1.0f);
 	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,-200.0f ,1000.0f, 1.0f);
+
+	l_primitive.Circle[1].MidPosition			= D3DXVECTOR4 (450, 0, 700, 1);
+	l_primitive.Circle[1].Radius				= 200;
+	l_primitive.Circle[1].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+
+	l_primitive.Triangle[1].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(450.0f,-200.0f ,500.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(450.0f,400.0f ,800.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(450.0f,-200.0f ,1000.0f, 1.0f);
+
 	*(CustomStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
 
