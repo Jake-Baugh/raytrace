@@ -1,0 +1,2 @@
+setx RAYTRACE %cd%
+pause
