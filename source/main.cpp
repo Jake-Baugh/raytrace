@@ -370,7 +370,7 @@ HRESULT CreateLightBuffer()
 	D3D11_BUFFER_DESC LightData;
 	LightData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
-	LightData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
 	LightData.ByteWidth			=	sizeof(CustomLightStruct::AllLight);
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
@@ -386,12 +386,12 @@ void FillLightBuffer()
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 	CustomLightStruct::AllLight l_light;
 
-	l_light.Light[0].ambient		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
-	l_light.Light[0].diffuse		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
-	l_light.Light[0].specular		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
-	l_light.Light[0].attenuation	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+	l_light.Light[0].ambient		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.Light[0].diffuse		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.Light[0].specular		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.Light[0].attenuation	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
 	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	l_light.Light[0].range			= 500.0f;
+	l_light.Light[0].range			= 10000.0f;
 		
 	*(CustomLightStruct::AllLight*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);

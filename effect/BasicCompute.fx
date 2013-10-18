@@ -4,6 +4,8 @@
 // Copyright (c) Stefan Petersson, 2012
 //--------------------------------------------------------------------------------------
 
+#include "LightHelper.fx"
+
 #pragma pack_matrix(row_major)
 
 RWTexture2D<float4> output : register(u0);
@@ -41,6 +43,11 @@ cbuffer PrimitiveBuffer: register(c1)
 	SphereStruct	Sphere[2];
 	TriangleStruct	Triangle[2];
 	float4			countVariable;
+}
+
+cbuffer LightBuffer : register(c2) 
+{
+	LightData Light[1];
 }
 
 struct Ray
@@ -226,17 +233,28 @@ Ray RayUpdate(Ray p_ray)
 		
 		p_ray.origin = l_collidePos;
 		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
+				
+		// Make light code here
+		SurfaceInfo a;
+		a.position = l_collidePos;
+		a.normal = l_collideNormal;
+		a.diffuse = l_tempColor;
+		a.specular = float4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_tempColor = PointLight(a, Light[0], p_ray.origin);
+		//if(l_tempColor.x == 0.0f && l_tempColor.y == 0.0f && l_tempColor.z == 0.0f && l_tempColor.w == 0.0f)
+			//l_tempColor = float4(1.0f, 0.5f, 0.5f, 0.0f);
 	}
 	else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_spherehit == 0.0f || l_trianglehit < l_spherehit))
 	{
+		
 		l_tempColor = Triangle[l_triangleindex].color;
 		p_ray.hit = true;
 
-		// Make light code here
+		// Make reflect code here
 		l_collidePos = p_ray.origin + (l_trianglehit - 0.000001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_ray.origin = l_collidePos;
-		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
+		p_ray.direction = reflect(p_ray.direction, l_collideNormal);
 	}	
 	else
 	{
@@ -245,6 +263,7 @@ Ray RayUpdate(Ray p_ray)
 		p_ray.hit = true;
 	}
 	p_ray.color = l_tempColor;
+	//p_ray.color += l_tempColor;
 
 	return p_ray;
 }

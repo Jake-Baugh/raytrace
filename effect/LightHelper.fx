@@ -3,7 +3,7 @@ struct LightData
 	float4 ambient;
 	float4 diffuse;
 	float4 specular;
-	float4 attenuation; // attenuation parameters (a0, a1, a2)
+	float4 attenuation;
 	float3 position;	
 	float range;
 };
@@ -15,11 +15,6 @@ struct SurfaceInfo
 	float4 diffuse;
 	float4 specular;
 };
-
-cbuffer EveryFrameBuffer : register(c2) 
-{
-	LightData Light[1];
-}
 
 
 //-----------------------------------------------------------------------------------------
