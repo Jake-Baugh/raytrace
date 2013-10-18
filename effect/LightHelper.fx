@@ -54,6 +54,7 @@ float4 PointLight(SurfaceInfo v, LightData L, float4 eyePos)
 		litColor += diffuseFactor * v.diffuse * L.diffuse;
 		litColor += specFactor * v.specular * L.specular;
 	}
+
 	// attenuate
 	return litColor / dot(L.attenuation.xyz, float3(1.0f, d, d*d));
 }

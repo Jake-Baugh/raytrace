@@ -375,8 +375,6 @@ HRESULT CreateLightBuffer()
 	LightData.ByteWidth			=	sizeof(CustomLightStruct::AllLight);
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
-
-
 	return hr;
 }
 
@@ -387,17 +385,15 @@ void FillLightBuffer()
 	CustomLightStruct::AllLight l_light;
 
 	l_light.Light[0].ambient		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.Light[0].diffuse		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
-	l_light.Light[0].specular		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
-	l_light.Light[0].attenuation	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.Light[0].diffuse		= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
+	l_light.Light[0].specular		= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
+	l_light.Light[0].attenuation	= D3DXVECTOR4(1.0f, 0.0f, 0.0f, 1.0f);
 	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	l_light.Light[0].range			= 10000.0f;
 		
 	*(CustomLightStruct::AllLight*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
-
-
 
 HRESULT Update(float deltaTime)
 {
@@ -409,9 +405,7 @@ HRESULT Update(float deltaTime)
 		GetCamera().strafe(MOVE_SPEED * -deltaTime);
 	if(GetAsyncKeyState('D') & 0x8000)
 		GetCamera().strafe(MOVE_SPEED *deltaTime);
-	GetCamera().rebuildView();
-	
-	
+	GetCamera().rebuildView();	
 	
 	FillCameraBuffer();
 	

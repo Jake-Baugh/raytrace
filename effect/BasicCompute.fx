@@ -228,7 +228,7 @@ Ray RayUpdate(Ray p_ray)
 		p_ray.hit = true;
 		
 		// Reflect code
-		l_collidePos = p_ray.origin + (l_spherehit - 0.000001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_spherehit - 0.0001) * p_ray.direction;
 		l_collideNormal = normalize((Sphere[l_sphereindex].midPos - p_ray.origin));
 		
 		p_ray.origin = l_collidePos;
@@ -240,7 +240,7 @@ Ray RayUpdate(Ray p_ray)
 		a.normal = l_collideNormal;
 		a.diffuse = l_tempColor;
 		a.specular = float4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_tempColor = PointLight(a, Light[0], p_ray.origin);
+		l_tempColor = PointLight(a, Light[0], cameraPosition);
 		//if(l_tempColor.x == 0.0f && l_tempColor.y == 0.0f && l_tempColor.z == 0.0f && l_tempColor.w == 0.0f)
 			//l_tempColor = float4(1.0f, 0.5f, 0.5f, 0.0f);
 	}
@@ -251,7 +251,7 @@ Ray RayUpdate(Ray p_ray)
 		p_ray.hit = true;
 
 		// Make reflect code here
-		l_collidePos = p_ray.origin + (l_trianglehit - 0.000001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_trianglehit - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_ray.origin = l_collidePos;
 		p_ray.direction = reflect(p_ray.direction, l_collideNormal);
@@ -268,22 +268,17 @@ Ray RayUpdate(Ray p_ray)
 	return p_ray;
 }
 
-#define max_number_of_bounces 2
+#define max_number_of_bounces 3
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0,0,0,1);
 	Ray l_ray = createRay(threadID.x, threadID.y);
 		
-	for(int i = 1; i < max_number_of_bounces; i++)	
+	for(int i = 0; i < max_number_of_bounces; i++)	
 	{
-	//	l_ray = RayUpdate(l_ray, i, i-1);
+		l_ray = RayUpdate(l_ray);
 	}
-	l_ray = RayUpdate(l_ray);
-	l_ray = RayUpdate(l_ray);
-	l_ray = RayUpdate(l_ray);
-
-
 
 	output[threadID.xy] = l_ray.color;
 //	output[threadID.xy] = l_ray.direction; //Debug thingy sak för att se om rays faktiskt blir nåt	
