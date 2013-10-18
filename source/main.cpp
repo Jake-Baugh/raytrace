@@ -40,8 +40,11 @@ HRESULT             InitWindow( HINSTANCE hInstance, int nCmdShow );
 HRESULT				Init();
 HRESULT				InitializeDXDeviceAndSwapChain();
 HRESULT				CreatePrimitiveBuffer();
+void				FillPrimitiveBuffer();
 HRESULT				CreateLightBuffer();
+void				FillLightBuffer();
 HRESULT				CreateCameraBuffer();
+void				FillCameraBuffer();
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -160,6 +163,10 @@ HRESULT Init()
 	if(FAILED(hr))	
 		return hr;
 
+
+	FillPrimitiveBuffer();
+	FillLightBuffer();
+
 	return S_OK;
 }
 HRESULT InitializeDXDeviceAndSwapChain()
@@ -265,10 +272,39 @@ HRESULT CreateCameraBuffer()
 	CameraData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	CameraData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
 	CameraData.MiscFlags			=	0;
-	CameraData.ByteWidth			=	sizeof(CustomStruct::EachFrameDataStructure);
+	CameraData.ByteWidth			=	sizeof(CustomPrimitiveStruct::EachFrameDataStructure);
 	hr = g_Device->CreateBuffer( &CameraData, NULL, &g_EveryFrameBuffer);
 
 	return hr;
+}
+
+void FillCameraBuffer()
+{
+	D3DXMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
+	float l_determinant;
+	l_view		 = GetCamera().GetProj();
+	l_projection = GetCamera().GetView();
+
+	l_determinant = D3DXMatrixDeterminant(&l_projection);
+	D3DXMatrixInverse(&l_inverseProjection, &l_determinant, &l_projection);
+
+    l_determinant  = D3DXMatrixDeterminant(&l_view);
+    D3DXMatrixInverse(&l_inverseView, &l_determinant, &l_view);
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	CustomPrimitiveStruct::EachFrameDataStructure l_eachFrameData;
+	l_eachFrameData.cameraPosition		= GetCamera().GetPosition();
+	l_eachFrameData.inverseProjection	= l_inverseProjection;
+	l_eachFrameData.inverseView			= l_inverseView;
+
+	l_eachFrameData.screenWidth			= 800.0f;
+	l_eachFrameData.screenHeight		= 800.0f;
+	l_eachFrameData.padding1			= 0;
+	l_eachFrameData.padding2			= 0;
+	*(CustomPrimitiveStruct::EachFrameDataStructure*)mappedResource.pData = l_eachFrameData;
+	g_DeviceContext->Unmap(g_EveryFrameBuffer, 0);
 }
 
 HRESULT CreatePrimitiveBuffer()
@@ -278,15 +314,19 @@ HRESULT CreatePrimitiveBuffer()
 	D3D11_BUFFER_DESC PrimitiveData;
 	PrimitiveData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
 	PrimitiveData.Usage				=	D3D11_USAGE_DYNAMIC; 
-	PrimitiveData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	PrimitiveData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	PrimitiveData.MiscFlags			=	0;
-	PrimitiveData.ByteWidth			=	sizeof(CustomStruct::Primitive);
+	PrimitiveData.ByteWidth			=	sizeof(CustomPrimitiveStruct::Primitive);
 	hr = g_Device->CreateBuffer( &PrimitiveData, NULL, &g_PrimitivesBuffer);
 
+	return hr;
+}
 
+void FillPrimitiveBuffer()
+{
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
-	CustomStruct::Primitive l_primitive;
+	CustomPrimitiveStruct::Primitive l_primitive;
 	
 	l_primitive.Sphere[0].MidPosition			= D3DXVECTOR4 (0.0f, 0.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
@@ -319,10 +359,8 @@ HRESULT CreatePrimitiveBuffer()
 	l_primitive.padding1 = -1;
 	l_primitive.padding2 = -1;
 
-	*(CustomStruct::Primitive*)PrimitivesResources.pData = l_primitive;
+	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
-
-	return hr;
 }
 
 HRESULT CreateLightBuffer()
@@ -334,29 +372,29 @@ HRESULT CreateLightBuffer()
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
-	LightData.ByteWidth			=	sizeof(Light::LightData);
-	hr = g_Device->CreateBuffer( &LightData, NULL, &g_PrimitivesBuffer);
+	LightData.ByteWidth			=	sizeof(CustomLightStruct::AllLight);
+	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
-	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
-	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
-	CustomLightStruct::Light l_light;
 
-	l_light.Light[0].ambient
-	l_light.Light[0].ambient;
-	l_light.Light[0].diffuse;
-	l_light.Light[0].specular;
-	l_light.Light[0].attenuation; // attenuation parameters (a0, a1, a2)
-	l_light.Light[0].pos;
-	l_light.Light[0].dir		=
-	l_light.Light[0].spotPower  = 500;
-	l_light.Light[0].range		= 500;
-	
-
-	
-	*(Light::LightData*)PrimitivesResources.pData = l_light;
-	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
 
 	return hr;
+}
+
+void FillLightBuffer()
+{
+	D3D11_MAPPED_SUBRESOURCE LightResources;
+	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
+	CustomLightStruct::AllLight l_light;
+
+	l_light.Light[0].ambient		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+	l_light.Light[0].diffuse		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+	l_light.Light[0].specular		= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+	l_light.Light[0].attenuation	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	l_light.Light[0].range			= 500.0f;
+		
+	*(CustomLightStruct::AllLight*)LightResources.pData = l_light;
+	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
 
 
@@ -374,47 +412,19 @@ HRESULT Update(float deltaTime)
 	GetCamera().rebuildView();
 	
 	
-		
-	D3DXMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
-	float l_determinant;
-	l_view		 = GetCamera().GetProj();
-	l_projection = GetCamera().GetView();
-
-	l_determinant = D3DXMatrixDeterminant(&l_projection);
-	D3DXMatrixInverse(&l_inverseProjection, &l_determinant, &l_projection);
-
-    l_determinant  = D3DXMatrixDeterminant(&l_view);
-    D3DXMatrixInverse(&l_inverseView, &l_determinant, &l_view);
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-
-	CustomStruct::EachFrameDataStructure l_eachFrameData;
-	l_eachFrameData.cameraPosition		= GetCamera().GetPosition();
-	l_eachFrameData.inverseProjection	= l_inverseProjection;
-	l_eachFrameData.inverseView			= l_inverseView;
-
-	l_eachFrameData.screenWidth			= 800.0f;
-	l_eachFrameData.screenHeight		= 800.0f;
-	l_eachFrameData.padding1			= 0;
-	l_eachFrameData.padding2			= 0;
-	*(CustomStruct::EachFrameDataStructure*)mappedResource.pData = l_eachFrameData;
-	g_DeviceContext->Unmap(g_EveryFrameBuffer, 0);
 	
-	//D3DXMatrixTranspose(&l_everyFramStuff.WorldViewProj, &(l_worldMatrix * GetCamera().GetView() * GetCamera().GetProj()));
-	//l_everyFramStuff.WorldViewProj		=	l_worldMatrix * GetCamera().GetView() * GetCamera().GetProj();
-	//D3DXMATRIX l_worldMatrix;
-	//D3DXMatrixIdentity(&l_worldMatrix);
+	FillCameraBuffer();
+	
 	return S_OK;
 }
 
 HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV };
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer };
+	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, NULL);
-	g_DeviceContext->CSSetConstantBuffers(0, 2, ppCB);
+	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
 
 	g_ComputeShader->Set();
 	g_Timer->Start();
