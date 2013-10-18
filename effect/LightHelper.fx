@@ -16,7 +16,7 @@ struct SurfaceInfo
 	float4 specular;
 };
 
-
+// Link to look at! http://takinginitiative.wordpress.com/2010/08/30/directx-10-tutorial-8-lighting-theory-and-hlsl/
 //-----------------------------------------------------------------------------------------
 // Method Declaration
 //-----------------------------------------------------------------------------------------
