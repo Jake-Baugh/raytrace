@@ -16,25 +16,29 @@ namespace CustomStruct
 		float padding2;
 	};
 
-	struct Circle
+	struct SphereStruct
 	{
 		D3DXVECTOR4 MidPosition;
 		D3DXVECTOR3	Color;
 		float		Radius;
 	};
 
-	struct Triangle
+	struct TriangleStruct
 	{
+		D3DXVECTOR4 Position0;
 		D3DXVECTOR4 Position1;
 		D3DXVECTOR4 Position2;
-		D3DXVECTOR4 Position3;
 		D3DXVECTOR4 Color;
 	};
 
 	struct Primitive
 	{
-		Circle		Circle[2];
-		Triangle	Triangle[2];
+		SphereStruct		Sphere[2];
+		TriangleStruct		Triangle[2];
+		float SphereCount;
+		float TriangleCount;
+		float padding1;
+		float padding2;
 	};
 }
 
