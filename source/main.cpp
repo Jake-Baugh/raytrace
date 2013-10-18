@@ -2,11 +2,11 @@
 #include "ComputeHelp.h"
 #include "D3D11Timer.h"
 #include "Primitives.h"
+#include "Light.h"
 #include "Camera.h"
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  150.0f
-
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -20,7 +20,9 @@ ID3D11DeviceContext*		g_DeviceContext			= NULL;
 
 ID3D11UnorderedAccessView*	g_BackBufferUAV			= NULL;		
 ID3D11Buffer*				g_EveryFrameBuffer		= NULL; 	
-ID3D11Buffer*				g_PrimitivesBuffer		= NULL; 	
+ID3D11Buffer*				g_PrimitivesBuffer		= NULL;
+ID3D11Buffer*				g_LightBuffer			= NULL;
+
 
 ComputeWrap*				g_ComputeSys			= NULL;
 ComputeShader*				g_ComputeShader			= NULL;
@@ -37,10 +39,14 @@ POINT						m_oldMousePos;
 HRESULT             InitWindow( HINSTANCE hInstance, int nCmdShow );
 HRESULT				Init();
 HRESULT				InitializeDXDeviceAndSwapChain();
+HRESULT				CreatePrimitiveBuffer();
+HRESULT				CreateLightBuffer();
+HRESULT				CreateCameraBuffer();
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
+
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -135,62 +141,27 @@ HRESULT Init()
 {
 	HRESULT hr;
 	hr = InitializeDXDeviceAndSwapChain();
-	if(FAILED(hr))
-		return hr;
+	if(FAILED(hr))	return hr;
 	
 	
 	// My things
 	//GetCamera().setLens(0.5f * PI, 1.0f, 1.0f, 1000.0f);
 	//GetCamera().setLens(0.25f*PI, ScreenAspect, NearPlane, FarPlane);
+	
+	hr = CreateCameraBuffer();
+	if(FAILED(hr))	
+		return hr;
 
-	D3D11_BUFFER_DESC CameraData;
-	CameraData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
-	CameraData.Usage				=	D3D11_USAGE_DYNAMIC; 
-	CameraData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
-	CameraData.MiscFlags			=	0;
-	CameraData.ByteWidth			=	sizeof(CustomStruct::EachFrameDataStructure);
-	hr = g_Device->CreateBuffer( &CameraData, NULL, &g_EveryFrameBuffer);
+	hr = CreatePrimitiveBuffer();
+	if(FAILED(hr))	
+		return hr;
 
-	D3D11_BUFFER_DESC CircleData;
-	CircleData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
-	CircleData.Usage				=	D3D11_USAGE_DYNAMIC; 
-	CircleData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
-	CircleData.MiscFlags			=	0;
-	CircleData.ByteWidth			=	sizeof(CustomStruct::Primitive);
-	hr = g_Device->CreateBuffer( &CircleData, NULL, &g_PrimitivesBuffer);
-
-	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
-	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
-	CustomStruct::Primitive l_primitive;
-	l_primitive.Sphere[0].MidPosition			= D3DXVECTOR4 (0.0f, 0.0f, 700.0f, 1.0f);
-	l_primitive.Sphere[0].Radius				= 200.0f;
-	l_primitive.Sphere[0].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-
-	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
-	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	 500.0f, 1.0f);
-	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	 800.0f, 1.0f);
-	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1000.0f, 1.0f);
-
-	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
-	l_primitive.Sphere[1].Radius				= 200.0f;
-	l_primitive.Sphere[1].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-
-	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
-	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(-400.0f,-200.0f ,500.0f, 1.0f);
-	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(-400.0f,400.0f ,800.0f, 1.0f);
-	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(-400.0f,-200.0f ,1000.0f, 1.0f);
-
-	l_primitive.SphereCount = 2;
-	l_primitive.TriangleCount = 2;
-	l_primitive.padding1 = -1;
-	l_primitive.padding2 = -1;
-
-	*(CustomStruct::Primitive*)PrimitivesResources.pData = l_primitive;
-	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
+	hr = CreateLightBuffer();
+	if(FAILED(hr))	
+		return hr;
 
 	return S_OK;
 }
-
 HRESULT InitializeDXDeviceAndSwapChain()
 {
 	HRESULT hr = S_OK;;
@@ -285,16 +256,121 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	return S_OK;
 }
 
+HRESULT CreateCameraBuffer()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC CameraData;
+	CameraData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
+	CameraData.Usage				=	D3D11_USAGE_DYNAMIC; 
+	CameraData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	CameraData.MiscFlags			=	0;
+	CameraData.ByteWidth			=	sizeof(CustomStruct::EachFrameDataStructure);
+	hr = g_Device->CreateBuffer( &CameraData, NULL, &g_EveryFrameBuffer);
+
+	return hr;
+}
+
+HRESULT CreatePrimitiveBuffer()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC PrimitiveData;
+	PrimitiveData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
+	PrimitiveData.Usage				=	D3D11_USAGE_DYNAMIC; 
+	PrimitiveData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	PrimitiveData.MiscFlags			=	0;
+	PrimitiveData.ByteWidth			=	sizeof(CustomStruct::Primitive);
+	hr = g_Device->CreateBuffer( &PrimitiveData, NULL, &g_PrimitivesBuffer);
+
+
+	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
+	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
+	CustomStruct::Primitive l_primitive;
+	
+	l_primitive.Sphere[0].MidPosition			= D3DXVECTOR4 (0.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[0].Radius				= 200.0f;
+	l_primitive.Sphere[0].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+
+	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	 500.0f, 1.0f);
+	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	 800.0f, 1.0f);
+	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1000.0f, 1.0f);
+
+	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[1].Radius				= 200.0f;
+	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+
+	/*
+	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(-400.0f,	-200.0f,	 500.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(-400.0f,	 400.0f,	 800.0f, 1.0f);
+	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(-400.0f,	-200.0f,	1000.0f, 1.0f);
+	*/
+	
+	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	1100.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	1400.0f, 1.0f);
+	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1600.0f, 1.0f);
+	
+
+	l_primitive.SphereCount = 2;
+	l_primitive.TriangleCount = 2;
+	l_primitive.padding1 = -1;
+	l_primitive.padding2 = -1;
+
+	*(CustomStruct::Primitive*)PrimitivesResources.pData = l_primitive;
+	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
+
+	return hr;
+}
+
+HRESULT CreateLightBuffer()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC LightData;
+	LightData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
+	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
+	LightData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	LightData.MiscFlags			=	0;
+	LightData.ByteWidth			=	sizeof(Light::LightData);
+	hr = g_Device->CreateBuffer( &LightData, NULL, &g_PrimitivesBuffer);
+
+	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
+	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
+	CustomLightStruct::Light l_light;
+
+	l_light.Light[0].ambient
+	l_light.Light[0].ambient;
+	l_light.Light[0].diffuse;
+	l_light.Light[0].specular;
+	l_light.Light[0].attenuation; // attenuation parameters (a0, a1, a2)
+	l_light.Light[0].pos;
+	l_light.Light[0].dir		=
+	l_light.Light[0].spotPower  = 500;
+	l_light.Light[0].range		= 500;
+	
+
+	
+	*(Light::LightData*)PrimitivesResources.pData = l_light;
+	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
+
+	return hr;
+}
+
+
+
 HRESULT Update(float deltaTime)
 {
 	if(GetAsyncKeyState('W') & 0x8000)
-		GetCamera().walk(100 * deltaTime);
+		GetCamera().walk(MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState('S') & 0x8000)
-		GetCamera().walk(100* -deltaTime);
+		GetCamera().walk(MOVE_SPEED* -deltaTime);
 	if(GetAsyncKeyState('A') & 0x8000)
-		GetCamera().strafe(100 * -deltaTime);
+		GetCamera().strafe(MOVE_SPEED * -deltaTime);
 	if(GetAsyncKeyState('D') & 0x8000)
-		GetCamera().strafe(100 *deltaTime);
+		GetCamera().strafe(MOVE_SPEED *deltaTime);
 	GetCamera().rebuildView();
 	
 	

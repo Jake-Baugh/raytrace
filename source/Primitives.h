@@ -1,8 +1,7 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-
-namespace CustomStruct
+namespace CustomPrimitiveStruct
 {
 	struct EachFrameDataStructure
 	{

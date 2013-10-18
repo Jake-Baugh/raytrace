@@ -48,7 +48,6 @@ struct Ray
 	float4 origin;
 	float4 direction;
 	float4 color;
-	float distance;
 	bool hit;
 };
 
@@ -74,14 +73,14 @@ Ray createRay(int x, int y)
 	l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	l_ray.hit = false;
-	l_ray.distance = 0.0f;
 	return l_ray;
 }
 
 float SphereIntersect(Ray p_ray, int index)
-{	
+{		
 	float4 l_distance = p_ray.origin - Sphere[index].midPos;
 	float a, b, t, t1, t2;
+
 	b = dot(p_ray.direction, l_distance);
 	a = dot(l_distance, l_distance ) - (Sphere[index].radius * Sphere[index].radius);
 	if(b * b - a >= 0)
@@ -114,7 +113,7 @@ float TriangleIntersect(Ray p_ray, int index)
 	e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
 	
 	//Begin calculating determinant - also used to calculate u parameter
-	float3 P = cross(p_ray.direction, e2);
+	float3 P = cross(p_ray.direction.xyz, e2);
 	
 	//if determinant is near zero, ray lies in plane of triangle
 	det = dot(e1, P);
@@ -132,17 +131,17 @@ float TriangleIntersect(Ray p_ray, int index)
 	u = dot(T, P) * inv_det;
 	
 	//The intersection lies outside of the triangle
-	if(u < 0.1f || u > 1.0f) 
+	if(u < 0.0f || u > 1.0f) 
 		return 0.0f;
 
 	//Prepare to test v parameter
 	float3 Q = cross(T, e1);
 
 	//Calculate V parameter and test bound
-	v = dot(p_ray.direction, Q) * inv_det;
+	v = dot(p_ray.direction.xyz, Q) * inv_det;
 	
 	//The intersection lies outside of the triangle
-	if(v < 0.1f || u + v  > 1.0f) 
+	if(v < 0.0f || u + v  > 1.0f) 
 		return 0.0f;
 
 	t = dot(e2, Q) * inv_det;
@@ -154,11 +153,23 @@ float TriangleIntersect(Ray p_ray, int index)
 	return 0.0f;
 }
 
+float3 TriangleNormalCounterClockwise(int index)
+{
+	float3 e1, e2;  //Edge1, Edge2
+ 
+	//Find vectors for two edges sharing V0
+	e1 = Triangle[index].pos1.xyz - Triangle[index].pos0.xyz;
+	e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
+	
+	float3 normal = cross(e1, e2);
+	return normalize(normal);	
+}
+
 Ray RayUpdate(Ray p_ray)
 {	
 	// Variables used by all intersections
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	float4 l_collidePos;
+	float4 l_collidePos, l_collideNormal;
 
 	// Sphere specific variable
 	float l_spherehit	= 0.0f;
@@ -202,30 +213,38 @@ Ray RayUpdate(Ray p_ray)
 		return p_ray; // It hit nothing, return direct
 	}
 
-
 	////////////////////////////// Checks which primitive is closest
-
-	float l_distance;
 	
 	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
 	{
-		l_tempColor = float4(Sphere[l_sphereindex].color.xyz, 1);
+		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
 		p_ray.hit = true;
-		l_distance = l_spherehit;
+		
+		// Reflect code
+		l_collidePos = p_ray.origin + (l_spherehit - 0.000001) * p_ray.direction;
+		l_collideNormal = normalize((Sphere[l_sphereindex].midPos - p_ray.origin));
+		
+		p_ray.origin = l_collidePos;
+		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
 	}
 	else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_spherehit == 0.0f || l_trianglehit < l_spherehit))
 	{
 		l_tempColor = Triangle[l_triangleindex].color;
 		p_ray.hit = true;
-		l_distance = l_trianglehit;
+
+		// Make light code here
+		l_collidePos = p_ray.origin + (l_trianglehit - 0.000001) * p_ray.direction;
+		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		p_ray.origin = l_collidePos;
+		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
 	}	
 	else
 	{
+		// This is a debug place, should never happen.
 		l_tempColor = float4(0.0f, 0.0f, 1.0f, 1.0f);
 		p_ray.hit = true;
-		l_distance = 0;
 	}
-	p_ray.color += l_tempColor;
+	p_ray.color = l_tempColor;
 
 	return p_ray;
 }
@@ -235,13 +254,16 @@ Ray RayUpdate(Ray p_ray)
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0,0,0,1);
-	Ray l_ray = createRay(threadID.xy, threadID.y);
+	Ray l_ray = createRay(threadID.x, threadID.y);
 		
 	for(int i = 1; i < max_number_of_bounces; i++)	
 	{
 	//	l_ray = RayUpdate(l_ray, i, i-1);
 	}
 	l_ray = RayUpdate(l_ray);
+	l_ray = RayUpdate(l_ray);
+	l_ray = RayUpdate(l_ray);
+
 
 
 	output[threadID.xy] = l_ray.color;
