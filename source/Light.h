@@ -21,9 +21,16 @@ namespace CustomLightStruct
 		D3DXVECTOR4 specular;
 	};
 
+	struct DirectionalLight
+	{
+		D3DXVECTOR4 color;
+		D3DXVECTOR4 direction;
+	};
+
 	struct AllLight
 	{
-		LightData Light[1];
+		//LightData Light[1];
+		DirectionalLight DirLight[1];
 	};
 }
 

@@ -5,6 +5,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "LightHelper.fx"
+//#include "RayStruct.fx"
 
 #pragma pack_matrix(row_major)
 
@@ -47,9 +48,11 @@ cbuffer PrimitiveBuffer: register(c1)
 
 cbuffer LightBuffer : register(c2) 
 {
-	LightData Light[1];
+	//LightData Light[1];
+	DirectionalLight DirLight[1];
 }
 
+/*
 struct Ray
 {
 	float4 origin;
@@ -57,7 +60,7 @@ struct Ray
 	float4 color;
 	bool hit;
 };
-
+*/
 Ray createRay(int x, int y)
 {
 	Ray l_ray;
@@ -79,7 +82,7 @@ Ray createRay(int x, int y)
 //	l_ray.direction.z = 0.0f;						// Used to test code
 	l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	l_ray.hit = false;
+	//l_ray.hit = false;
 	return l_ray;
 }
 
@@ -224,8 +227,8 @@ Ray RayUpdate(Ray p_ray)
 	
 	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
 	{
-		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
-		p_ray.hit = true;
+		//l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+		//p_ray.hit = true;
 		
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_spherehit - 0.0001) * p_ray.direction;
@@ -235,12 +238,16 @@ Ray RayUpdate(Ray p_ray)
 		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
 				
 		// Make light code here
-		SurfaceInfo a;
+		l_tempColor = CalcLight(p_ray, DirLight[0], l_collideNormal, cameraPosition);
+		//Ray p_ray, DirectionalLight p_directionalLight, float3 p_normal, float3 p_cameraPosition
+		
+		/*SurfaceInfo a;
 		a.position = l_collidePos;
 		a.normal = l_collideNormal;
 		a.diffuse = l_tempColor;
 		a.specular = float4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_tempColor = PointLight(a, Light[0], cameraPosition);
+		l_tempColor = PointLight(a, Light[0], cameraPosition);*/
+
 		//if(l_tempColor.x == 0.0f && l_tempColor.y == 0.0f && l_tempColor.z == 0.0f && l_tempColor.w == 0.0f)
 			//l_tempColor = float4(1.0f, 0.5f, 0.5f, 0.0f);
 	}
@@ -248,19 +255,22 @@ Ray RayUpdate(Ray p_ray)
 	{
 		
 		l_tempColor = Triangle[l_triangleindex].color;
-		p_ray.hit = true;
+		//p_ray.hit = true;
 
 		// Make reflect code here
 		l_collidePos = p_ray.origin + (l_trianglehit - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_ray.origin = l_collidePos;
 		p_ray.direction = reflect(p_ray.direction, l_collideNormal);
+
+		// Light code
+		//l_tempColor = CalcLight(p_ray, DirLight[0], l_collideNormal, cameraPosition);
 	}	
 	else
 	{
 		// This is a debug place, should never happen.
 		l_tempColor = float4(0.0f, 0.0f, 1.0f, 1.0f);
-		p_ray.hit = true;
+		//p_ray.hit = true;
 	}
 	p_ray.color = l_tempColor;
 	//p_ray.color += l_tempColor;
@@ -268,7 +278,7 @@ Ray RayUpdate(Ray p_ray)
 	return p_ray;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 4
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
@@ -283,3 +293,5 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	output[threadID.xy] = l_ray.color;
 //	output[threadID.xy] = l_ray.direction; //Debug thingy sak för att se om rays faktiskt blir nåt	
 }
+
+

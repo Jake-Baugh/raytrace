@@ -383,14 +383,17 @@ void FillLightBuffer()
 	D3D11_MAPPED_SUBRESOURCE LightResources;
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 	CustomLightStruct::AllLight l_light;
-
+	/*
 	l_light.Light[0].ambient		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_light.Light[0].diffuse		= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
 	l_light.Light[0].specular		= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
 	l_light.Light[0].attenuation	= D3DXVECTOR4(1.0f, 0.0f, 0.0f, 1.0f);
 	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	l_light.Light[0].range			= 10000.0f;
-		
+	*/
+	l_light.DirLight[0].color =  D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_light.DirLight[0].direction = D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+
 	*(CustomLightStruct::AllLight*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
