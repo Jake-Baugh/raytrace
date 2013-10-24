@@ -3,7 +3,7 @@
 
 namespace CustomPrimitiveStruct
 {
-	struct EachFrameDataStructure
+	struct EachFrameDataStructure	// This struct should be moved out of here. // TODO : Fix
 	{
 		D3DXVECTOR4 cameraPosition;
 		D3DXMATRIX	inverseProjection;
@@ -15,11 +15,20 @@ namespace CustomPrimitiveStruct
 		float padding2;
 	};
 
+	struct Material
+	{
+		float ambient;
+		float specular;
+		float diffuse;
+		float shininess;
+	};
+
 	struct SphereStruct
 	{
 		D3DXVECTOR4 MidPosition;
 		D3DXVECTOR3	Color;
 		float		Radius;
+		Material	Material;
 	};
 
 	struct TriangleStruct
@@ -28,6 +37,7 @@ namespace CustomPrimitiveStruct
 		D3DXVECTOR4 Position1;
 		D3DXVECTOR4 Position2;
 		D3DXVECTOR4 Color;
+		Material	Material;
 	};
 
 	struct Primitive

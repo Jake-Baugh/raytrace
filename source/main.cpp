@@ -327,37 +327,46 @@ void FillPrimitiveBuffer()
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
 	CustomPrimitiveStruct::Primitive l_primitive;
+		
+	l_primitive.SphereCount = 2;
+	l_primitive.TriangleCount = 2;
+	l_primitive.padding1 = -1;
+	l_primitive.padding2 = -1;
+
 	
 	l_primitive.Sphere[0].MidPosition			= D3DXVECTOR4 (0.0f, 0.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
 	l_primitive.Sphere[0].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+	
+	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[1].Radius				= 200.0f;
+	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+
+	for(int i = 0; i < l_primitive.SphereCount; i++)
+	{
+		l_primitive.Sphere[i].Material.ambient = 0.1f;
+		l_primitive.Sphere[i].Material.diffuse = 0.8f;
+		l_primitive.Sphere[i].Material.specular = 0.8f;
+		l_primitive.Sphere[i].Material.shininess = 800.0f;
+	}
 
 	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
 	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	 500.0f, 1.0f);
 	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	 800.0f, 1.0f);
 	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1000.0f, 1.0f);
 
-	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
-	l_primitive.Sphere[1].Radius				= 200.0f;
-	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
-
-	/*
-	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
-	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(-400.0f,	-200.0f,	 500.0f, 1.0f);
-	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(-400.0f,	 400.0f,	 800.0f, 1.0f);
-	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(-400.0f,	-200.0f,	1000.0f, 1.0f);
-	*/
-	
 	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
 	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	1100.0f, 1.0f);
 	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	1400.0f, 1.0f);
 	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1600.0f, 1.0f);
 	
-
-	l_primitive.SphereCount = 2;
-	l_primitive.TriangleCount = 2;
-	l_primitive.padding1 = -1;
-	l_primitive.padding2 = -1;
+	for(int i = 0; i < l_primitive.TriangleCount; i++)
+	{
+		l_primitive.Triangle[i].Material.ambient = 0.1f;
+		l_primitive.Triangle[i].Material.diffuse = 0.8f;
+		l_primitive.Triangle[i].Material.specular = 0.8f;
+		l_primitive.Triangle[i].Material.shininess = 800.0f;
+	}
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
@@ -372,7 +381,7 @@ HRESULT CreateLightBuffer()
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
-	LightData.ByteWidth			=	sizeof(CustomLightStruct::AllLight);
+	LightData.ByteWidth			=	sizeof(CustomLightStruct::LightBuffer);
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
 	return hr;
@@ -382,7 +391,7 @@ void FillLightBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE LightResources;
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
-	CustomLightStruct::AllLight l_light;
+	CustomLightStruct::LightBuffer l_light;
 	/*
 	l_light.Light[0].ambient		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_light.Light[0].diffuse		= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
@@ -391,10 +400,11 @@ void FillLightBuffer()
 	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	l_light.Light[0].range			= 10000.0f;
 	*/
-	l_light.DirLight[0].color =  D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
-	l_light.DirLight[0].direction = D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.PointLight[0].position	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.ambientLight			= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	*(CustomLightStruct::AllLight*)LightResources.pData = l_light;
+	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
 

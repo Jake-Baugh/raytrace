@@ -6,10 +6,30 @@
 
 #include "LightHelper.fx"
 //#include "RayStruct.fx"
+#define EPSILON 0.000001
 
 #pragma pack_matrix(row_major)
 
 RWTexture2D<float4> output : register(u0);
+
+struct SphereStruct
+{
+	float4	midPos;
+	float3	color;
+	float	radius;
+	Material material;
+};
+
+
+struct TriangleStruct
+{	
+	float4  pos0;
+	float4  pos1;
+	float4  pos2;
+	float4  color;			//float4 for padding reasons 
+	Material material;
+};
+
 
 cbuffer EveryFrameBuffer : register(c0) 
 {
@@ -23,22 +43,6 @@ cbuffer EveryFrameBuffer : register(c0)
 	//float padding2;
 }
 
-struct SphereStruct
-{
-	float4	midPos;
-	float3	color;
-	float	radius;
-};
-
-
-struct TriangleStruct
-{	
-	float4  pos0;
-	float4  pos1;
-	float4  pos2;
-	float4  color;			//float4 for padding reasons 
-};
-
 cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[2];
@@ -48,19 +52,11 @@ cbuffer PrimitiveBuffer: register(c1)
 
 cbuffer LightBuffer : register(c2) 
 {
-	//LightData Light[1];
-	DirectionalLight DirLight[1];
+	PointLightData PointLight[1];
+	float4 ambientLight;
+	//DirectionalLight DirLight[1];
 }
 
-/*
-struct Ray
-{
-	float4 origin;
-	float4 direction;
-	float4 color;
-	bool hit;
-};
-*/
 Ray createRay(int x, int y)
 {
 	Ray l_ray;
@@ -110,7 +106,7 @@ float SphereIntersect(Ray p_ray, int index)
 	return 0.0f;		// ifwe didn't hit	
 }
 
-#define EPSILON 0.000001
+
 float TriangleIntersect(Ray p_ray, int index)                         
 {
 	//return 1.0f;
@@ -227,7 +223,7 @@ Ray RayUpdate(Ray p_ray)
 	
 	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
 	{
-		//l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
 		//p_ray.hit = true;
 		
 		// Reflect code
