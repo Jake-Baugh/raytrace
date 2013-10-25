@@ -7,6 +7,7 @@
 #include "LightHelper.fx"
 //#include "RayStruct.fx"
 #define EPSILON 0.000001
+#define SPHERE_COUNT 3
 
 #pragma pack_matrix(row_major)
 
@@ -45,7 +46,7 @@ cbuffer EveryFrameBuffer : register(c0)
 
 cbuffer PrimitiveBuffer: register(c1)
 {
-	SphereStruct	Sphere[2];
+	SphereStruct	Sphere[SPHERE_COUNT];
 	TriangleStruct	Triangle[2];
 	float4			countVariable;
 }
@@ -231,10 +232,12 @@ Ray RayUpdate(Ray p_ray)
 		l_collideNormal = normalize((Sphere[l_sphereindex].midPos - p_ray.origin));
 		
 		p_ray.origin = l_collidePos;
-		p_ray.direction = reflect(p_ray.direction, l_collideNormal); 
+		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
 				
 		// Make light code here
-		l_tempColor = CalcLight(p_ray, DirLight[0], l_collideNormal, cameraPosition);
+	//	if(l_sphereindex != 2)
+	//		l_tempColor = CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material);
+	
 		//Ray p_ray, DirectionalLight p_directionalLight, float3 p_normal, float3 p_cameraPosition
 		
 		/*SurfaceInfo a;
@@ -257,10 +260,10 @@ Ray RayUpdate(Ray p_ray)
 		l_collidePos = p_ray.origin + (l_trianglehit - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_ray.origin = l_collidePos;
-		p_ray.direction = reflect(p_ray.direction, l_collideNormal);
+		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
 
 		// Light code
-		//l_tempColor = CalcLight(p_ray, DirLight[0], l_collideNormal, cameraPosition);
+		l_tempColor = CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_sphereindex].material);
 	}	
 	else
 	{

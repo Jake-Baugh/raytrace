@@ -322,13 +322,15 @@ HRESULT CreatePrimitiveBuffer()
 	return hr;
 }
 
+float a = 0.0f;
+
 void FillPrimitiveBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
 	CustomPrimitiveStruct::Primitive l_primitive;
 		
-	l_primitive.SphereCount = 2;
+	l_primitive.SphereCount = SPHERE_COUNT;
 	l_primitive.TriangleCount = 2;
 	l_primitive.padding1 = -1;
 	l_primitive.padding2 = -1;
@@ -341,6 +343,10 @@ void FillPrimitiveBuffer()
 	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[1].Radius				= 200.0f;
 	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+
+	l_primitive.Sphere[2].MidPosition			= D3DXVECTOR4 (a, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[2].Radius				= 50.0f;
+	l_primitive.Sphere[2].Color					= D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
 	for(int i = 0; i < l_primitive.SphereCount; i++)
 	{
@@ -387,6 +393,7 @@ HRESULT CreateLightBuffer()
 	return hr;
 }
 
+
 void FillLightBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE LightResources;
@@ -400,6 +407,10 @@ void FillLightBuffer()
 	l_light.Light[0].position		= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	l_light.Light[0].range			= 10000.0f;
 	*/
+	a = a - 0.1f;
+	if(a < -1000.0f)
+		a = 1000.0f;
+
 	l_light.PointLight[0].position	= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
 	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_light.ambientLight			= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -421,6 +432,7 @@ HRESULT Update(float deltaTime)
 	GetCamera().rebuildView();	
 	
 	FillCameraBuffer();
+	FillLightBuffer();
 	
 	return S_OK;
 }

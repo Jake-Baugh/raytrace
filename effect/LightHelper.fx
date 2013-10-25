@@ -34,7 +34,8 @@ float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, Po
     return l_ambient + (l_diffuse + l_specular) * l_pointLight.color;
 }
 
-float4 CalcLight(Ray p_ray, PointLightData light, float4 hitPos, float3 hitNormal, Material M)
+float4 CalcLight	 (Ray p_ray, PointLightData light,	float4 hitPos, float3 hitNormal, Material M)
+//float4 calculateLight(Ray p_ray, pointLight light,		float4 hitPos, float3 hitNormal, material M)
 {
 	float3 lightDir = normalize(hitPos - light.position);
 	float4 lightAttenuation = 1 / (length(lightDir) * length(lightDir));

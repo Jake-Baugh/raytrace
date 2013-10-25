@@ -1,6 +1,8 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
+#define SPHERE_COUNT 3
+
 namespace CustomPrimitiveStruct
 {
 	struct EachFrameDataStructure	// This struct should be moved out of here. // TODO : Fix
@@ -42,7 +44,7 @@ namespace CustomPrimitiveStruct
 
 	struct Primitive
 	{
-		SphereStruct		Sphere[2];
+		SphereStruct		Sphere[SPHERE_COUNT];
 		TriangleStruct		Triangle[2];
 		float SphereCount;
 		float TriangleCount;
