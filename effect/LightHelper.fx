@@ -14,20 +14,13 @@ struct PointLightData
 	float4 color;
 };
 
-/*
-struct DirectionalLight
-{
-	float4 color;
-	float4 direction;
-};*/
-
 
 //--------------------------------------------------------------------------------------
 // Phong Lighting Reflection Model
 //--------------------------------------------------------------------------------------
 float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, PointLightData l_pointLight)
 {
-    float4 l_ambient = M.ambient * float4(0.3f, 0.0f, 0.0f, 0.0f);
+    float4 l_ambient = M.ambient * float4(0.5f, 0.5f, 0.5f, 0.5f);
     float4 l_diffuse = M.diffuse * saturate( dot(N,L) );
     float4 l_specular = M.specular * pow( saturate(dot(R,V)), M.shininess );
  

@@ -2,6 +2,7 @@
 #define PRIMITIVES_H
 
 #define SPHERE_COUNT 3
+#define TRIANGLE_COUNT 2
 
 namespace CustomPrimitiveStruct
 {
@@ -45,7 +46,7 @@ namespace CustomPrimitiveStruct
 	struct Primitive
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
-		TriangleStruct		Triangle[2];
+		TriangleStruct		Triangle[TRIANGLE_COUNT];
 		float SphereCount;
 		float TriangleCount;
 		float padding1;
