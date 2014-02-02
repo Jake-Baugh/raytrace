@@ -6,8 +6,7 @@
 class Camera
 {
 public:
-	Camera();
-	~Camera();
+	static Camera* GetCamera();
 
 	void setLens(float fovY, float aspect, float zn, float zf);
 	void SetPosition(D3DXVECTOR3 lPos);
@@ -29,15 +28,19 @@ public:
 	D3DXMATRIX GetProj()		const{ return mProj;}
 
 private:
+	static Camera* m_camera;
+	Camera();
+	~Camera();
+
 	D3DXVECTOR3 mPosition;
 	D3DXVECTOR3 mRight;
 	D3DXVECTOR3 mUp;
 	D3DXVECTOR3 mLook;
 
 	D3DXMATRIX mView;
-	D3DXMATRIX mProj;
+	D3DXMATRIX mProj;	
 };
 
-Camera& GetCamera();
+//Camera* GetCamera();
 
 #endif

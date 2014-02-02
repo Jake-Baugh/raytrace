@@ -1,9 +1,13 @@
 #include "Camera.h"
 
-Camera& GetCamera()
+
+Camera* Camera::m_camera = nullptr;
+
+Camera* Camera::GetCamera()
 {
-	static Camera camera;
-	return camera;
+	if(m_camera == nullptr)
+		m_camera = new Camera();
+	return m_camera;
 }
 
 Camera::Camera()

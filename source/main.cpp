@@ -148,8 +148,8 @@ HRESULT Init()
 	
 	
 	// My things
-	//GetCamera().setLens(0.5f * PI, 1.0f, 1.0f, 1000.0f);
-	//GetCamera().setLens(0.25f*PI, ScreenAspect, NearPlane, FarPlane);
+	//Camera::GetCamera()->setLens(0.5f * PI, 1.0f, 1.0f, 1000.0f);
+	//Camera::GetCamera()->setLens(0.25f*PI, ScreenAspect, NearPlane, FarPlane);
 	
 	hr = CreateCameraBuffer();
 	if(FAILED(hr))	
@@ -282,8 +282,8 @@ void FillCameraBuffer()
 {
 	D3DXMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
 	float l_determinant;
-	l_view		 = GetCamera().GetProj();
-	l_projection = GetCamera().GetView();
+	l_view		 = Camera::GetCamera()->GetProj();
+	l_projection = Camera::GetCamera()->GetView();
 
 	l_determinant = D3DXMatrixDeterminant(&l_projection);
 	D3DXMatrixInverse(&l_inverseProjection, &l_determinant, &l_projection);
@@ -295,7 +295,7 @@ void FillCameraBuffer()
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
 	CustomPrimitiveStruct::EachFrameDataStructure l_eachFrameData;
-	l_eachFrameData.cameraPosition		= GetCamera().GetPosition();
+	l_eachFrameData.cameraPosition		= Camera::GetCamera()->GetPosition();
 	l_eachFrameData.inverseProjection	= l_inverseProjection;
 	l_eachFrameData.inverseView			= l_inverseView;
 
@@ -346,7 +346,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	a = sin(a) * l_deltaTime*100;
 	b = D3DXVECTOR4(0.0f, a, 0.0f, 0.0f); // make it move in circles
-	//l_primitive.Sphere[2].MidPosition			= GetCamera().GetPosition(); 
+	//l_primitive.Sphere[2].MidPosition			= Camera::GetCamera()->GetPosition(); 
 	l_primitive.Sphere[2].MidPosition			= b;
 	l_primitive.Sphere[2].Radius				= 50.0f;
 	l_primitive.Sphere[2].Color					= D3DXVECTOR3(1.0f, 0.55f, 0.0f);
@@ -403,7 +403,7 @@ void FillLightBuffer()
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 	CustomLightStruct::LightBuffer l_light;
 
-	l_light.PointLight[0].position	= GetCamera().GetPosition();
+	l_light.PointLight[0].position	= Camera::GetCamera()->GetPosition();
 	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_light.ambientLight			= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -414,30 +414,30 @@ void FillLightBuffer()
 HRESULT Update(float deltaTime)
 {
 	if(GetAsyncKeyState('W') & 0x8000)
-		GetCamera().walk(MOVE_SPEED * deltaTime);
+		Camera::GetCamera()->walk(MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState('S') & 0x8000)
-		GetCamera().walk(MOVE_SPEED* -deltaTime);
+		Camera::GetCamera()->walk(MOVE_SPEED* -deltaTime);
 	if(GetAsyncKeyState('A') & 0x8000)
-		GetCamera().strafe(MOVE_SPEED * -deltaTime);
+		Camera::GetCamera()->strafe(MOVE_SPEED * -deltaTime);
 	if(GetAsyncKeyState('D') & 0x8000)
-		GetCamera().strafe(MOVE_SPEED *deltaTime);
+		Camera::GetCamera()->strafe(MOVE_SPEED *deltaTime);
 	
 	float cameraspeed = 5.0;
 	if(GetAsyncKeyState('Q') & 0x8000)
-		GetCamera().rotateY(-cameraspeed * deltaTime);
+		Camera::GetCamera()->rotateY(-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('E') & 0x8000)
-		GetCamera().rotateY(cameraspeed * deltaTime);
+		Camera::GetCamera()->rotateY(cameraspeed * deltaTime);
 	if(GetAsyncKeyState('1') & 0x8000)
-		GetCamera().pitch(	-cameraspeed * deltaTime);
+		Camera::GetCamera()->pitch(	-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('2') & 0x8000)
-		GetCamera().pitch(	cameraspeed * deltaTime);
+		Camera::GetCamera()->pitch(	cameraspeed * deltaTime);
 
 		
 	
 	
 	
 	
-	GetCamera().rebuildView();	
+	Camera::GetCamera()->rebuildView();	
 	
 	FillCameraBuffer();
 	FillLightBuffer();
@@ -463,9 +463,9 @@ HRESULT Render(float deltaTime)
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
 
-	float x = GetCamera().GetPosition().x;
-	float y = GetCamera().GetPosition().y;
-	float z = GetCamera().GetPosition().z;
+	float x = Camera::GetCamera()->GetPosition().x;
+	float y = Camera::GetCamera()->GetPosition().y;
+	float z = Camera::GetCamera()->GetPosition().z;
 
 	char title[256];
 	sprintf_s(
@@ -516,8 +516,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 
 			dx = l_mousePos.x - m_oldMousePos.x;
 			dy = l_mousePos.y - m_oldMousePos.y;
-			GetCamera().pitch(		dy * MOUSE_SENSE);
-			GetCamera().rotateY(	-dx * MOUSE_SENSE);
+			Camera::GetCamera()->pitch(		dy * MOUSE_SENSE);
+			Camera::GetCamera()->rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
 		}
 		break;
