@@ -346,7 +346,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	a = sin(a) * l_deltaTime*100;
 	b = D3DXVECTOR4(0.0f, a, 0.0f, 0.0f); // make it move in circles
-	//l_primitive.Sphere[2].MidPosition			= GetCamera().GetPosition();
+	//l_primitive.Sphere[2].MidPosition			= GetCamera().GetPosition(); 
 	l_primitive.Sphere[2].MidPosition			= b;
 	l_primitive.Sphere[2].Radius				= 50.0f;
 	l_primitive.Sphere[2].Color					= D3DXVECTOR3(1.0f, 0.55f, 0.0f);
@@ -359,15 +359,15 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
 	}
 
-	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
-	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	 500.0f, 1.0f);
-	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	 800.0f, 1.0f);
-	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1000.0f, 1.0f);
+	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.5f, 1.0f, 0.5f, 1.0f);
+	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-50.0f,		700.0f, 1.0f);
+	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 50.0f,	700.0f, 1.0f);
+	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-50.0f,		800.0f, 1.0f);
 
-	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
-	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(400.0f,	-200.0f,	1100.0f, 1.0f);
-	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 400.0f,	1400.0f, 1.0f);
-	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-200.0f,	1600.0f, 1.0f);
+	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 0.5f, 0.5f, 1.0f);
+	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(400.0f,	50.0f,		700.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 50.0f,	800.0f, 1.0f);
+	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-50.0f,		800.0f, 1.0f);
 	
 	for(int i = 0; i < l_primitive.TriangleCount; i++)
 	{

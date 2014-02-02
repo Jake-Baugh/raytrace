@@ -175,7 +175,7 @@ float3 TriangleNormalCounterClockwise(int index)
 	return normalize(normal);	
 }
 
-Ray RayUpdate(Ray p_ray, int i)
+Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 {	
 	// Variables used by all intersections
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -189,8 +189,6 @@ Ray RayUpdate(Ray p_ray, int i)
 	int l_triangleindex = 0;
 
 	p_ray.lastWasHit = false;
-
-
 
 	for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 	{
@@ -246,29 +244,38 @@ Ray RayUpdate(Ray p_ray, int i)
 		
 		p_ray.origin = l_collidePos; // new origin for next jump
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
-				
+		
+		// Distance to light source
+		float l_lightSourceDistance;
+		l_lightSourceDistance = length(p_ray.origin - PointLight[0].position);
+
 		// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 		float temp1 = 0.0f;
+		float l_spherehit2 = 0.0f;
 		for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 		{
 			temp1 = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-			if(temp1 != 0.0f)									// Checks so that it does intersect
+			if(temp1 < l_spherehit2 || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
 			{
-				break; // No idea to look anymore
+				l_spherehit2 = temp1;
 			}
 		}
 
 		float temp2 = 0.0f;
+		float l_trianglehit2 = 0.0f;
+
 			// Same code as above but for triangles instead
 		for(int i = 0; i < countVariable.y; i++)
 		{
 			temp2 = TriangleIntersect(p_ray, i);
-			if(temp2 != 0.0f)
+			if(temp2 < l_trianglehit2 || l_trianglehit2 == 0.0f)
 			{
-				break; // No idea to look anymore
+				l_trianglehit2 = temp2;
 			}
 		}
-		if(temp1 == 0.0f && temp2 == 0.0f) // if no object was in the way
+		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material); 			// Light code		
+		else if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2)
 			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material); 			// Light code		
 	}	
 
@@ -290,29 +297,38 @@ Ray RayUpdate(Ray p_ray, int i)
 		p_ray.origin = l_collidePos;
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
 
-		// Check if this is lit by the light
+		// Distance to light source
+		float l_lightSourceDistance;
+		l_lightSourceDistance = length(p_ray.origin - PointLight[0].position);
+
+				// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 		float temp1 = 0.0f;
+		float l_spherehit2 = 0.0f;
 		for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 		{
 			temp1 = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-			if(temp1 != 0.0f)									// Checks so that it does intersect
+			if(temp1 < l_spherehit2 || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
 			{
-				break; // No idea to look anymore
+				l_spherehit2 = temp1;
 			}
 		}
 
 		float temp2 = 0.0f;
+		float l_trianglehit2 = 0.0f;
+
 			// Same code as above but for triangles instead
 		for(int i = 0; i < countVariable.y; i++)
 		{
 			temp2 = TriangleIntersect(p_ray, i);
-			if(temp2 != 0.0f)
+			if(temp2 < l_trianglehit2 || l_trianglehit2 == 0.0f)
 			{
-				break; // No idea to look anymore
+				l_trianglehit2 = temp2;
 			}
 		}
-		if(temp1 == 0.0f && temp2 == 0.0f) // if no object was in the way
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material);			// Light code
+		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material); 			// Light code		
+		else if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2)
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material); 			// Light code		
 	}	
 	else
 	{
@@ -335,10 +351,10 @@ void main( uint3 threadID : SV_DispatchThreadID)
 		
 	for(int i = 0; i < max_number_of_bounces; i++)	
 	{
-		if(l_ray.lastWasHit == true)
+		if(l_ray.lastWasHit == true) // Change this to jump out of 
 			l_ray = RayUpdate(l_ray, i);
 	}
-
+	
 	output[threadID.xy] = l_ray.color;
 //	output[threadID.xy] = l_ray.direction; //Debug thingy sak för att se om rays faktiskt blir nåt	
 }
@@ -346,11 +362,15 @@ void main( uint3 threadID : SV_DispatchThreadID)
 
 /*
 	Fixa så att ljuset rör sig.
-		Gametimer
-		Ljus
 	Fixa till så att det ser bra ut.
 	Väldigt skrikiga färger
 	Fixa flimmret som är
+	Dela upp saker i funktioner
+	Dynamiska buffrar
+	Ladda in objekt
+	Material
+	Ljus som studsar? :3
+
 
 	Tankar
 		Octatree
