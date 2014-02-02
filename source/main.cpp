@@ -40,7 +40,7 @@ HRESULT             InitWindow( HINSTANCE hInstance, int nCmdShow );
 HRESULT				Init();
 HRESULT				InitializeDXDeviceAndSwapChain();
 HRESULT				CreatePrimitiveBuffer();
-void				FillPrimitiveBuffer();
+void				FillPrimitiveBuffer(float l_deltaTime);
 HRESULT				CreateLightBuffer();
 void				FillLightBuffer();
 HRESULT				CreateCameraBuffer();
@@ -164,7 +164,7 @@ HRESULT Init()
 		return hr;
 
 
-	FillPrimitiveBuffer();
+//	FillPrimitiveBuffer();
 	FillLightBuffer();
 
 	return S_OK;
@@ -324,7 +324,7 @@ HRESULT CreatePrimitiveBuffer()
 
 float a = 1.0f;
 D3DXVECTOR4 b;
-void FillPrimitiveBuffer()
+void FillPrimitiveBuffer(float l_deltaTime)
 {
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
@@ -344,10 +344,10 @@ void FillPrimitiveBuffer()
 	l_primitive.Sphere[1].Radius				= 200.0f;
 	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 
-	a = sin(a);
+	a = sin(a) * l_deltaTime*100;
 	b = D3DXVECTOR4(0.0f, a, 0.0f, 0.0f); // make it move in circles
-	l_primitive.Sphere[2].MidPosition			= GetCamera().GetPosition();
-	//l_primitive.Sphere[2].MidPosition			= b;
+	//l_primitive.Sphere[2].MidPosition			= GetCamera().GetPosition();
+	l_primitive.Sphere[2].MidPosition			= b;
 	l_primitive.Sphere[2].Radius				= 50.0f;
 	l_primitive.Sphere[2].Color					= D3DXVECTOR3(1.0f, 0.55f, 0.0f);
 
@@ -403,7 +403,7 @@ void FillLightBuffer()
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 	CustomLightStruct::LightBuffer l_light;
 
-	l_light.PointLight[0].position	=	GetCamera().GetPosition();
+	l_light.PointLight[0].position	= GetCamera().GetPosition();
 	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	l_light.ambientLight			= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -421,11 +421,27 @@ HRESULT Update(float deltaTime)
 		GetCamera().strafe(MOVE_SPEED * -deltaTime);
 	if(GetAsyncKeyState('D') & 0x8000)
 		GetCamera().strafe(MOVE_SPEED *deltaTime);
+	
+	float cameraspeed = 5.0;
+	if(GetAsyncKeyState('Q') & 0x8000)
+		GetCamera().rotateY(-cameraspeed * deltaTime);
+	if(GetAsyncKeyState('E') & 0x8000)
+		GetCamera().rotateY(cameraspeed * deltaTime);
+	if(GetAsyncKeyState('1') & 0x8000)
+		GetCamera().pitch(	-cameraspeed * deltaTime);
+	if(GetAsyncKeyState('2') & 0x8000)
+		GetCamera().pitch(	cameraspeed * deltaTime);
+
+		
+	
+	
+	
+	
 	GetCamera().rebuildView();	
 	
 	FillCameraBuffer();
 	FillLightBuffer();
-	FillPrimitiveBuffer();
+	FillPrimitiveBuffer(deltaTime);
 	
 	return S_OK;
 }
@@ -493,8 +509,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 		}
 		break;
 	case WM_MOUSEMOVE:
-		//if(wParam & MK_LBUTTON)
-		//{
+		if(wParam & MK_LBUTTON)
+		{
 			l_mousePos.x = (int)LOWORD(lParam);
 			l_mousePos.y = (int)HIWORD(lParam);
 
@@ -503,7 +519,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 			GetCamera().pitch(		dy * MOUSE_SENSE);
 			GetCamera().rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
-		//}
+		}
 		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);

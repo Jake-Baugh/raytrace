@@ -81,7 +81,8 @@ Ray createRay(int x, int y)
 //	l_ray.direction.z = 0.0f;						// Used to test code
 	l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	//l_ray.hit = false;
+	l_ray.lastWasHit = true;
+	
 	return l_ray;
 }
 
@@ -174,7 +175,7 @@ float3 TriangleNormalCounterClockwise(int index)
 	return normalize(normal);	
 }
 
-Ray RayUpdate(Ray p_ray)
+Ray RayUpdate(Ray p_ray, int i)
 {	
 	// Variables used by all intersections
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -186,6 +187,9 @@ Ray RayUpdate(Ray p_ray)
 
 	float l_trianglehit = 0.0f;
 	int l_triangleindex = 0;
+
+	p_ray.lastWasHit = false;
+
 
 
 	for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
@@ -232,16 +236,18 @@ Ray RayUpdate(Ray p_ray)
 	//	l_spherehit is smaller than l_trianglehit. Means that both a triangle and a sphere was hit, but that sphere was closer.
 	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
 	{		
-		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+		p_ray.lastWasHit = true;
+		//if(i == 0)
+			l_tempColor = float4(Sphere[l_sphereindex].color, 1);
 
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_spherehit - 0.0001) * p_ray.direction;
 		l_collideNormal = normalize((Sphere[l_sphereindex].midPos - p_ray.origin));
 		
-		p_ray.origin = l_collidePos;
-		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
+		p_ray.origin = l_collidePos; // new origin for next jump
+		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
 				
-		// Check if this is lit by the light
+		// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 		float temp1 = 0.0f;
 		for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 		{
@@ -251,7 +257,6 @@ Ray RayUpdate(Ray p_ray)
 				break; // No idea to look anymore
 			}
 		}
-
 
 		float temp2 = 0.0f;
 			// Same code as above but for triangles instead
@@ -274,7 +279,10 @@ Ray RayUpdate(Ray p_ray)
 	//	l_trianglehit is smaller than l_spherehit. Means that both a triangle and a sphere was hit, but that triangle was closer.
 	else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_spherehit == 0.0f || l_trianglehit < l_spherehit))
 	{	
+		p_ray.lastWasHit = true;
+
 		l_tempColor = Triangle[l_triangleindex].color;
+		
 		// Make reflect code here
 		l_collidePos = p_ray.origin + (l_trianglehit - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
@@ -327,7 +335,8 @@ void main( uint3 threadID : SV_DispatchThreadID)
 		
 	for(int i = 0; i < max_number_of_bounces; i++)	
 	{
-		l_ray = RayUpdate(l_ray);
+		if(l_ray.lastWasHit == true)
+			l_ray = RayUpdate(l_ray, i);
 	}
 
 	output[threadID.xy] = l_ray.color;
