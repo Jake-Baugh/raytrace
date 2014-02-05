@@ -18,6 +18,9 @@ public:
 	void rotateY(float angle);
 	void rebuildView();
 
+	void MoveY(float p_step);
+
+
 	//
 	D3DXVECTOR4 GetPosition()	const { return D3DXVECTOR4(mPosition, 1);};
 	D3DXVECTOR4 GetLookAt()		const { return D3DXVECTOR4(mLook, 0) ;};
@@ -40,7 +43,5 @@ private:
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;	
 };
-
-//Camera* GetCamera();
 
 #endif

@@ -348,7 +348,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	b = D3DXVECTOR4(0.0f, a, 0.0f, 0.0f); // make it move in circles
 	//l_primitive.Sphere[2].MidPosition			= Camera::GetCamera()->GetPosition(); 
 	l_primitive.Sphere[2].MidPosition			= b;
-	l_primitive.Sphere[2].Radius				= 50.0f;
+	l_primitive.Sphere[2].Radius				= 200.0f;
 	l_primitive.Sphere[2].Color					= D3DXVECTOR3(1.0f, 0.55f, 0.0f);
 
 	for(int i = 0; i < l_primitive.SphereCount; i++)
@@ -369,6 +369,11 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 50.0f,	800.0f, 1.0f);
 	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-50.0f,		800.0f, 1.0f);
 	
+	l_primitive.Triangle[2].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[2].Position0			= D3DXVECTOR4(-200.0f,	-300.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[2].Position1			= D3DXVECTOR4(200.0f,	-300.0f,		400.0f, 1.0f);
+	l_primitive.Triangle[2].Position2			= D3DXVECTOR4(-200.0f,	-300.0f,		800.0f, 1.0f);
+
 	for(int i = 0; i < l_primitive.TriangleCount; i++)
 	{
 		l_primitive.Triangle[i].Material.ambient = 0.5f;
@@ -405,7 +410,7 @@ void FillLightBuffer()
 
 	l_light.PointLight[0].position	= Camera::GetCamera()->GetPosition();
 	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.ambientLight			= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.ambientLight			= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
@@ -431,12 +436,14 @@ HRESULT Update(float deltaTime)
 		Camera::GetCamera()->pitch(	-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('2') & 0x8000)
 		Camera::GetCamera()->pitch(	cameraspeed * deltaTime);
-
+	
+	float upndownspeed = 4.0f;
+	if(GetAsyncKeyState(VK_SPACE) & 0x8000)
+		Camera::GetCamera()->MoveY(	MOVE_SPEED * deltaTime);
+	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
+		Camera::GetCamera()->MoveY(	-MOVE_SPEED * deltaTime);
 		
-	
-	
-	
-	
+
 	Camera::GetCamera()->rebuildView();	
 	
 	FillCameraBuffer();

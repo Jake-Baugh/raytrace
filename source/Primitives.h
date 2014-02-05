@@ -2,7 +2,7 @@
 #define PRIMITIVES_H
 
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 2
+#define TRIANGLE_COUNT 3
 
 namespace CustomPrimitiveStruct
 {

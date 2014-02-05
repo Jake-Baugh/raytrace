@@ -106,3 +106,8 @@ void Camera::rebuildView()
 	mView(2,3) = 0.0f;
 	mView(3,3) = 1.0f;
 }
+
+void Camera::MoveY(float p_step)
+{
+	mPosition.y += p_step;
+}

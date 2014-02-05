@@ -8,7 +8,7 @@
 //#include "RayStruct.fx"
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 2
+#define TRIANGLE_COUNT 3
 
 
 #pragma pack_matrix(row_major)
@@ -232,7 +232,7 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 	//	l_trianglehit is equal to 0, means there was no hit on triangle at all
 	//	l_trianglehit is bigger than 0, what does this mean?
 	//	l_spherehit is smaller than l_trianglehit. Means that both a triangle and a sphere was hit, but that sphere was closer.
-	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
+	if(0.0f != l_spherehit &&		(l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
 	{		
 		p_ray.lastWasHit = true;
 		//if(i == 0)
@@ -273,10 +273,12 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 				l_trianglehit2 = temp2;
 			}
 		}
-		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material); 			// Light code		
-		else if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2)
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material); 			// Light code		
+		//if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f) // 
+		//	l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 			// Light code		
+		if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2 && l_spherehit2 != 0.0f && l_trianglehit2 != 0.0f)
+			l_tempColor *= 0.0 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
+		else
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
 	}	
 
 	//	if l_spherehit was NOT equal to zero 
@@ -284,7 +286,8 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 	//	AND that atleast one of the following is correct
 	//	l_spherehit is equal to 0.0, means no hit
 	//	l_trianglehit is smaller than l_spherehit. Means that both a triangle and a sphere was hit, but that triangle was closer.
-	else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_spherehit == 0.0f || l_trianglehit < l_spherehit))
+	//else if(0.0f != l_trianglehit && 0.0f < l_trianglehit && (l_spherehit == 0.0f || l_trianglehit < l_spherehit))
+	else if(0.0f != l_trianglehit && ( l_spherehit == 0.0f  || l_spherehit == 0.0f  || l_trianglehit < l_spherehit))
 	{	
 		p_ray.lastWasHit = true;
 
@@ -325,10 +328,11 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 				l_trianglehit2 = temp2;
 			}
 		}
-		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material); 			// Light code		
-		else if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2)
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material); 			// Light code		
+					// Light code		
+		if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2 && l_spherehit2 != 0.0f && l_trianglehit2 != 0.0f)
+			l_tempColor *= 0.0 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_triangleindex].material, ambientLight); 
+		else
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
 	}	
 	else
 	{
