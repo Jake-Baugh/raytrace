@@ -344,8 +344,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Sphere[1].Radius				= 200.0f;
 	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 
-	a = sin(a) * l_deltaTime*100;
-	b = D3DXVECTOR4(0.0f, a, 0.0f, 0.0f); // make it move in circles
+	b = D3DXVECTOR4(0.0f, 500, 0.0f, 0.0f); // make it move in circles
 	//l_primitive.Sphere[2].MidPosition			= Camera::GetCamera()->GetPosition(); 
 	l_primitive.Sphere[2].MidPosition			= b;
 	l_primitive.Sphere[2].Radius				= 200.0f;

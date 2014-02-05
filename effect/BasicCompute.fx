@@ -246,16 +246,17 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
 		
 		// Distance to light source
-		float l_lightSourceDistance;
-		l_lightSourceDistance = length(p_ray.origin - PointLight[0].position);
+		Ray l_lightSourceRay;
+		l_lightSourceRay.origin = PointLight[0].position;
+		l_lightSourceRay.direction = PointLight[0].position - p_ray.origin;
 
 		// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 		float temp1 = 0.0f;
 		float l_spherehit2 = 0.0f;
 		for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 		{
-			temp1 = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-			if(temp1 < l_spherehit2 || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
+			temp1 = SphereIntersect(l_lightSourceRay, i);				// Get distance to current sphere, return 0.0 if it does not intersect
+			if((temp1 != 0.0f && temp1 < l_spherehit2) || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
 			{
 				l_spherehit2 = temp1;
 			}
@@ -267,18 +268,20 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 			// Same code as above but for triangles instead
 		for(int i = 0; i < countVariable.y; i++)
 		{
-			temp2 = TriangleIntersect(p_ray, i);
-			if(temp2 < l_trianglehit2 || l_trianglehit2 == 0.0f)
+			temp2 = TriangleIntersect(l_lightSourceRay, i);
+			if((temp2 != 0.0f && temp2 < l_trianglehit2) || l_trianglehit2 == 0.0f)
 			{
 				l_trianglehit2 = temp2;
 			}
 		}
 		//if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f) // 
 		//	l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 			// Light code		
-		if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2 && l_spherehit2 != 0.0f && l_trianglehit2 != 0.0f)
-			l_tempColor *= 0.0 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
+		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
 		else
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
+			l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
+			
+			//l_tempColor *= 0.5 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
 	}	
 
 	//	if l_spherehit was NOT equal to zero 
@@ -301,16 +304,18 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
 
 		// Distance to light source
-		float l_lightSourceDistance;
-		l_lightSourceDistance = length(p_ray.origin - PointLight[0].position);
+		// Distance to light source
+		Ray l_lightSourceRay;
+		l_lightSourceRay.origin = PointLight[0].position;
+		l_lightSourceRay.direction = PointLight[0].position - p_ray.origin;
 
-				// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
+		// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 		float temp1 = 0.0f;
 		float l_spherehit2 = 0.0f;
 		for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 		{
-			temp1 = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-			if(temp1 < l_spherehit2 || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
+			temp1 = SphereIntersect(l_lightSourceRay, i);				// Get distance to current sphere, return 0.0 if it does not intersect
+			if((temp1 != 0.0f && temp1 < l_spherehit2) || l_spherehit2 == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
 			{
 				l_spherehit2 = temp1;
 			}
@@ -322,17 +327,17 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 			// Same code as above but for triangles instead
 		for(int i = 0; i < countVariable.y; i++)
 		{
-			temp2 = TriangleIntersect(p_ray, i);
-			if(temp2 < l_trianglehit2 || l_trianglehit2 == 0.0f)
+			temp2 = TriangleIntersect(l_lightSourceRay, i);
+			if((temp2 != 0.0f && temp2 < l_trianglehit2) || l_trianglehit2 == 0.0f)
 			{
 				l_trianglehit2 = temp2;
 			}
 		}
-					// Light code		
-		if(l_lightSourceDistance < l_spherehit2 && l_lightSourceDistance < l_trianglehit2 && l_spherehit2 != 0.0f && l_trianglehit2 != 0.0f)
-			l_tempColor *= 0.0 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_triangleindex].material, ambientLight); 
+		if(l_spherehit2 == 0.0f && l_trianglehit2 == 0.0f)
+			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
 		else
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
+			l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
+			//l_tempColor *= 0.5 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
 	}	
 	else
 	{

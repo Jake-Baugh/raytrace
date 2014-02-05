@@ -20,7 +20,7 @@ struct PointLightData
 //--------------------------------------------------------------------------------------
 float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, PointLightData l_pointLight, float4 p_ambient)
 {
-    float4 l_ambient = M.ambient * p_ambient;//float4(0.5f, 0.5f, 0.5f, 0.5f);
+    float4 l_ambient = M.ambient * p_ambient;
     float4 l_diffuse = M.diffuse * saturate( dot(N,L) );
     float4 l_specular = M.specular * pow( saturate(dot(R,V)), M.shininess );
  
