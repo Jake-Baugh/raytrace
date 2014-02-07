@@ -409,7 +409,7 @@ void FillLightBuffer()
 
 	l_light.PointLight[0].position	= Camera::GetCamera()->GetPosition();
 	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.ambientLight			= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_light.ambientLight			= D3DXVECTOR4(0.5f, 0.5f, 0.5f, 1.0f);
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);

@@ -174,7 +174,7 @@ float3 TriangleNormalCounterClockwise(int index)
 	return normalize(normal);	
 }
 
-void CheckIfRayHits(Ray p_ray, out bool p_hitSphere, out bool p_hitTriangle, out int p_closestSphereIndex, out int p_closestTriangleIndex, out float p_distanceToClosestSphere, out int p_distanceToClosestTriangle)
+void CheckIfRayHits(in Ray p_ray, out int p_hitSphere, out int p_hitTriangle, out int p_closestSphereIndex, out int p_closestTriangleIndex, out float p_distanceToClosestSphere, out int p_distanceToClosestTriangle)
 {
 	// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
 	float temp = 0.0f;
@@ -186,26 +186,31 @@ void CheckIfRayHits(Ray p_ray, out bool p_hitSphere, out bool p_hitTriangle, out
 	float l_triangleDistance = 0.0f;
 	int l_triangleIndex = 0;
 
-	p_hitSphere = false;
-	p_hitTriangle = false;
+	p_hitSphere = -1;
+	p_hitTriangle = -1;
 
 	for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
 	{
 		temp = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-		if(lowest == 0.0)
-			lowest = temp;
-		if(temp != 0.0f)	
+		if(temp > 0.0f)
 		{
-			p_hitSphere = true;
-			if(temp < lowest) //|| l_sphereDistance == 0.0f*/)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
-			{
+			if(lowest == 0.0)
 				lowest = temp;
-				l_sphereIndex = i;
+			if(temp != 0.0f)	
+			{
+				p_hitSphere = 1;
+				if(temp < lowest) //|| l_sphereDistance == 0.0f*/)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
+				{
+					lowest = temp;
+					l_sphereIndex = i;
+				}
 			}
 		}
 	}
 	l_sphereDistance = lowest;
 	
+	//l_triangleIndex = 2;
+
 	lowest = 0.0;
 	for(int i = 0; i < countVariable.y; i++)
 	{
@@ -214,9 +219,9 @@ void CheckIfRayHits(Ray p_ray, out bool p_hitSphere, out bool p_hitTriangle, out
 		{
 			if(lowest == 0.0f)
 				lowest = temp;
-			if(temp != 0.0f || lowest == 0.0f)	
+			if(temp != 0.0f)	
 			{
-				p_hitTriangle = true;
+				p_hitTriangle = 1;
 				if(temp < lowest)
 				{
 					lowest = temp;
@@ -292,8 +297,7 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 	{		
 		
 		p_ray.lastWasHit = true;
-		//if(i == 0)
-			l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+			//l_tempColor = float4(Sphere[l_sphereindex].color, 1);
 
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_spherehit - 0.0001) * p_ray.direction;
@@ -306,19 +310,29 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		Ray l_lightSourceRay;
 		l_lightSourceRay.origin = PointLight[0].position;
 		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
-		
+	
+		float distanceFromLight = length(p_ray.origin - PointLight[0].position);
+
+
 		int l_closestSphereIndex, l_closestTriangleIndex;
-		float l_distanceToClosestSphere, l_distanceToClosestTriangle;
+		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
+		int sp = -1;
+		int tr = -1;
 
-		//CheckIfRayHits(l_lightSourceRay, 0, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
+		CheckIfRayHits(l_lightSourceRay, sp, tr, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
+		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+		
+		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
+		{
+			if(tr == -1)
+				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
+			else if(tr == 1 && distanceFromLight-1 < abs(l_distanceToClosestTriangle))
+				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 		
+		}
+		else
+			l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
 
-		//if(l_distanceToClosestSphere == 0.0f && l_distanceToClosestTriangle == 0.0f)
-			l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
-		//else
-			//l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
-			//l_tempColor *= l_tempColor;
-			//l_tempColor *= 0.5f * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
-	}	
+	 }
 
 	//	if l_spherehit was NOT equal to zero 
 	//	AND that atleast one of the following is correct
@@ -348,45 +362,20 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-		bool sp, tr;
+		int sp = -1;
+		int tr = -1;
 
 		CheckIfRayHits(l_lightSourceRay, sp, tr, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
 		
-		if(sp == false)
+		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
 		{
-			if(tr == false)
-				l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
-			else
-				l_tempColor = float4(1.0f, 1.0f, 1.0f, 1.0f); //white
-			if(tr == true && distanceFromLight < l_distanceToClosestTriangle)
-				l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
-			else
-				l_tempColor = float4(0.0f, 1.0f, 1.0f, 1.0f); //teal
+			if(tr == -1)
+				l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
+			else if(tr == 1 && distanceFromLight-1 < abs(l_distanceToClosestTriangle))
+				l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
 		}
 		else
-			l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
-		
-
-		if(l_closestTriangleIndex == 0)
-			l_tempColor = float4(1.0f, 0.0f, 0.0f, 1.0f); //red
-		if(l_closestTriangleIndex == 1)
-			l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
-		if(l_closestTriangleIndex == 2)
-			l_tempColor = float4(0.0f, 0.0f, 1.0f, 1.0f); //blue
-
-		/*
-		if(l_distanceToClosestSphere == 0.0f)
-		{
-			if(l_distanceToClosestTriangle == 0.0f)
-				l_tempColor *= CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
-			else
-				l_tempColor = float4(1.0f, 1.0f, 1.0f, 1.0f); //GREEN
-		}
-		else
-			l_tempColor = float4(0.0f, 1.0f, 0.0f, 1.0f); //GREEN
-			*/
-			
-			//l_tempColor *= 0.1 * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
+			l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
 	}	
 	else
 	{
