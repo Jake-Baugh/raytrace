@@ -2,11 +2,12 @@
 #define CAMERA_H
 
 #include "stdafx.h"
+#include <vector>
 
 class Camera
 {
 public:
-	static Camera* GetCamera();
+	static Camera* GetCamera(int index);
 
 	void setLens(float fovY, float aspect, float zn, float zf);
 	void SetPosition(D3DXVECTOR3 lPos);
@@ -31,7 +32,10 @@ public:
 	D3DXMATRIX GetProj()		const{ return mProj;}
 
 private:
-	static Camera* m_camera;
+	//static Camera* m_camera;
+	//static Camera* m_camera2;
+	static std::vector<Camera*>* m_camera;
+
 	Camera();
 	~Camera();
 

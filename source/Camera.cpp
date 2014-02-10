@@ -1,13 +1,13 @@
 #include "Camera.h"
 
 
-Camera* Camera::m_camera = nullptr;
+std::vector<Camera*>* Camera::m_camera = new std::vector<Camera*>(10);
 
-Camera* Camera::GetCamera()
+Camera* Camera::GetCamera(int index)
 {
-	if(m_camera == nullptr)
-		m_camera = new Camera();
-	return m_camera;
+	if(m_camera->at(index) == nullptr)
+		m_camera->at(index) = new Camera();
+	return m_camera->at(index);
 }
 
 Camera::Camera()

@@ -9,6 +9,16 @@
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
 #define TRIANGLE_COUNT 3
+#define LIGHT_COUNT 9
+
+
+
+#define WHITE float3(1.0f, 1.0f, 1.0f)
+#define BLACK float3(0.0f, 0.0f, 0.0f)
+
+#define RED   float3(1.0f, 0.0f, 0.0f)
+#define GREEN float3(0.0f, 1.0f, 0.0f)
+#define BLACK float3(0.0f, 0.0f, 1.0f)
 
 
 #pragma pack_matrix(row_major)
@@ -53,9 +63,9 @@ cbuffer PrimitiveBuffer: register(c1)
 
 cbuffer LightBuffer : register(c2) 
 {
-	PointLightData PointLight[1];
-	float4 ambientLight;
-	//DirectionalLight DirLight[1];
+	float light_count;
+	float3 ambientLight;
+	PointLightData PointLight[LIGHT_COUNT];
 }
 
 Ray createRay(int x, int y)
@@ -305,14 +315,15 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		
 		p_ray.origin = l_collidePos; // new origin for next jump
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
-		
-		// Vector from light source
+
+		l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+
+/*		// Vector from light source
 		Ray l_lightSourceRay;
 		l_lightSourceRay.origin = PointLight[0].position;
 		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
 	
 		float distanceFromLight = length(p_ray.origin - PointLight[0].position);
-
 
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
@@ -320,18 +331,24 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		int tr = -1;
 
 		CheckIfRayHits(l_lightSourceRay, sp, tr, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
-		l_tempColor = float4(Sphere[l_sphereindex].color, 1);
+		
+		// ENTER IF ATLEAST ONE OF THE FOLLOWING IS TRUE
+		// There was no triangle or sphere hit
+		// There was a sphere hit but the distance to the light is closer than to the sphere.
+		// THere was a triangle hit but the distance to the light source is closer than too the triangle
 		
 		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
 		{
 			if(tr == -1)
 				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
-			else if(tr == 1 && distanceFromLight-1 < abs(l_distanceToClosestTriangle))
+			else if(tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle)
 				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 		
 		}
-		else
-			l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight);
-
+		//It's not lit by the light (??)
+		else 
+				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 		
+			//l_tempColor = float4(WHITE, 1.0f);
+			*/
 	 }
 
 	//	if l_spherehit was NOT equal to zero 
@@ -369,19 +386,25 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 		
 		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
 		{
-			if(tr == -1)
-				l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
-			else if(tr == 1 && distanceFromLight-1 < abs(l_distanceToClosestTriangle))
-				l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
+/*			if(tr == -1)
+				l_tempColor = float4(BLACK, 1.0f);//Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
+			
+				//l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
+			else if(tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle)
+				l_tempColor = float4(WHITE, 1.0f);//Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
+*/
+			l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
 		}
+		//It's not lit by the light (??)
 		else
-			l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight);
+			l_tempColor = float4(WHITE, 1.0f);
 	}	
 	else
 	{
 		// This is a debug place, should never happen.
 		l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
 	}
+
 	p_ray.color = l_tempColor;
 
 	return p_ray;

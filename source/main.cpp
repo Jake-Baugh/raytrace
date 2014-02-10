@@ -30,6 +30,7 @@ ComputeShader*				g_ComputeShader			= NULL;
 D3D11Timer*					g_Timer					= NULL;
 
 int							g_Width, g_Height;
+int							g_cameraIndex = 0;
 
 POINT						m_oldMousePos;
 
@@ -282,8 +283,8 @@ void FillCameraBuffer()
 {
 	D3DXMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
 	float l_determinant;
-	l_view		 = Camera::GetCamera()->GetProj();
-	l_projection = Camera::GetCamera()->GetView();
+	l_view		 = Camera::GetCamera(g_cameraIndex)->GetProj();
+	l_projection = Camera::GetCamera(g_cameraIndex)->GetView();
 
 	l_determinant = D3DXMatrixDeterminant(&l_projection);
 	D3DXMatrixInverse(&l_inverseProjection, &l_determinant, &l_projection);
@@ -295,7 +296,7 @@ void FillCameraBuffer()
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
 	CustomPrimitiveStruct::EachFrameDataStructure l_eachFrameData;
-	l_eachFrameData.cameraPosition		= Camera::GetCamera()->GetPosition();
+	l_eachFrameData.cameraPosition		= Camera::GetCamera(g_cameraIndex)->GetPosition();
 	l_eachFrameData.inverseProjection	= l_inverseProjection;
 	l_eachFrameData.inverseView			= l_inverseView;
 
@@ -407,9 +408,41 @@ void FillLightBuffer()
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 	CustomLightStruct::LightBuffer l_light;
 
-	l_light.PointLight[0].position	= Camera::GetCamera()->GetPosition();
-	l_light.PointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.ambientLight			= D3DXVECTOR4(0.5f, 0.5f, 0.5f, 1.0f);
+	l_light.lightCount = LIGHT_COUNT;
+	l_light.ambientLight			= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+
+	l_light.pointLight[0].position	= Camera::GetCamera(0)->GetPosition();
+	l_light.pointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[1].position	= Camera::GetCamera(1)->GetPosition();
+	l_light.pointLight[1].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[2].position	= Camera::GetCamera(2)->GetPosition();
+	l_light.pointLight[2].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[3].position	= Camera::GetCamera(3)->GetPosition();
+	l_light.pointLight[3].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[4].position	= Camera::GetCamera(4)->GetPosition();
+	l_light.pointLight[4].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[5].position	= Camera::GetCamera(5)->GetPosition();
+	l_light.pointLight[5].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[6].position	= Camera::GetCamera(6)->GetPosition();
+	l_light.pointLight[6].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[7].position	= Camera::GetCamera(7)->GetPosition();
+	l_light.pointLight[7].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_light.pointLight[8].position	= Camera::GetCamera(8)->GetPosition();
+	l_light.pointLight[8].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	/*l_light.pointLight[9].position	= Camera::GetCamera(9)->GetPosition();
+	l_light.pointLight[9].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+	*/
+
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
@@ -418,32 +451,54 @@ void FillLightBuffer()
 HRESULT Update(float deltaTime)
 {
 	if(GetAsyncKeyState('W') & 0x8000)
-		Camera::GetCamera()->walk(MOVE_SPEED * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->walk(MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState('S') & 0x8000)
-		Camera::GetCamera()->walk(MOVE_SPEED* -deltaTime);
+		Camera::GetCamera(g_cameraIndex)->walk(MOVE_SPEED* -deltaTime);
 	if(GetAsyncKeyState('A') & 0x8000)
-		Camera::GetCamera()->strafe(MOVE_SPEED * -deltaTime);
+		Camera::GetCamera(g_cameraIndex)->strafe(MOVE_SPEED * -deltaTime);
 	if(GetAsyncKeyState('D') & 0x8000)
-		Camera::GetCamera()->strafe(MOVE_SPEED *deltaTime);
+		Camera::GetCamera(g_cameraIndex)->strafe(MOVE_SPEED *deltaTime);
 	
 	float cameraspeed = 5.0;
 	if(GetAsyncKeyState('Q') & 0x8000)
-		Camera::GetCamera()->rotateY(-cameraspeed * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->rotateY(-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('E') & 0x8000)
-		Camera::GetCamera()->rotateY(cameraspeed * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->rotateY(cameraspeed * deltaTime);
 	if(GetAsyncKeyState('1') & 0x8000)
-		Camera::GetCamera()->pitch(	-cameraspeed * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->pitch(	-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('2') & 0x8000)
-		Camera::GetCamera()->pitch(	cameraspeed * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->pitch(	cameraspeed * deltaTime);
 	
 	float upndownspeed = 4.0f;
 	if(GetAsyncKeyState(VK_SPACE) & 0x8000)
-		Camera::GetCamera()->MoveY(	MOVE_SPEED * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->MoveY(	MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
-		Camera::GetCamera()->MoveY(	-MOVE_SPEED * deltaTime);
+		Camera::GetCamera(g_cameraIndex)->MoveY(	-MOVE_SPEED * deltaTime);
 		
 
-	Camera::GetCamera()->rebuildView();	
+	if(GetAsyncKeyState(VK_NUMPAD0) & 0x8000)
+			g_cameraIndex = 0;
+	if(GetAsyncKeyState(VK_NUMPAD1) & 0x8000)
+			g_cameraIndex = 1;
+	if(GetAsyncKeyState(VK_NUMPAD2) & 0x8000)
+			g_cameraIndex = 2;
+	if(GetAsyncKeyState(VK_NUMPAD3) & 0x8000)
+			g_cameraIndex = 3;
+	if(GetAsyncKeyState(VK_NUMPAD4) & 0x8000)
+			g_cameraIndex = 4;
+	if(GetAsyncKeyState(VK_NUMPAD5) & 0x8000)
+			g_cameraIndex = 5;
+	if(GetAsyncKeyState(VK_NUMPAD6) & 0x8000)
+			g_cameraIndex = 6;
+	if(GetAsyncKeyState(VK_NUMPAD7) & 0x8000)
+			g_cameraIndex = 7;
+	if(GetAsyncKeyState(VK_NUMPAD8) & 0x8000)
+			g_cameraIndex = 8;
+	if(GetAsyncKeyState(VK_NUMPAD9) & 0x8000)
+			g_cameraIndex = 9;
+
+
+	Camera::GetCamera(g_cameraIndex)->rebuildView();	
 	
 	FillCameraBuffer();
 	FillLightBuffer();
@@ -469,9 +524,9 @@ HRESULT Render(float deltaTime)
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
 
-	float x = Camera::GetCamera()->GetPosition().x;
-	float y = Camera::GetCamera()->GetPosition().y;
-	float z = Camera::GetCamera()->GetPosition().z;
+	float x = Camera::GetCamera(g_cameraIndex)->GetPosition().x;
+	float y = Camera::GetCamera(g_cameraIndex)->GetPosition().y;
+	float z = Camera::GetCamera(g_cameraIndex)->GetPosition().z;
 
 	char title[256];
 	sprintf_s(
@@ -522,8 +577,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 
 			dx = l_mousePos.x - m_oldMousePos.x;
 			dy = l_mousePos.y - m_oldMousePos.y;
-			Camera::GetCamera()->pitch(		dy * MOUSE_SENSE);
-			Camera::GetCamera()->rotateY(	-dx * MOUSE_SENSE);
+			Camera::GetCamera(g_cameraIndex)->pitch(		dy * MOUSE_SENSE);
+			Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
 		}
 		break;

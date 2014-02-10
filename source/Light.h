@@ -1,6 +1,8 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
+#define LIGHT_COUNT 9
+
 namespace CustomLightStruct
 {
 	struct Material
@@ -19,8 +21,9 @@ namespace CustomLightStruct
 
 	struct LightBuffer
 	{
-		PointLightData PointLight[1];
-		D3DXVECTOR4 ambientLight;
+		float lightCount;
+		D3DXVECTOR3 ambientLight;
+		PointLightData pointLight[LIGHT_COUNT];
 	};
 }
 
