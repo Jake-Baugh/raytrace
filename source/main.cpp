@@ -374,6 +374,11 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Triangle[2].Position1			= D3DXVECTOR4(200.0f,	-300.0f,		400.0f, 1.0f);
 	l_primitive.Triangle[2].Position2			= D3DXVECTOR4(-200.0f,	-300.0f,		800.0f, 1.0f);
 
+	l_primitive.Triangle[3].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.5f, 1.0f);
+	l_primitive.Triangle[3].Position0			= D3DXVECTOR4(-150.0f,	-250.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[3].Position1			= D3DXVECTOR4(150.0f,	-250.0f,		300.0f, 1.0f);
+	l_primitive.Triangle[3].Position2			= D3DXVECTOR4(-150.0f,	-250.0f,		600.0f, 1.0f);
+
 	for(int i = 0; i < l_primitive.TriangleCount; i++)
 	{
 		l_primitive.Triangle[i].Material.ambient = 0.5f;

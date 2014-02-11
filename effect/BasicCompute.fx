@@ -8,7 +8,7 @@
 //#include "RayStruct.fx"
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 3
+#define TRIANGLE_COUNT 4
 #define LIGHT_COUNT 9
 
 
@@ -18,7 +18,7 @@
 
 #define RED   float3(1.0f, 0.0f, 0.0f)
 #define GREEN float3(0.0f, 1.0f, 0.0f)
-#define BLACK float3(0.0f, 0.0f, 1.0f)
+#define BLUE float3(0.0f, 0.0f, 1.0f)
 
 
 #pragma pack_matrix(row_major)
@@ -90,86 +90,8 @@ Ray createRay(int x, int y)
 	l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	l_ray.lastWasHit = true;
-	
+
 	return l_ray;
-}
-
-float SphereIntersect(Ray p_ray, int index)
-{		
-	//return 0.0f; //Skip spheres
-	float4 l_distance = p_ray.origin - Sphere[index].midPos;
-	float a, b, t, t1, t2;
-
-	b = dot(p_ray.direction, l_distance);
-	a = dot(l_distance, l_distance ) - (Sphere[index].radius * Sphere[index].radius);
-	if(b * b - a >= 0)
-	{
-		t = sqrt(b * b - a);
-		t1 = -b + t;  
-		t2 = -b - t;
-		if( t1 > 0.0f || t2 > 0.0f) // checks so atleast one of the values are infront of the camera
-		{			
-			if(t1 < t2 && t1 > 0)
-				return t1;
-			else if( t2 > 0)
-				return t2;
-			//return t1 < t2 ? t1 : t2;		//Returns the smallest number
-		}
-	}
-	return 0.0f;		// ifwe didn't hit	
-}
-
-
-float TriangleIntersect(Ray p_ray, int index)                         
-{
-	//return 0.0f;
-	float3 e1, e2;  //Edge1, Edge2
-	float det, inv_det, u, v;
-	float t;
- 
-	//Find vectors for two edges sharing V0
-	e1 = Triangle[index].pos1.xyz - Triangle[index].pos0.xyz;
-	e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
-	
-	//Begin calculating determinant - also used to calculate u parameter
-	float3 P = cross(p_ray.direction.xyz, e2);
-	
-	//if determinant is near zero, ray lies in plane of triangle
-	det = dot(e1, P);
-	
-	//NOT CULLING
-	if(det > -EPSILON && det < EPSILON) 
-		return 0.0f;
-	
-	inv_det = 1.0f / det;
-
-	//calculate distance from V0 to ray origin
-	float3 T = p_ray.origin.xyz - Triangle[index].pos0.xyz;
-
-	//Calculate u parameter and test bound
-	u = dot(T, P) * inv_det;
-	
-	//The intersection lies outside of the triangle
-	if(u < 0.0f || u > 1.0f) 
-		return 0.0f;
-
-	//Prepare to test v parameter
-	float3 Q = cross(T, e1);
-
-	//Calculate V parameter and test bound
-	v = dot(p_ray.direction.xyz, Q) * inv_det;
-	
-	//The intersection lies outside of the triangle
-	if(v < 0.0f || u + v  > 1.0f) 
-		return 0.0f;
-
-	t = dot(e2, Q) * inv_det;
-
-	if(t > EPSILON) 
-		return t; //ray intersection
-
-	// No hit, no win
-	return 0.0f;
 }
 
 float3 TriangleNormalCounterClockwise(int index)
@@ -183,7 +105,7 @@ float3 TriangleNormalCounterClockwise(int index)
 	float3 normal = cross(e1, e2);
 	return normalize(normal);	
 }
-
+/*
 void CheckIfRayHits(in Ray p_ray, out int p_hitSphere, out int p_hitTriangle, out int p_closestSphereIndex, out int p_closestTriangleIndex, out float p_distanceToClosestSphere, out int p_distanceToClosestTriangle)
 {
 	// Check if this is lit by the light. Means that we check if this intersects anything else. If not it is lit by the light.
@@ -209,7 +131,7 @@ void CheckIfRayHits(in Ray p_ray, out int p_hitSphere, out int p_hitTriangle, ou
 			if(temp != 0.0f)	
 			{
 				p_hitSphere = 1;
-				if(temp < lowest) //|| l_sphereDistance == 0.0f*/)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
+				if(temp < lowest) //|| l_sphereDistance == 0.0f)	// Sets the new value to l_sphereHitDistance if it's lower than before or if l_sphereHitDistance equals 0.0f (first attempt)
 				{
 					lowest = temp;
 					l_sphereIndex = i;
@@ -218,8 +140,6 @@ void CheckIfRayHits(in Ray p_ray, out int p_hitSphere, out int p_hitTriangle, ou
 		}
 	}
 	l_sphereDistance = lowest;
-	
-	//l_triangleIndex = 2;
 
 	lowest = 0.0;
 	for(int i = 0; i < countVariable.y; i++)
@@ -247,157 +167,283 @@ void CheckIfRayHits(in Ray p_ray, out int p_hitSphere, out int p_hitTriangle, ou
 	p_distanceToClosestSphere = l_sphereDistance;
 	p_distanceToClosestTriangle = l_triangleDistance;
 }
+*/
 
-Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
+interface IntersectInterface
+{
+	float Intersect(in Ray p_ray, in int p_index);
+};
+
+class SphereIntersect : IntersectInterface
+{
+	float Intersect(in Ray p_ray, in int index)
+	{		
+		//return 0.0f; //Skip spheres
+		float4 l_distance = p_ray.origin - Sphere[index].midPos;
+		float a, b, t, t1, t2;
+
+		b = dot(p_ray.direction, l_distance);
+		a = dot(l_distance, l_distance ) - (Sphere[index].radius * Sphere[index].radius);
+		if(b * b - a >= 0)
+		{
+			t = sqrt(b * b - a);
+			t1 = -b + t;  
+			t2 = -b - t;
+			if( t1 > 0.0f || t2 > 0.0f) // checks so atleast one of the values are infront of the camera
+			{			
+				if(t1 < t2 && t1 > 0)
+					return t1;
+				else if( t2 > 0)
+					return t2;
+				//return t1 < t2 ? t1 : t2;		//Returns the smallest number
+			}
+		}
+		return 0.0f;		// ifwe didn't hit	
+	}
+};
+
+class TriangleIntersect : IntersectInterface
+{
+	float Intersect(Ray p_ray, int index)                         
+	{
+		//return 0.0f;
+		float3 e1, e2;  //Edge1, Edge2
+		float det, inv_det, u, v;
+		float t;
+ 
+		//Find vectors for two edges sharing V0
+		e1 = Triangle[index].pos1.xyz - Triangle[index].pos0.xyz;
+		e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
+	
+		//Begin calculating determinant - also used to calculate u parameter
+		float3 P = cross(p_ray.direction.xyz, e2);
+	
+		//if determinant is near zero, ray lies in plane of triangle
+		det = dot(e1, P);
+	
+		//NOT CULLING
+		if(det > -EPSILON && det < EPSILON) 
+			return 0.0f;
+	
+		inv_det = 1.0f / det;
+
+		//calculate distance from V0 to ray origin
+		float3 T = p_ray.origin.xyz - Triangle[index].pos0.xyz;
+
+		//Calculate u parameter and test bound
+		u = dot(T, P) * inv_det;
+	
+		//The intersection lies outside of the triangle
+		if(u < 0.0f || u > 1.0f) 
+			return 0.0f;
+
+		//Prepare to test v parameter
+		float3 Q = cross(T, e1);
+
+		//Calculate V parameter and test bound
+		v = dot(p_ray.direction.xyz, Q) * inv_det;
+	
+		//The intersection lies outside of the triangle
+		if(v < 0.0f || u + v  > 1.0f) 
+			return 0.0f;
+
+		t = dot(e2, Q) * inv_det;
+
+		if(t > EPSILON) 
+			return t; //ray intersection
+
+		// No hit, no win
+		return 0.0f;
+	}
+};
+
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_amount, out int p_hitPrimitive, out int p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
+{	
+	p_hitPrimitive = -1;
+	
+	int l_primitiveIndex = 0;
+	//int l_primitiveIndex = 0;
+	
+	float temp = 0.0f;
+	float lowest = 0.0f;
+
+	for(int i = 0; i < p_amount; i++)				// Go through all spheres
+	{
+		temp = p_intersect.Intersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
+		if(temp != 0.0f && temp > 0.0f)	
+		{
+			p_hitPrimitive = 1;
+			if(temp < lowest || lowest == 0.0f) // Sets the new value to l_sphereHitDistance if it's lower than before or if l_sphereHitDistance equals 0.0f (first attempt)
+			{
+				lowest = temp;
+				l_primitiveIndex = i;
+			}
+		}
+	}
+	p_closestPrimitiveIndex =  l_primitiveIndex;
+	p_distanceToClosestPrimitive = lowest;
+}
+
+#define THING i
+
+Ray Phong(inout Ray p_ray) // first jump == 0
 {	
 	// Variables used by all intersections
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 l_collidePos, l_collideNormal;
 
 	// Sphere specific variable
-	float l_spherehit	= 0.0f;
+	float l_sphereHitDistance	= 0.0f;
 	int l_sphereindex = 0;
 
-	float l_trianglehit = 0.0f;
+	float l_triangleHitDistance = 0.0f;
 	int l_triangleindex = 0;
 
 	p_ray.lastWasHit = false;
 
-	for(int i = 0; i < countVariable.x; i++)				// Go through all spheres
-	{
-		float temp = SphereIntersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-		if(temp != 0.0f)									// Checks so that it does intersect
-		{
-			if(temp < l_spherehit || l_spherehit == 0.0f)	// Sets the new value to l_spherehit if it's lower than before or if l_spherehit equals 0.0f (first attempt)
-			{
-				l_spherehit = temp;
-				l_sphereindex = i;							// Saves index to closes sphere
-			}
-		}
-	}
+	SphereIntersect sphereIntersect;
+	TriangleIntersect triangleIntersect;
 	
-	// Same code as above but for triangles instead
-	for(int i = 0; i < countVariable.y; i++)
-	{
-		float temp = TriangleIntersect(p_ray, i);
-		if(temp != 0.0f && temp > 0.0f)
-		{
-			if(temp < l_trianglehit || l_trianglehit == 0.0f)
-			{
-				l_trianglehit = temp;
-				l_triangleindex = i;
-			}
-		}
-	}
+	int sp1, tr1;
+	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, sp1, l_sphereindex, l_sphereHitDistance); // Spheres
+		
+	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, tr1, l_triangleindex, l_triangleHitDistance); // Triangles
+	
 
 	////////////////////////////// Checks to se if any triangle or sphere was hit at all
-	if(l_trianglehit == 0.0f && l_spherehit == 0.0f)
+	if(l_triangleHitDistance == 0.0f && l_sphereHitDistance == 0.0f)
 	{
 		return p_ray; // It hit nothing, return direct
 	}
 
 	////////////////////////////// Checks which primitive is closest
 
-	//	if l_spherehit was NOT equal to zero 
+	//	if l_sphereHitDistance was NOT equal to zero 
 	//	AND atleast one of the following three is correct:
-	//	l_trianglehit is equal to 0, means there was no hit on triangle at all
-	//	l_trianglehit is bigger than 0, what does this mean?
-	//	l_spherehit is smaller than l_trianglehit. Means that both a triangle and a sphere was hit, but that sphere was closer.
-	if(0.0f != l_spherehit && (l_trianglehit == 0.0f || l_trianglehit < 0.0f || l_spherehit < l_trianglehit))
-	{		
-		
+	//	l_triangleHitDistance is equal to 0, means there was no hit on triangle at all
+	//	l_triangleHitDistance is bigger than 0, what does this mean?
+	//	l_sphereHitDistance is smaller than l_triangleHitDistance. Means that both a triangle and a sphere was hit, but that sphere was closer.
+	//if(sp1 != -1 && (tr1 == -1 || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
+	if(0.0f != l_sphereHitDistance && (l_triangleHitDistance == 0.0f || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
+	{			
 		p_ray.lastWasHit = true;
-			//l_tempColor = float4(Sphere[l_sphereindex].color, 1);
 
 		// Reflect code
-		l_collidePos = p_ray.origin + (l_spherehit - 0.0001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_sphereHitDistance - 0.0001) * p_ray.direction;
 		l_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
 		
 		p_ray.origin = l_collidePos; // new origin for next jump
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
-
-		l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
-
-/*		// Vector from light source
+				
+		// Vector from light source
 		Ray l_lightSourceRay;
 		l_lightSourceRay.origin = PointLight[0].position;
 		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
-	
-		float distanceFromLight = length(p_ray.origin - PointLight[0].position);
-
+		
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
 		int sp = -1;
 		int tr = -1;
 
-		CheckIfRayHits(l_lightSourceRay, sp, tr, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
+		GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
 		
-		// ENTER IF ATLEAST ONE OF THE FOLLOWING IS TRUE
-		// There was no triangle or sphere hit
-		// There was a sphere hit but the distance to the light is closer than to the sphere.
-		// THere was a triangle hit but the distance to the light source is closer than too the triangle
+		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
-		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
+		for(int i = 0; i < LIGHT_COUNT; i++)
 		{
-			if(tr == -1)
-				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 
-			else if(tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle)
-				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 		
+		float4 a = 0.0f * float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
+		{
+			if(l_distanceToClosestSphere < l_distanceToClosestTriangle ) // A sphere is the closest
+			{
+				if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
+				{
+					// Render sphere
+					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+				}
+				else //Another sphere was closer
+					l_tempColor = a;		
+			}
+			else // A random triangle was closer
+				l_tempColor = a;
 		}
-		//It's not lit by the light (??)
-		else 
-				l_tempColor = float4(Sphere[l_sphereindex].color, 1) * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, ambientLight); 		
-			//l_tempColor = float4(WHITE, 1.0f);
-			*/
+		else if(sp != -1 && tr == -1) // Only a sphere was hit
+		{
+			if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
+			{
+				// Render sphere
+					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+			}
+			else // Another sphere was closer
+				l_tempColor = a;		
+		}
+		}
 	 }
 
-	//	if l_spherehit was NOT equal to zero 
+	//	if l_sphereHitDistance was NOT equal to zero 
 	//	AND that atleast one of the following is correct
-	//	that l_trianglehit is greater than 0	
-	//	l_spherehit is equal to 0.0, means no hit
-	//	l_trianglehit is smaller than l_spherehit. Means that both a triangle and a sphere was hit, but that triangle was closer.
-	else if(l_trianglehit != 0.0f  && ( l_spherehit == 0.0f  || l_spherehit == 0.0f  || l_trianglehit < l_spherehit))
+	//	that l_triangleHitDistance is greater than 0	
+	//	l_sphereHitDistance is equal to 0.0, means no hit
+	//	l_triangleHitDistance is smaller than l_sphereHitDistance. Means that both a triangle and a sphere was hit, but that triangle was closer.
+	else if(l_triangleHitDistance != 0.0f  && ( l_sphereHitDistance == 0.0f  || l_sphereHitDistance == 0.0f  || l_triangleHitDistance < l_sphereHitDistance))
 	{	
 		p_ray.lastWasHit = true;
 
-		l_tempColor = Triangle[l_triangleindex].color;
 		
 		// Make reflect code here
-		l_collidePos = p_ray.origin + (l_trianglehit - 0.0001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_triangleHitDistance - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 
 		p_ray.origin = l_collidePos;
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
+
 
 		// Vector from light source
 		Ray l_lightSourceRay;
 		l_lightSourceRay.origin = PointLight[0].position;
 		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
 		
-		float distanceFromLight = length(p_ray.origin - PointLight[0].position);
-
-
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
 		int sp = -1;
 		int tr = -1;
 
-		CheckIfRayHits(l_lightSourceRay, sp, tr, l_closestSphereIndex, l_closestTriangleIndex, l_distanceToClosestSphere, l_distanceToClosestTriangle);
+		GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
 		
-		if(sp == -1 && tr == -1 || sp == 1 && distanceFromLight-1 < l_distanceToClosestSphere || tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle )
+		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
+		for(int i = 0; i < LIGHT_COUNT; i++)
 		{
-/*			if(tr == -1)
-				l_tempColor = float4(BLACK, 1.0f);//Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
-			
-				//l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 
-			else if(tr == 1 && distanceFromLight-1 < l_distanceToClosestTriangle)
-				l_tempColor = float4(WHITE, 1.0f);//Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, ambientLight); 		
-*/
-			l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[0], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+		float4 a = 0.0f * Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
+		{
+			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
+			{
+				if(l_triangleindex == l_closestTriangleIndex)	// The triangle I am at is  the closest
+				{
+					// Render triangle
+					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+				}
+				else //Another triangle was closer
+				{
+					l_tempColor = a;		
+				}
+			}
+			else // A random Sphere was closer
+			{
+				l_tempColor = a;
+			}
 		}
-		//It's not lit by the light (??)
-		else
-			l_tempColor = float4(WHITE, 1.0f);
+		else if(sp == -1 && tr != -1) // Only a triangle was hit
+		{
+			if(l_triangleindex == l_closestTriangleIndex)	// The triangle I am at is the closest
+			{
+				// Render triangle
+					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+			}
+			else // Another triangle was closer
+				l_tempColor = a;		
+		}
+		}
 	}	
 	else
 	{
@@ -410,17 +456,17 @@ Ray RayUpdate(Ray p_ray, int jump) // first jump == 0
 	return p_ray;
 }
 
-#define max_number_of_bounces 4
+#define max_number_of_bounces 3
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0,0,0,1);
 	Ray l_ray = createRay(threadID.x, threadID.y);
 		
+
 	for(int i = 0; i < max_number_of_bounces; i++)	
 	{
-		if(l_ray.lastWasHit == true) // Change this to jump out of 
-			l_ray = RayUpdate(l_ray, i);
+		l_ray = Phong(l_ray);	
 	}
 	
 	output[threadID.xy] = l_ray.color;
