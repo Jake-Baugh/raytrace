@@ -379,6 +379,12 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Triangle[3].Position1			= D3DXVECTOR4(150.0f,	-250.0f,		300.0f, 1.0f);
 	l_primitive.Triangle[3].Position2			= D3DXVECTOR4(-150.0f,	-250.0f,		600.0f, 1.0f);
 
+	l_primitive.Triangle[4].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.5f, 1.0f);
+	l_primitive.Triangle[4].Position0			= D3DXVECTOR4(-3000.0f,	-500.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[4].Position1			= D3DXVECTOR4(1500.0f,	-500.0f,		1500.0f, 1.0f);
+	l_primitive.Triangle[4].Position2			= D3DXVECTOR4(-3000.0f,	-500.0f,		3000.0f, 1.0f);
+
+
 	for(int i = 0; i < l_primitive.TriangleCount; i++)
 	{
 		l_primitive.Triangle[i].Material.ambient = 0.5f;
@@ -415,35 +421,21 @@ void FillLightBuffer()
 
 	l_light.lightCount = LIGHT_COUNT;
 	l_light.ambientLight			= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	
+	for(int i = 0; i < LIGHT_COUNT; i++)
+	{
+		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
+	}
 
-
-	l_light.pointLight[0].position	= Camera::GetCamera(0)->GetPosition();
 	l_light.pointLight[0].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[1].position	= Camera::GetCamera(1)->GetPosition();
-	l_light.pointLight[1].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[2].position	= Camera::GetCamera(2)->GetPosition();
-	l_light.pointLight[2].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[3].position	= Camera::GetCamera(3)->GetPosition();
-	l_light.pointLight[3].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[4].position	= Camera::GetCamera(4)->GetPosition();
+	l_light.pointLight[1].color		= D3DXVECTOR4(1.0f, 0.0f, 0.0f, 1.0f);
+	l_light.pointLight[2].color		= D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_light.pointLight[3].color		= D3DXVECTOR4(0.0f, 0.0f, 1.0f, 1.0f);
 	l_light.pointLight[4].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[5].position	= Camera::GetCamera(5)->GetPosition();
 	l_light.pointLight[5].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[6].position	= Camera::GetCamera(6)->GetPosition();
 	l_light.pointLight[6].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[7].position	= Camera::GetCamera(7)->GetPosition();
 	l_light.pointLight[7].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_light.pointLight[8].position	= Camera::GetCamera(8)->GetPosition();
 	l_light.pointLight[8].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
 	/*l_light.pointLight[9].position	= Camera::GetCamera(9)->GetPosition();
 	l_light.pointLight[9].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
 	*/

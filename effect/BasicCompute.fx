@@ -8,7 +8,7 @@
 //#include "RayStruct.fx"
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 4
+#define TRIANGLE_COUNT 5
 #define LIGHT_COUNT 9
 
 
@@ -334,11 +334,13 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 		
 		p_ray.origin = l_collidePos; // new origin for next jump
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
-				
+		
+		for(int i = 0; i < 9; i++)
+		{
 		// Vector from light source
 		Ray l_lightSourceRay;
-		l_lightSourceRay.origin = PointLight[0].position;
-		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
+		l_lightSourceRay.origin = PointLight[i].position;
+		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[i].position);
 		
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
@@ -349,9 +351,8 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 		
 		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
-		for(int i = 0; i < LIGHT_COUNT; i++)
-		{
-		float4 a = 0.0f * float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+		
+		//float4 a = 0.0f * float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
 		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
 		{
 			if(l_distanceToClosestSphere < l_distanceToClosestTriangle ) // A sphere is the closest
@@ -359,23 +360,23 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 				if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
 				{
 					// Render sphere
-					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
 				}
-				else //Another sphere was closer
-					l_tempColor = a;		
+//				else //Another sphere was closer
+//					l_tempColor = a;		
 			}
-			else // A random triangle was closer
-				l_tempColor = a;
+//			else // A random triangle was closer
+//				l_tempColor = a;
 		}
 		else if(sp != -1 && tr == -1) // Only a sphere was hit
 		{
 			if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
 			{
 				// Render sphere
-					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
+					l_tempColor = float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
 			}
-			else // Another sphere was closer
-				l_tempColor = a;		
+//			else // Another sphere was closer
+//				l_tempColor = a;		
 		}
 		}
 	 }
@@ -387,7 +388,7 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 	//	l_triangleHitDistance is smaller than l_sphereHitDistance. Means that both a triangle and a sphere was hit, but that triangle was closer.
 	else if(l_triangleHitDistance != 0.0f  && ( l_sphereHitDistance == 0.0f  || l_sphereHitDistance == 0.0f  || l_triangleHitDistance < l_sphereHitDistance))
 	{	
-		p_ray.lastWasHit = true;
+		//p_ray.lastWasHit = true;
 
 		
 		// Make reflect code here
@@ -397,11 +398,12 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 		p_ray.origin = l_collidePos;
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
 
-
+		for(int i = 0; i < 9; i++)
+		{
 		// Vector from light source
 		Ray l_lightSourceRay;
-		l_lightSourceRay.origin = PointLight[0].position;
-		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[0].position);
+		l_lightSourceRay.origin = PointLight[i].position;
+		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[i].position);
 		
 		int l_closestSphereIndex, l_closestTriangleIndex;
 		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
@@ -411,9 +413,8 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 		GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
 		
 		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
-		for(int i = 0; i < LIGHT_COUNT; i++)
-		{
-		float4 a = 0.0f * Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+		
+		//float4 a = 0.0f * Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
 		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
 		{
 			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
@@ -421,16 +422,16 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 				if(l_triangleindex == l_closestTriangleIndex)	// The triangle I am at is  the closest
 				{
 					// Render triangle
-					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
 				}
 				else //Another triangle was closer
 				{
-					l_tempColor = a;		
+//					l_tempColor = a;		
 				}
 			}
 			else // A random Sphere was closer
 			{
-				l_tempColor = a;
+//				l_tempColor = a;
 			}
 		}
 		else if(sp == -1 && tr != -1) // Only a triangle was hit
@@ -438,10 +439,10 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 			if(l_triangleindex == l_closestTriangleIndex)	// The triangle I am at is the closest
 			{
 				// Render triangle
-					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[THING], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
+					l_tempColor = Triangle[l_triangleindex].color * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Triangle[l_triangleindex].material, float4(ambientLight, 1.0f)); 
 			}
-			else // Another triangle was closer
-				l_tempColor = a;		
+//			else // Another triangle was closer
+//				l_tempColor = a;		
 		}
 		}
 	}	
@@ -451,20 +452,19 @@ Ray Phong(inout Ray p_ray) // first jump == 0
 		l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
 	}
 
-	p_ray.color = l_tempColor;
+	p_ray.color += 0.2 * l_tempColor;
 
 	return p_ray;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 2
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0,0,0,1);
 	Ray l_ray = createRay(threadID.x, threadID.y);
 		
-
-	for(int i = 0; i < max_number_of_bounces; i++)	
+	for(int i = 0; i < max_number_of_bounces; i++)
 	{
 		l_ray = Phong(l_ray);	
 	}

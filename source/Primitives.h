@@ -2,7 +2,7 @@
 #define PRIMITIVES_H
 
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 4
+#define TRIANGLE_COUNT 5
 
 namespace CustomPrimitiveStruct
 {
@@ -24,6 +24,7 @@ namespace CustomPrimitiveStruct
 		float specular;
 		float diffuse;
 		float shininess;
+		//float reflection;
 	};
 
 	struct SphereStruct
