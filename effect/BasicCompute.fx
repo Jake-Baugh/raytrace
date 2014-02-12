@@ -76,9 +76,6 @@ Ray createRay(int x, int y)
 	double normalized_x = ((x / screenVariable.x) - 0.5) * 2;
 	double normalized_y = (1 - (y / screenVariable.y) - 0.5) * 2;
 
-//	double normalized_x = ((x / screenWidth) - 0.5) * 2;		// Other variable name
-//	double normalized_y = (1 - (y / screenHeight) - 0.5) * 2;	// Other variable name
- 
 	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1, 1), inverseProjection);
 	imagePoint /= imagePoint.w;
  
@@ -86,10 +83,6 @@ Ray createRay(int x, int y)
  
 	l_ray.direction = imagePoint - l_ray.origin;
 	l_ray.direction = normalize(l_ray.direction);
-//	l_ray.direction.z = 0.0f;						// Used to test code
-	//l_ray.color = float4(0.0f, 0.0f, 0.0f, 1.0f);
-
-	//l_ray.lastWasHit = true;
 
 	return l_ray;
 }
@@ -199,7 +192,6 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_
 	p_hitPrimitive = -1;
 	
 	int l_primitiveIndex = 0;
-	//int l_primitiveIndex = 0;
 	
 	float temp = 0.0f;
 	float lowest = 0.0f;
@@ -217,7 +209,7 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_
 			}
 		}
 	}
-	p_closestPrimitiveIndex =  l_primitiveIndex;
+	p_closestPrimitiveIndex = l_primitiveIndex;
 	p_distanceToClosestPrimitive = lowest;
 }
 
@@ -243,11 +235,10 @@ float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primiti
 		
 		GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
 		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
-				
 		
 		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
 		{
-			if(p_isTriangle)
+			if(p_isTriangle == true)
 			{
 				if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 				{
@@ -258,9 +249,9 @@ float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primiti
 					}
 				}
 			}
-			else // Input primitive is NOT triangle. Thus sphere
+			else if(p_isTriangle == false) // Input primitive is NOT triangle. Thus sphere
 			{
-				if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Sphere is the closest
+				if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 				{
 					if(p_primitiveIndex == l_closestSphereIndex)  // 
 					{
@@ -307,14 +298,13 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 	SphereIntersect sphereIntersect;
 	TriangleIntersect triangleIntersect;
 	
-	int sp1, tr1;
-	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, sp1, l_sphereindex, l_sphereHitDistance); // Spheres
-		
-	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, tr1, l_triangleindex, l_triangleHitDistance); // Triangles
-	
+	int sp1, tr1; // not used as of 2014-02-12
 
-	////////////////////////////// Checks to se if any triangle or sphere was hit at all
-	if(l_triangleHitDistance == 0.0f && l_sphereHitDistance == 0.0f)
+	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, sp1, l_sphereindex, l_sphereHitDistance); // Sphere
+	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, tr1, l_triangleindex, l_triangleHitDistance); // Triangle
+	
+	// Checks to se if any triangle or sphere was hit at all
+	if(l_triangleHitDistance == 0.0f && l_sphereHitDistance == 0.0f) 
 	{
 		return float4(0.0f, 0.0f, 0.0f, 0.0f); // It hit nothing, return direct
 	}
@@ -329,8 +319,6 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 	//if(sp1 != -1 && (tr1 == -1 || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
 	if(0.0f != l_sphereHitDistance && (l_triangleHitDistance == 0.0f || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
 	{			
-		//p_ray.lastWasHit = true;
-
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_sphereHitDistance - 0.0001) * p_ray.direction;
 		l_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
@@ -339,46 +327,11 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 		p_ray.origin = l_collidePos; 
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
 		
-		// A
+
 		l_tempColor = float4(Sphere[l_sphereindex].color * ambientLight, 1.0f);
-		
 
-		for(int i = 0; i < LIGHT_COUNT; i++)
-		{
-			// Vector from light source
-			Ray l_lightSourceRay;
-			l_lightSourceRay.origin = PointLight[i].position;
-			l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[i].position);
-		
-			int l_closestSphereIndex, l_closestTriangleIndex;
-			float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-			int sp = -1;
-			int tr = -1;
-
-			GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
-			GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
-		
-			// new
-			if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
-			{
-				if(l_distanceToClosestSphere < l_distanceToClosestTriangle ) // A sphere is the closest
-				{
-					if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
-					{
-						// Render sphere
-						l_tempColor += float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f)); 
-					
-					}
-				}
-			}
-			else if(sp != -1 && tr == -1) // Only a sphere was hit
-			{
-				if(l_sphereindex == l_closestSphereIndex)	// The sphere I am at is the closest
-				{		// Render sphere
-						l_tempColor += float4(Sphere[l_sphereindex].color, 1.0f) * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, Sphere[l_sphereindex].material, float4(ambientLight, 1.0f));
-				}
-			}
-		}
+		// Light and shadows
+		l_tempColor += ThrowShadowRays(p_ray, l_collideNormal, l_sphereindex, float4(Sphere[l_sphereindex].color, 1.0f), Sphere[l_sphereindex].material, false);
 	 }
 
 	//	if l_sphereHitDistance was NOT equal to zero 
@@ -388,32 +341,46 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 	//	l_triangleHitDistance is smaller than l_sphereHitDistance. Means that both a triangle and a sphere was hit, but that triangle was closer.
 	else if(l_triangleHitDistance != 0.0f  && ( l_sphereHitDistance == 0.0f  || l_sphereHitDistance == 0.0f  || l_triangleHitDistance < l_sphereHitDistance))
 	{	
-		// Make reflect code here
+		// Reflect code
 		l_collidePos = p_ray.origin + (l_triangleHitDistance - 0.0001) * p_ray.direction;
 		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 
+		// New variables for next ray
 		p_ray.origin = l_collidePos;
 		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
-		l_tempColor = ThrowShadowRays(p_ray, l_collideNormal, l_triangleindex, Triangle[l_triangleindex].color, Triangle[l_triangleindex].material, true);
+		
+		l_tempColor = Triangle[l_triangleindex].color * float4(ambientLight, 1.0f);
+
+		// Light and shadows
+		l_tempColor += ThrowShadowRays(p_ray, l_collideNormal, l_triangleindex, Triangle[l_triangleindex].color, Triangle[l_triangleindex].material, true);
 	}	
-	else
+	else // This is a debug place, should never happen.
 	{
-		// This is a debug place, should never happen.
 		l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
 	}
 
 	return l_tempColor;
 }
 
-void ReturnCollision()
+//float4 ThrowShadowRays(, , in int p_primitiveIndex, in float4 p_primitiveColor, in Material p_material, in bool p_isTriangle)
+float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collideNormal)
 {
+	float n1, n2;
+	float angle1, angle2;
 	
+	/*
+	cos(angle) = vec1 * vec2 / |vec1|*|vec2|
+	angle = arccos (vec1* vec2)
 
-}
+	n1 = 1.0f // vacuum
+	n2 = 1.5f // glass
+	angle1 = angle between infallsvektor och normal
+	angle2 = angle between normal och utfallsvinkel
 
-float4 Trace2()
-{
-
+	n1 * sin(angle1) = n2 * sin(angle2)
+	sin(angle2) = n1 * sin(angle1) / n2
+	angle2 = arcsin(n1 * sin(angle1) / n2)
+	*/
 }
 
 #define max_number_of_bounces 2
