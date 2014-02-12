@@ -6,6 +6,7 @@ struct Material
 	float specular;
 	float diffuse;
 	float shininess;
+	//float reflective;
 };
 
 struct PointLightData

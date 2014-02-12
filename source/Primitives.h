@@ -24,7 +24,7 @@ namespace CustomPrimitiveStruct
 		float specular;
 		float diffuse;
 		float shininess;
-		//float reflection;
+		//float reflective;
 	};
 
 	struct SphereStruct
