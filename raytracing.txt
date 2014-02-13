@@ -1,0 +1,19 @@
+A(int jump)
+{
+	if(jump == 4)
+		return;
+	
+	object_point = GetClosestInteraction();
+	if(object_point == false)
+		return;
+		
+	bool alpha = CheckInLight();
+	if(alpha)
+		color += phong();
+		
+	if(material.reflective)
+		color += reflective_constant * A(jump);
+	if(material.refractive)
+		color += refractive_constant * A(jump);	
+	return color;
+}

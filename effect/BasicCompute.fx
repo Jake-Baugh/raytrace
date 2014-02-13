@@ -213,7 +213,8 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_
 	p_distanceToClosestPrimitive = lowest;
 }
 
-
+// Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
+// 
 float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primitiveIndex, in float4 p_primitiveColor, in Material p_material, in bool p_isTriangle)
 {
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -221,8 +222,7 @@ float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primiti
 	TriangleIntersect triangleIntersect;
 	
 	for(int i = 0; i < LIGHT_COUNT; i++)
-	{
-	
+	{	
 		// Vector from light source
 		Ray l_lightSourceRay;
 		l_lightSourceRay.origin = PointLight[i].position;
@@ -280,7 +280,6 @@ float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primiti
 	}
 	return l_tempColor;
 }
-
 
 float4 Trace(inout Ray p_ray) // first jump == 0
 {	
@@ -362,8 +361,7 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 	return l_tempColor;
 }
 
-//float4 ThrowShadowRays(, , in int p_primitiveIndex, in float4 p_primitiveColor, in Material p_material, in bool p_isTriangle)
-float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collideNormal)
+float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 {
 	float n1, n2;
 	float angle1, angle2;
@@ -394,6 +392,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	for(int i = 0; i < max_number_of_bounces; i++)
 	{
 		l_finalColor += Trace(l_ray);
+		//l_nextRay = Trace(l_reflectedRay, l_reflective, l_refractive, l_isTriangle, l_primitiveIndex);
 	}
 
 	float a;
