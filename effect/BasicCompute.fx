@@ -187,7 +187,7 @@ class TriangleIntersect : IntersectInterface
 	}
 };
 
-void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_amount, out int p_hitPrimitive, out int p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int p_amount, out int p_hitPrimitive, out int p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
 {	
 	p_hitPrimitive = -1;
 	
@@ -214,74 +214,75 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, int p_
 }
 
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
-// 
-float4 ThrowShadowRays(in Ray p_ray, in float4 p_collideNormal, in int p_primitiveIndex, in float4 p_primitiveColor, in Material p_material, in bool p_isTriangle)
+bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in int p_lightIndex)
 {
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	SphereIntersect sphereIntersect;
 	TriangleIntersect triangleIntersect;
 	
-	for(int i = 0; i < LIGHT_COUNT; i++)
-	{	
-		// Vector from light source
-		Ray l_lightSourceRay;
-		l_lightSourceRay.origin = PointLight[i].position;
-		l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[i].position);
+	// Vector from light source
+	Ray l_lightSourceRay;
+	l_lightSourceRay.origin = PointLight[p_lightIndex].position;
+	l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
+	
+	int l_closestSphereIndex, l_closestTriangleIndex;
+	float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
+	int sp = -1;
+	int tr = -1;
 		
-		int l_closestSphereIndex, l_closestTriangleIndex;
-		float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-		int sp = -1;
-		int tr = -1;
+	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
+	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
-		GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
-		GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
-		
-		if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
+	if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
+	{
+		if(p_isTriangle == true) // Bouncing of a triangle
 		{
-			if(p_isTriangle == true)
+			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 			{
-				if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
+				if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is  the closest
 				{
-					if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is  the closest
-					{
-						// Render triangle
-						l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
-					}
-				}
-			}
-			else if(p_isTriangle == false) // Input primitive is NOT triangle. Thus sphere
-			{
-				if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
-				{
-					if(p_primitiveIndex == l_closestSphereIndex)  // 
-					{
-						//Render Sphere
-						l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
-					}
+					return true;
+					// Render triangle
+					//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
 				}
 			}
 		}
-		else if(sp != -1 && tr == -1) // Only a sphere was hit
+		else if(p_isTriangle == false) // Input primitive is NOT triangle. Thus sphere
 		{
-			if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
-			{		
-				// Render sphere
-				l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
-			}
-		}
-		else if(sp == -1 && tr != -1) // Only a triangle was hit
-		{
-			if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
+			if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 			{
-				// Render triangle
-				l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
+				if(p_primitiveIndex == l_closestSphereIndex)  // 
+				{
+					return true;
+					//Render Sphere
+					//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
+				}
 			}
 		}
 	}
-	return l_tempColor;
+	else if(sp != -1 && tr == -1) // Only a sphere was hit
+	{
+		if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
+		{		
+			return true;
+			// Render sphere
+			//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
+		}
+	}
+	else if(sp == -1 && tr != -1) // Only a triangle was hit
+	{
+		if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
+		{
+			return true;
+			// Render triangle
+			//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
+		}
+	}
+	return false;
+	//return l_tempColor;
 }
 
-float4 Trace(inout Ray p_ray) // first jump == 0
+float4 Shade(inout Ray p_ray) // first jump == 0
 {	
 	// Variables used by all intersections
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -329,9 +330,17 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 
 		l_tempColor = float4(Sphere[l_sphereindex].color * ambientLight, 1.0f);
 
-		// Light and shadows
-		l_tempColor += ThrowShadowRays(p_ray, l_collideNormal, l_sphereindex, float4(Sphere[l_sphereindex].color, 1.0f), Sphere[l_sphereindex].material, false);
-	 }
+		float4 l_primitiveColor = float4(Sphere[l_sphereindex].color, 1.0f);
+		Material l_material = Sphere[l_sphereindex].material;
+
+		for(int i = 0; i < LIGHT_COUNT; i++)
+		{	
+			// Light and shadows
+			bool l_isLitByLight = IsInShadow(p_ray, l_sphereindex, false, i);
+			if(l_isLitByLight == true) // Thus is lit
+				l_tempColor +=  l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, l_material, float4(ambientLight, 1.0f)); 
+		} 
+	}
 
 	//	if l_sphereHitDistance was NOT equal to zero 
 	//	AND that atleast one of the following is correct
@@ -346,12 +355,20 @@ float4 Trace(inout Ray p_ray) // first jump == 0
 
 		// New variables for next ray
 		p_ray.origin = l_collidePos;
-		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);
-		
+		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);		
 		l_tempColor = Triangle[l_triangleindex].color * float4(ambientLight, 1.0f);
 
-		// Light and shadows
-		l_tempColor += ThrowShadowRays(p_ray, l_collideNormal, l_triangleindex, Triangle[l_triangleindex].color, Triangle[l_triangleindex].material, true);
+		// Store color and material for a short period
+		float4 l_primitiveColor = Triangle[l_triangleindex].color;
+		Material l_material = Triangle[l_triangleindex].material;
+
+		
+		for(int i = 0; i < LIGHT_COUNT; i++)																												// for each light source
+		{	
+			bool l_isLitByLight = IsInShadow(p_ray, l_triangleindex, true, i); 
+			if(l_isLitByLight == true) // Thus is lit																										// if (!in_shadow)
+				l_tempColor +=  l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, l_material, float4(ambientLight, 1.0f));	//  radiance += phong_illumination()
+		}
 	}	
 	else // This is a debug place, should never happen.
 	{
@@ -382,18 +399,52 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 }
 
 #define max_number_of_bounces 2
+float4 Trace(in Ray p_ray)
+{
+	Ray l_nextRay = p_ray;
+	Ray l_reflectedRay;
+	Ray l_refractedRay;
+
+	float4 colorIllumination	= float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 colorReflected		= float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 colorRefracted		= float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 tempColor			= float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	for(int i = 0; i < max_number_of_bounces; i++)
+	{
+		colorIllumination += Shade(l_nextRay);
+
+		// l_bounceRay = Bounce(in l_currentRay, out l_primitiveIndex, out l_isTriangle) // in, out out
+		//foreach light
+			// IsinShadow(in l_bounceRay.origin, in l_primitiveIndex, in l_isTriangle, in l_lightIndex)
+		//
+
+
+	//	for(int j = 0; j < max_number_of_bounces-1; j++)
+	//	{
+
+	//	}
+
+	//	for(int j = 0; j < max_number_of_bounces; j++)
+	//	{
+	//	}	
+	}
+	float4 l_finalColor = colorIllumination + colorReflected + colorRefracted;
+	return l_finalColor;
+}
+
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
 
-	
-	for(int i = 0; i < max_number_of_bounces; i++)
+	l_finalColor = Trace(l_ray);
+	/*for(int i = 0; i < max_number_of_bounces; i++)
 	{
-		l_finalColor += Trace(l_ray);
+		//l_finalColor += Shade(l_ray);
 		//l_nextRay = Trace(l_reflectedRay, l_reflective, l_refractive, l_isTriangle, l_primitiveIndex);
-	}
+	}*/
 
 	float a;
 	a = max(l_finalColor.x, l_finalColor.y);
