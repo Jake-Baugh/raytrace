@@ -206,23 +206,23 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int
 
 	for(int i = 0; i < p_amount; i++)				// Go through all primitives
 	{
-		temp = p_intersect.Intersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
-		if(temp != 0.0f && temp > 0.0f)	
+		temp = p_intersect.Intersect(p_ray, i);				// Get distance to current primitive, return 0.0 if it does not intersect anything
+		if(temp != 0.0f && temp > 0.0f)						// if temp has his something and it's bigger than 0 (removing distances that reports negative values)
 		{
-			p_hitPrimitive = 1;
-			if(temp < lowest || lowest == 0.0f) // Sets the new value to l_sphereHitDistance if it's lower than before or if l_sphereHitDistance equals 0.0f (first attempt)
+			p_hitPrimitive = 1;								// if you came here, you have hit something. Now lets check if it's the closest one
+			if(temp < lowest || lowest == 0.0f)				// if the new value is lower than the currently lowest OR if the currently lowest is already 0.0, then this new value is the closest
 			{
-				lowest = temp;
-				l_primitiveIndex = i;
+				lowest = temp;								// Save the new lowest distance
+				l_primitiveIndex = i;						// Save the index to the lowest primitive
 			}
 		}
 	}
-	p_closestPrimitiveIndex = l_primitiveIndex;
+	p_closestPrimitiveIndex = l_primitiveIndex;				// Return values
 	p_distanceToClosestPrimitive = lowest;
 }
 
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
-bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in int p_lightIndex)
+bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in int p_lightIndex)
 {
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	SphereIntersect sphereIntersect;
@@ -270,20 +270,17 @@ bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in 
 	{
 		if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
 		{		
-			return true;
-			// Render sphere
+			return true; // Sphere is in shadow
 		}
 	}
 	else if(sp == -1 && tr != -1) // Only a triangle was hit
 	{
 		if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
 		{
-			return true;
-			// Render triangle
+			return true; // Triangle is nshadow
 		}
 	}
 	return false;
-	//return l_tempColor;
 }
 
 	// returns next ray // does not return a color
@@ -292,7 +289,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	Ray l_ray = p_ray;
 	// Variables used by all intersections
 	// float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	float4 l_collidePos;// l_collideNormal;
+	float4 l_collidePos;
 
 	// Sphere specific variable
 	float l_sphereHitDistance	= 0.0f;
@@ -323,7 +320,6 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	//	l_triangleHitDistance is equal to 0, means there was no hit on triangle at all
 	//	l_triangleHitDistance is bigger than 0, what does this mean?
 	//	l_sphereHitDistance is smaller than l_triangleHitDistance. Means that both a triangle and a sphere was hit, but that sphere was closer.
-	//if(sp1 != -1 && (tr1 == -1 || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
 	if(0.0f != l_sphereHitDistance && (l_triangleHitDistance == 0.0f || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
 	{			
 		// Reflect code
@@ -363,10 +359,9 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	}	
 	else // This is a debug place, should never happen.
 	{
-		//l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
+		// Mighty guy
 	}
 
-	//return l_tempColor;
 	return l_ray;
 }
 
@@ -417,14 +412,14 @@ float4 Shade(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in flo
 	for(int i = 0; i < LIGHT_COUNT; i++)
 	{	
 		// Light and shadows
-		bool l_isLitByLight = IsInShadow(p_ray, p_primitiveIndex, p_isTriangle, i);
+		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_isTriangle, i);
 		if(l_isLitByLight == true) // Thus is lit
 			p_color += l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f));
 	}
 	return p_color;
 }
 
-#define max_number_of_bounces 1
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -451,7 +446,8 @@ float4 Trace(in Ray p_ray)
 			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 			l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
 
-			colorIllumination +=  /*l_reflectiveFactor **/ Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+			colorIllumination += float4(0.1,0.1,0.1,1.0);
+				//Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
 
 			//if(l_reflectiveFactor == 0.0f)
