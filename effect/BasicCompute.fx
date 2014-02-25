@@ -11,14 +11,22 @@
 #define TRIANGLE_COUNT 5
 #define LIGHT_COUNT 3
 
+#define MY_DEBUG
 
-
+//Used for debug purposes
+#ifdef MY_DEBUG
 #define WHITE float3(1.0f, 1.0f, 1.0f)
 #define BLACK float3(0.0f, 0.0f, 0.0f)
-
 #define RED   float3(1.0f, 0.0f, 0.0f)
 #define GREEN float3(0.0f, 1.0f, 0.0f)
-#define BLUE float3(0.0f, 0.0f, 1.0f)
+#define BLUE  float3(0.0f, 0.0f, 1.0f)
+
+#define WHITE4 float4(1.0f, 1.0f, 1.0f, 1.0f)
+#define BLACK4 float4(0.0f, 0.0f, 0.0f, 1.0f)
+#define RED4   float4(1.0f, 0.0f, 0.0f, 1.0f)
+#define GREEN4 float4(0.0f, 1.0f, 0.0f, 1.0f)
+#define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
+#endif
 
 
 #pragma pack_matrix(row_major)
@@ -196,7 +204,7 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int
 	float temp = 0.0f;
 	float lowest = 0.0f;
 
-	for(int i = 0; i < p_amount; i++)				// Go through all spheres
+	for(int i = 0; i < p_amount; i++)				// Go through all primitives
 	{
 		temp = p_intersect.Intersect(p_ray, i);				// Get distance to current sphere, return 0.0 if it does not intersect
 		if(temp != 0.0f && temp > 0.0f)	
@@ -243,7 +251,6 @@ bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in 
 				{
 					return true;
 					// Render triangle
-					//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
 				}
 			}
 		}
@@ -255,7 +262,6 @@ bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in 
 				{
 					return true;
 					//Render Sphere
-					//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
 				}
 			}
 		}
@@ -266,7 +272,6 @@ bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in 
 		{		
 			return true;
 			// Render sphere
-			//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
 		}
 	}
 	else if(sp == -1 && tr != -1) // Only a triangle was hit
@@ -275,18 +280,19 @@ bool IsInShadow(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in 
 		{
 			return true;
 			// Render triangle
-			//l_tempColor +=  p_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f)); 
 		}
 	}
 	return false;
 	//return l_tempColor;
 }
 
-float4 Shade(inout Ray p_ray) // first jump == 0
+	// returns next ray // does not return a color
+Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out bool p_out_isTriangle) 
 {	
+	Ray l_ray = p_ray;
 	// Variables used by all intersections
-	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	float4 l_collidePos, l_collideNormal;
+	// float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 l_collidePos;// l_collideNormal;
 
 	// Sphere specific variable
 	float l_sphereHitDistance	= 0.0f;
@@ -306,7 +312,8 @@ float4 Shade(inout Ray p_ray) // first jump == 0
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_triangleHitDistance == 0.0f && l_sphereHitDistance == 0.0f) 
 	{
-		return float4(0.0f, 0.0f, 0.0f, 0.0f); // It hit nothing, return direct
+		return p_ray;
+		//return float4(0.0f, 0.0f, 0.0f, 0.0f); // It hit nothing, return direct
 	}
 
 	////////////////////////////// Checks which primitive is closest
@@ -321,25 +328,17 @@ float4 Shade(inout Ray p_ray) // first jump == 0
 	{			
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_sphereHitDistance - 0.0001) * p_ray.direction;
-		l_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
-		
+
+		// Out variables
+		p_out_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
+		p_out_material = Sphere[l_sphereindex].material;
+		p_out_primitiveIndex = l_sphereindex;
+		p_out_isTriangle = false;
+
 		// New variables for next ray
-		p_ray.origin = l_collidePos; 
-		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f); // new direction for next jump
-		
+		l_ray.origin = l_collidePos; 
+		l_ray.direction = float4(reflect(p_ray.direction.xyz, p_out_collideNormal), 0.0f); // new direction for next jump
 
-		l_tempColor = float4(Sphere[l_sphereindex].color * ambientLight, 1.0f);
-
-		float4 l_primitiveColor = float4(Sphere[l_sphereindex].color, 1.0f);
-		Material l_material = Sphere[l_sphereindex].material;
-
-		for(int i = 0; i < LIGHT_COUNT; i++)
-		{	
-			// Light and shadows
-			bool l_isLitByLight = IsInShadow(p_ray, l_sphereindex, false, i);
-			if(l_isLitByLight == true) // Thus is lit
-				l_tempColor +=  l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, l_material, float4(ambientLight, 1.0f)); 
-		} 
 	}
 
 	//	if l_sphereHitDistance was NOT equal to zero 
@@ -351,31 +350,24 @@ float4 Shade(inout Ray p_ray) // first jump == 0
 	{	
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_triangleHitDistance - 0.0001) * p_ray.direction;
-		l_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		
+		// Out variables		
+		p_out_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		p_out_material = Triangle[l_triangleindex].material;
+		p_out_primitiveIndex = l_triangleindex;
+		p_out_isTriangle = true;
 
 		// New variables for next ray
-		p_ray.origin = l_collidePos;
-		p_ray.direction = float4(reflect(p_ray.direction.xyz, l_collideNormal), 0.0f);		
-		l_tempColor = Triangle[l_triangleindex].color * float4(ambientLight, 1.0f);
-
-		// Store color and material for a short period
-		float4 l_primitiveColor = Triangle[l_triangleindex].color;
-		Material l_material = Triangle[l_triangleindex].material;
-
-		
-		for(int i = 0; i < LIGHT_COUNT; i++)																												// for each light source
-		{	
-			bool l_isLitByLight = IsInShadow(p_ray, l_triangleindex, true, i); 
-			if(l_isLitByLight == true) // Thus is lit																										// if (!in_shadow)
-				l_tempColor +=  l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, l_collideNormal, l_material, float4(ambientLight, 1.0f));	//  radiance += phong_illumination()
-		}
+		l_ray.origin = l_collidePos;
+		l_ray.direction = float4(reflect(p_ray.direction.xyz, p_out_collideNormal), 0.0f);		
 	}	
 	else // This is a debug place, should never happen.
 	{
-		l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
+		//l_tempColor = float4(1.0f, 0.55f, 0.0f, 1.0f); //ORANGES
 	}
 
-	return l_tempColor;
+	//return l_tempColor;
+	return l_ray;
 }
 
 float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
@@ -398,39 +390,76 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 	*/
 }
 
-#define max_number_of_bounces 2
+
+float4 GetPrimitiveColor(in int p_primitiveIndex, in bool p_isTriangle)
+{
+	if(!p_isTriangle)	// Sphere
+		return float4(Sphere[p_primitiveIndex].color, 0.0f);
+	else				// Triangle
+		return Triangle[p_primitiveIndex].color;	
+}
+
+float4 GetReflectiveFactor(in int p_primitiveIndex, in bool p_isTriangle)
+{
+	if(!p_isTriangle)	// Sphere
+		return Sphere[p_primitiveIndex].material.reflective;
+	else				// Triangle
+		return Triangle[p_primitiveIndex].material.reflective;	
+}
+
+
+float4 Shade(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in float4 p_collideNormal, in Material p_material)
+{
+	float4 p_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	
+	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_isTriangle);
+
+	for(int i = 0; i < LIGHT_COUNT; i++)
+	{	
+		// Light and shadows
+		bool l_isLitByLight = IsInShadow(p_ray, p_primitiveIndex, p_isTriangle, i);
+		if(l_isLitByLight == true) // Thus is lit
+			p_color += l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f));
+	}
+	return p_color;
+}
+
+#define max_number_of_bounces 1
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
-	Ray l_reflectedRay;
-	Ray l_refractedRay;
+	float4 colorIllumination	= float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	float4 colorIllumination	= float4(0.0f, 0.0f, 0.0f, 1.0f);
-	float4 colorReflected		= float4(0.0f, 0.0f, 0.0f, 1.0f);
-	float4 colorRefracted		= float4(0.0f, 0.0f, 0.0f, 1.0f);
-	float4 tempColor			= float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 l_collideNormal;
+	Material l_material;
+	int l_primitiveIndex;
+	bool l_isTriangle;
+	float l_reflectiveFactor;
+	
+	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
+	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+		
+//	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
+//	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
-	for(int i = 0; i < max_number_of_bounces; i++)
-	{
-		colorIllumination += Shade(l_nextRay);
+	l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
+	
+//	if(l_reflectiveFactor != 0.0f)
+//	{
+		for(int i = 0; i < max_number_of_bounces; i++)
+		{
+			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
+			l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
 
-		// l_bounceRay = Bounce(in l_currentRay, out l_primitiveIndex, out l_isTriangle) // in, out out
-		//foreach light
-			// IsinShadow(in l_bounceRay.origin, in l_primitiveIndex, in l_isTriangle, in l_lightIndex)
-		//
+			//colorIllumination +=  /*l_reflectiveFactor **/ Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
 
-	//	for(int j = 0; j < max_number_of_bounces-1; j++)
-	//	{
-
-	//	}
-
-	//	for(int j = 0; j < max_number_of_bounces; j++)
-	//	{
-	//	}	
-	}
-	float4 l_finalColor = colorIllumination + colorReflected + colorRefracted;
-	return l_finalColor;
+			//if(l_reflectiveFactor == 0.0f)
+			//	break;
+		}
+//	}
+	//float4 l_finalColor = colorIllumination + colorReflected + colorRefracted;
+	return colorIllumination;
 }
 
 [numthreads(32, 32, 1)]
@@ -438,13 +467,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
-
-	l_finalColor = Trace(l_ray);
-	/*for(int i = 0; i < max_number_of_bounces; i++)
-	{
-		//l_finalColor += Shade(l_ray);
-		//l_nextRay = Trace(l_reflectedRay, l_reflective, l_refractive, l_isTriangle, l_primitiveIndex);
-	}*/
+			l_finalColor = Trace(l_ray);
 
 	float a;
 	a = max(l_finalColor.x, l_finalColor.y);

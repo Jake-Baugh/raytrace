@@ -357,7 +357,11 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
 		l_primitive.Sphere[i].Material.specular = 0.8f;
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
-		//l_primitive.Sphere[i].Material.reflective = 1.0f;
+		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
+		l_primitive.Sphere[i].Material.refractiveFactor = 1.0f;
+		l_primitive.Sphere[i].Material.isReflective = 1.0f;
+		l_primitive.Sphere[i].Material.isRefractive = 1.0f;
+
 	}
 
 	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.5f, 1.0f, 0.5f, 1.0f);
@@ -392,7 +396,10 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Triangle[i].Material.diffuse = 0.8f;
 		l_primitive.Triangle[i].Material.specular = 0.8f;
 		l_primitive.Triangle[i].Material.shininess = 30.0f;
-		//l_primitive.Triangle[i].Material.reflective = 1.0f;
+		l_primitive.Triangle[i].Material.reflectiveFactor = 1.0f;
+		l_primitive.Triangle[i].Material.refractiveFactor = 0.0f;
+		l_primitive.Triangle[i].Material.isReflective = 1.0f;
+		l_primitive.Triangle[i].Material.isRefractive = 1.0f;
 	}
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;

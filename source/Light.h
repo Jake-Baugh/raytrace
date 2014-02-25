@@ -5,13 +5,6 @@
 
 namespace CustomLightStruct
 {
-	struct Material
-	{
-		float ambient;
-		float specular;
-		float diffuse;
-		float shininess;
-	};
 
 	struct PointLightData
 	{
