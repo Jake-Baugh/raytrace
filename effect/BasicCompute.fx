@@ -451,7 +451,7 @@ float4 Trace(in Ray p_ray)
 			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 			l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
 
-			//colorIllumination +=  /*l_reflectiveFactor **/ Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+			colorIllumination +=  /*l_reflectiveFactor **/ Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
 
 			//if(l_reflectiveFactor == 0.0f)
