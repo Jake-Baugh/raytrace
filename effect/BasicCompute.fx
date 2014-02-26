@@ -5,16 +5,12 @@
 //--------------------------------------------------------------------------------------
 
 #include "LightHelper.fx"
-//#include "RayStruct.fx"
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
 #define TRIANGLE_COUNT 5
 #define LIGHT_COUNT 3
 
-#define MY_DEBUG
 
-//Used for debug purposes
-#ifdef MY_DEBUG
 #define WHITE float3(1.0f, 1.0f, 1.0f)
 #define BLACK float3(0.0f, 0.0f, 0.0f)
 #define RED   float3(1.0f, 0.0f, 0.0f)
@@ -26,8 +22,8 @@
 #define RED4   float4(1.0f, 0.0f, 0.0f, 1.0f)
 #define GREEN4 float4(0.0f, 1.0f, 0.0f, 1.0f)
 #define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
-#endif
-
+#define ORANGE4  float4(1.0f, 0.55f, 0.0f, 1.0f)
+#define TEAL4  float4(0.0f, 1.0f, 1.0f, 1.0f)
 
 #pragma pack_matrix(row_major)
 
@@ -56,10 +52,6 @@ cbuffer EveryFrameBuffer : register(c0)
 	float4x4 inverseProjection;
 	float4x4 inverseView;
 	float4 screenVariable;
-	//float screenWidth;
-	//float screenHeight;
-	//float padding1;
-	//float padding2;
 }
 
 cbuffer PrimitiveBuffer: register(c1)
@@ -235,22 +227,21 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 	
 	int l_closestSphereIndex, l_closestTriangleIndex;
 	float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-	int sp = -1;
-	int tr = -1;
+	int l_sphereHit = -1;
+	int l_TriangleHit = -1;
 		
-	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, sp, l_closestSphereIndex, l_distanceToClosestSphere);
-	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, tr, l_closestTriangleIndex, l_distanceToClosestTriangle);
+	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
+	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
-	if(sp != -1 && tr != -1) // Both a triangle and a sphere has been hit
+	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
 		if(p_isTriangle == true) // Bouncing of a triangle
 		{
 			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 			{
-				if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is  the closest
+				if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is the closest
 				{
-					return true;
-					// Render triangle
+					return true; // Render is lit
 				}
 			}
 		}
@@ -258,26 +249,25 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 		{
 			if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 			{
-				if(p_primitiveIndex == l_closestSphereIndex)  // 
+				if(p_primitiveIndex == l_closestSphereIndex)  
 				{
-					return true;
-					//Render Sphere
+					return true; // Sphere is lit
 				}
 			}
 		}
 	}
-	else if(sp != -1 && tr == -1) // Only a sphere was hit
+	else if(l_sphereHit != -1 && l_TriangleHit == -1) // Only a sphere was hit
 	{
 		if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
 		{		
-			return true; // Sphere is in shadow
+			return true; // Sphere is lit
 		}
 	}
-	else if(sp == -1 && tr != -1) // Only a triangle was hit
+	else if(l_sphereHit == -1 && l_TriangleHit != -1) // Only a triangle was hit
 	{
 		if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
 		{
-			return true; // Triangle is nshadow
+			return true; // Triangle is lit
 		}
 	}
 	return false;
@@ -308,8 +298,13 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
 	{
+		/*if(l_sphereindex == 0 || l_triangleindex == 0)
+		{
+			
+			a.origin = float4(123.0f, 0, 0,0);
+			return a;
+		}*/
 		return p_ray;
-		//return float4(0.0f, 0.0f, 0.0f, 0.0f); // It hit nothing, return direct
 	}
 
 	////////////////////////////// Checks which primitive is closest
@@ -397,7 +392,7 @@ float4 Shade(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in flo
 	
 	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_isTriangle);
 
-	for(int i = 0; i < LIGHT_COUNT; i++)
+	for(int i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_isTriangle, i);
@@ -424,6 +419,10 @@ float4 Trace(in Ray p_ray)
 	
 	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+	/*if(l_nextRay.origin.x == 123.0f)
+		colorIllumination = ORANGE4;
+	if(l_nextRay.origin.x == 246.0f)
+		colorIllumination = TEAL4;*/
 //	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 //	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 		
@@ -461,7 +460,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	float a;
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
-	a = max(a, 1.0);
+	a = max(a, 1.0f);
 	
 	l_finalColor /= a;
 
