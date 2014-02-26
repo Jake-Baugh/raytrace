@@ -27,6 +27,10 @@
 
 #pragma pack_matrix(row_major)
 
+#define PRIMITIVE_NOTHING 0
+#define SPHERE 1
+#define TRIANGLE 2
+
 RWTexture2D<float4> output : register(u0);
 
 struct SphereStruct
@@ -214,7 +218,7 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int
 }
 
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
-bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in int p_lightIndex)
+bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in int p_lightIndex)
 {
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	SphereIntersect sphereIntersect;
@@ -227,15 +231,15 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 	
 	int l_closestSphereIndex, l_closestTriangleIndex;
 	float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-	int l_sphereHit = -1;
-	int l_TriangleHit = -1;
+	int l_sphereHit;
+	int l_TriangleHit;
 		
 	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
 	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
-		if(p_isTriangle == true) // Bouncing of a triangle
+		if(p_primitiveType == TRIANGLE) // Bouncing of a triangle
 		{
 			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 			{
@@ -245,7 +249,7 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 				}
 			}
 		}
-		else if(p_isTriangle == false) // Input primitive is NOT triangle. Thus sphere
+		else if(p_primitiveType == SPHERE) // Input primitive is NOT triangle. Thus sphere
 		{
 			if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 			{
@@ -274,7 +278,7 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 }
 
 	// returns next ray // does not return a color
-Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out bool p_out_isTriangle) 
+Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out int p_out_primitiveType) 
 {	
 	Ray l_ray = p_ray;
 
@@ -298,12 +302,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
 	{
-		/*if(l_sphereindex == 0 || l_triangleindex == 0)
-		{
-			
-			a.origin = float4(123.0f, 0, 0,0);
-			return a;
-		}*/
+		p_out_primitiveType = PRIMITIVE_NOTHING; // Not a triangle or sphere
 		return p_ray;
 	}
 
@@ -318,7 +317,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		p_out_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
 		p_out_material = Sphere[l_sphereindex].material;
 		p_out_primitiveIndex = l_sphereindex;
-		p_out_isTriangle = false;
+		p_out_primitiveType = SPHERE;
 
 		// New variables for next ray
 		l_ray.origin = l_collidePos; 
@@ -334,7 +333,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		p_out_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_out_material = Triangle[l_triangleindex].material;
 		p_out_primitiveIndex = l_triangleindex;
-		p_out_isTriangle = true;
+		p_out_primitiveType = TRIANGLE;
 
 		// New variables for next ray
 		l_ray.origin = l_collidePos;
@@ -369,33 +368,35 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 }
 
 
-float4 GetPrimitiveColor(in int p_primitiveIndex, in bool p_isTriangle)
+float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
 {
-	if(!p_isTriangle)	// Sphere
+	if(p_primitiveType == SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
-	else				// Triangle
+	else if(p_primitiveType == TRIANGLE)		// Triangle
 		return Triangle[p_primitiveIndex].color;	
+	return BLACK4;
 }
 
-float4 GetReflectiveFactor(in int p_primitiveIndex, in bool p_isTriangle)
+float4 GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 {
-	if(!p_isTriangle)	// Sphere
+	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
-	else				// Triangle
-		return Triangle[p_primitiveIndex].material.reflective;	
+	else if(p_primitiveType == TRIANGLE)		// Triangle
+		return Triangle[p_primitiveIndex].material.reflective;
+	return BLACK4;
 }
 
 
-float4 Shade(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, in float4 p_collideNormal, in Material p_material)
+float4 Shade(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in float4 p_collideNormal, in Material p_material)
 {
 	float4 p_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	
-	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_isTriangle);
+	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
 
 	for(int i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
-		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_isTriangle, i);
+		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
 		if(l_isLitByLight == true) // Thus is lit
 			p_color += l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin, p_collideNormal, p_material, float4(ambientLight, 1.0f));
 	}
@@ -411,18 +412,22 @@ float4 Trace(in Ray p_ray)
 	float4 l_collideNormal;
 	Material l_material;
 	int l_primitiveIndex;
-	bool l_isTriangle;
+	int l_primitiveType;
 	float l_reflectiveFactor;
 	
-	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
-	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
+	if(l_primitiveType != PRIMITIVE_NOTHING) // Remove 
+		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+
+
+	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
+	if(l_primitiveType != PRIMITIVE_NOTHING)	
+		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
 	
-	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
-	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
-	/*if(l_nextRay.origin.x == 123.0f)
-		colorIllumination = ORANGE4;
-	if(l_nextRay.origin.x == 246.0f)
-		colorIllumination = TEAL4;*/
+	/*
+	if(l_nextRay.origin.x == 0.1f)
+		colorIllumination = WHITE4;
+		*/
 //	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 //	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 		
