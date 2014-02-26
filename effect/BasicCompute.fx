@@ -287,27 +287,26 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in bool p_isTriangle, i
 Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out bool p_out_isTriangle) 
 {	
 	Ray l_ray = p_ray;
+
 	// Variables used by all intersections
-	// float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float4 l_collidePos;
 
-	// Sphere specific variable
-	float l_sphereHitDistance	= 0.0f;
-	int l_sphereindex = 0;
-
-	float l_triangleHitDistance = 0.0f;
+	int l_sphereindex = 0;	
 	int l_triangleindex = 0;
+	float l_distanceToClosestSphere	= 0.0f;
+	float l_distanceToClosestTriangle = 0.0f;
+
 
 	SphereIntersect sphereIntersect;
 	TriangleIntersect triangleIntersect;
 	
-	int sp1, tr1; // not used as of 2014-02-12
+	int l_sphereHit, l_triangleHit;
 
-	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, sp1, l_sphereindex, l_sphereHitDistance); // Sphere
-	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, tr1, l_triangleindex, l_triangleHitDistance); // Triangle
+	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
+	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
 	
 	// Checks to se if any triangle or sphere was hit at all
-	if(l_triangleHitDistance == 0.0f && l_sphereHitDistance == 0.0f) 
+	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
 	{
 		return p_ray;
 		//return float4(0.0f, 0.0f, 0.0f, 0.0f); // It hit nothing, return direct
@@ -315,15 +314,10 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 
 	////////////////////////////// Checks which primitive is closest
 
-	//	if l_sphereHitDistance was NOT equal to zero 
-	//	AND atleast one of the following three is correct:
-	//	l_triangleHitDistance is equal to 0, means there was no hit on triangle at all
-	//	l_triangleHitDistance is bigger than 0, what does this mean?
-	//	l_sphereHitDistance is smaller than l_triangleHitDistance. Means that both a triangle and a sphere was hit, but that sphere was closer.
-	if(0.0f != l_sphereHitDistance && (l_triangleHitDistance == 0.0f || l_triangleHitDistance < 0.0f || l_sphereHitDistance < l_triangleHitDistance))
+	if((l_sphereHit != -1 && l_triangleHit != -1 && l_distanceToClosestSphere < l_distanceToClosestTriangle) || l_sphereHit != -1 && l_triangleHit == -1)
 	{			
 		// Reflect code
-		l_collidePos = p_ray.origin + (l_sphereHitDistance - 0.0001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_distanceToClosestSphere - 0.0001) * p_ray.direction;
 
 		// Out variables
 		p_out_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
@@ -336,16 +330,10 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		l_ray.direction = float4(reflect(p_ray.direction.xyz, p_out_collideNormal), 0.0f); // new direction for next jump
 
 	}
-
-	//	if l_sphereHitDistance was NOT equal to zero 
-	//	AND that atleast one of the following is correct
-	//	that l_triangleHitDistance is greater than 0	
-	//	l_sphereHitDistance is equal to 0.0, means no hit
-	//	l_triangleHitDistance is smaller than l_sphereHitDistance. Means that both a triangle and a sphere was hit, but that triangle was closer.
-	else if(l_triangleHitDistance != 0.0f  && ( l_sphereHitDistance == 0.0f  || l_sphereHitDistance == 0.0f  || l_triangleHitDistance < l_sphereHitDistance))
+	else if((l_sphereHit != -1 && l_triangleHit != -1 && l_distanceToClosestTriangle < l_distanceToClosestSphere) || l_sphereHit == -1 && l_triangleHit != -1)
 	{	
 		// Reflect code
-		l_collidePos = p_ray.origin + (l_triangleHitDistance - 0.0001) * p_ray.direction;
+		l_collidePos = p_ray.origin + (l_distanceToClosestTriangle - 0.0001) * p_ray.direction;
 		
 		// Out variables		
 		p_out_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
@@ -433,26 +421,31 @@ float4 Trace(in Ray p_ray)
 	
 	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+	
+	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
+	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+//	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
+//	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 		
 //	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 //	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
-	l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
+//	l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
 	
 //	if(l_reflectiveFactor != 0.0f)
 //	{
+	/*
 		for(int i = 0; i < max_number_of_bounces; i++)
 		{
 			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
 			l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
 
-			colorIllumination += float4(0.1,0.1,0.1,1.0);
-				//Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+			//colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
 
 
 			//if(l_reflectiveFactor == 0.0f)
 			//	break;
-		}
+		}*/
 //	}
 	//float4 l_finalColor = colorIllumination + colorReflected + colorRefracted;
 	return colorIllumination;
@@ -463,7 +456,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
-			l_finalColor = Trace(l_ray);
+	l_finalColor = Trace(l_ray);
 
 	float a;
 	a = max(l_finalColor.x, l_finalColor.y);
