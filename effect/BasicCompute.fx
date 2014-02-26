@@ -277,7 +277,6 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 	return false;
 }
 
-	// returns next ray // does not return a color
 Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out int p_out_primitiveType) 
 {	
 	Ray l_ray = p_ray;
@@ -377,13 +376,13 @@ float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
 	return BLACK4;
 }
 
-float4 GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
+float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
 	else if(p_primitiveType == TRIANGLE)		// Triangle
 		return Triangle[p_primitiveIndex].material.reflective;
-	return BLACK4;
+	return 0;
 }
 
 
@@ -416,42 +415,24 @@ float4 Trace(in Ray p_ray)
 	float l_reflectiveFactor;
 	
 	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
-	if(l_primitiveType != PRIMITIVE_NOTHING) // Remove 
+
+	if(l_primitiveType != PRIMITIVE_NOTHING)
+	{
 		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
-
-
-	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
-	if(l_primitiveType != PRIMITIVE_NOTHING)	
-		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+		l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_primitiveType);
+	}
 	
-	/*
-	if(l_nextRay.origin.x == 0.1f)
-		colorIllumination = WHITE4;
-		*/
-//	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
-//	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
-		
-//	l_nextRay = Jump(p_ray, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
-//	colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
+	for(int i = 0; i < max_number_of_bounces; i++)
+	{
+		l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
+		l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_primitiveType);
 
-//	l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
-	
-//	if(l_reflectiveFactor != 0.0f)
-//	{
-	/*
-		for(int i = 0; i < max_number_of_bounces; i++)
+		if(l_primitiveType != PRIMITIVE_NOTHING)
 		{
-			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_isTriangle);
-			l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_isTriangle);
+				colorIllumination += l_reflectiveFactor * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+		}
+	}
 
-			//colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_isTriangle, l_collideNormal, l_material);
-
-
-			//if(l_reflectiveFactor == 0.0f)
-			//	break;
-		}*/
-//	}
-	//float4 l_finalColor = colorIllumination + colorReflected + colorRefracted;
 	return colorIllumination;
 }
 

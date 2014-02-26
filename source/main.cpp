@@ -359,7 +359,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 		l_primitive.Sphere[i].Material.refractiveFactor = 1.0f;
-		l_primitive.Sphere[i].Material.isReflective = 1.0f;
+		l_primitive.Sphere[i].Material.isReflective = 0.0f;
 		l_primitive.Sphere[i].Material.isRefractive = 1.0f;
 
 	}
@@ -398,7 +398,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Triangle[i].Material.shininess = 30.0f;
 		l_primitive.Triangle[i].Material.reflectiveFactor = 1.0f;
 		l_primitive.Triangle[i].Material.refractiveFactor = 0.0f;
-		l_primitive.Triangle[i].Material.isReflective = 1.0f;
+		l_primitive.Triangle[i].Material.isReflective = 0.0f;
 		l_primitive.Triangle[i].Material.isRefractive = 1.0f;
 	}
 
