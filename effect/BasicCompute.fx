@@ -385,6 +385,15 @@ float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 	return 0;
 }
 
+int GetReflective(in int p_primitiveIndex, in int p_primitiveType)
+{
+	if(p_primitiveType == SPHERE)			// Sphere
+		return Sphere[p_primitiveIndex].material.isReflective;
+	else if(p_primitiveType == TRIANGLE)		// Triangle
+		return Triangle[p_primitiveIndex].material.isReflective;
+	return 0;
+}
+
 
 float4 Shade(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in float4 p_collideNormal, in Material p_material)
 {
@@ -406,30 +415,38 @@ float4 Shade(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in f
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
-	float4 colorIllumination	= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 colorIllumination = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	float4 l_collideNormal;
 	Material l_material;
 	int l_primitiveIndex;
 	int l_primitiveType;
-	float l_reflectiveFactor;
-	
+	int l_isReflective;
+
 	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
 
 	if(l_primitiveType != PRIMITIVE_NOTHING)
 	{
+		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);
 		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
-		l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_primitiveType);
 	}
 	
-	for(int i = 0; i < max_number_of_bounces; i++)
+	if(l_isReflective != -1)
 	{
-		l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
-		l_reflectiveFactor = GetReflectiveFactor(l_primitiveIndex, l_primitiveType);
-
-		if(l_primitiveType != PRIMITIVE_NOTHING)
+		for(int i = 0; i < max_number_of_bounces; i++)
 		{
-				colorIllumination += l_reflectiveFactor * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
+			if(l_primitiveType != PRIMITIVE_NOTHING)
+			{
+				l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);
+
+			//	if(l_isReflective == 1)
+					colorIllumination += GetReflectiveFactor(l_primitiveIndex, l_primitiveType) * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+				//if(l_isReflective == -1)
+				//	break;
+			}
+			//else
+			//	break;
 		}
 	}
 

@@ -358,9 +358,9 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.specular = 0.8f;
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
-		l_primitive.Sphere[i].Material.refractiveFactor = 1.0f;
-		l_primitive.Sphere[i].Material.isReflective = 0.0f;
-		l_primitive.Sphere[i].Material.isRefractive = 1.0f;
+		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
+		l_primitive.Sphere[i].Material.isReflective = -1;
+		l_primitive.Sphere[i].Material.isRefractive = -1;
 
 	}
 
@@ -398,8 +398,8 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Triangle[i].Material.shininess = 30.0f;
 		l_primitive.Triangle[i].Material.reflectiveFactor = 1.0f;
 		l_primitive.Triangle[i].Material.refractiveFactor = 0.0f;
-		l_primitive.Triangle[i].Material.isReflective = 0.0f;
-		l_primitive.Triangle[i].Material.isRefractive = 1.0f;
+		l_primitive.Triangle[i].Material.isReflective = 1;
+		l_primitive.Triangle[i].Material.isRefractive = -1;
 	}
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
@@ -435,7 +435,6 @@ void FillLightBuffer()
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
 		l_light.pointLight[i].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-
 	}
 
 	/*

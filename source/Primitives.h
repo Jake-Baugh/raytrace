@@ -26,8 +26,8 @@ namespace CustomPrimitiveStruct
 		float shininess;		
 		float reflectiveFactor;
 		float refractiveFactor;
-		float isReflective;
-		float isRefractive;
+		int isReflective;
+		int isRefractive;
 	};
 
 	struct SphereStruct
