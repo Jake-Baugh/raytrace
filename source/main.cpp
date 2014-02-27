@@ -22,6 +22,7 @@ ID3D11UnorderedAccessView*	g_BackBufferUAV			= NULL;
 ID3D11Buffer*				g_EveryFrameBuffer		= NULL; 	
 ID3D11Buffer*				g_PrimitivesBuffer		= NULL;
 ID3D11Buffer*				g_LightBuffer			= NULL;
+ID3D11Buffer*				g_objectBuffer			= nullptr;
 
 
 ComputeWrap*				g_ComputeSys			= NULL;
@@ -447,6 +448,7 @@ void FillLightBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE LightResources;
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
+
 	CustomLightStruct::LightBuffer l_light;
 
 	l_light.lightCount = LIGHT_COUNT;
@@ -478,6 +480,27 @@ void FillLightBuffer()
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
 
+HRESULT CreateObjectBuffer()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC ObjectDescription;
+	ObjectDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
+	ObjectDescription.Usage				=	D3D11_USAGE_DYNAMIC; 
+	ObjectDescription.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
+	ObjectDescription.MiscFlags			=	0;
+	ObjectDescription.ByteWidth			=	sizeof(5); // change
+
+	hr = g_Device->CreateBuffer( &ObjectDescription, NULL, &g_objectBuffer);
+
+	return hr;
+}
+
+void FillObjectBuffer()
+{
+	// DO I NEED THIS FUNCTION??!
+}
+
 HRESULT Update(float deltaTime)
 {
 	if(GetAsyncKeyState('W') & 0x8000)
@@ -489,7 +512,7 @@ HRESULT Update(float deltaTime)
 	if(GetAsyncKeyState('D') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->strafe(MOVE_SPEED *deltaTime);
 	
-	float cameraspeed = 5.0;
+	float cameraspeed = 7.0;
 	if(GetAsyncKeyState('Q') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->rotateY(-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('E') & 0x8000)
@@ -499,7 +522,7 @@ HRESULT Update(float deltaTime)
 	if(GetAsyncKeyState('2') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->pitch(	cameraspeed * deltaTime);
 	
-	float upndownspeed = 4.0f;
+	float upndownspeed = 6.0f;
 	if(GetAsyncKeyState(VK_SPACE) & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->MoveY(	MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
@@ -544,6 +567,7 @@ HRESULT Render(float deltaTime)
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, NULL);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
+
 
 	g_ComputeShader->Set();
 	g_Timer->Start();

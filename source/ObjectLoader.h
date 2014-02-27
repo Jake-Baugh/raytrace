@@ -13,13 +13,16 @@ class ObjectLoader
 public:
 	static ObjectLoader* GetObjectLoader();
 
-	Object* LoadObject(ID3D10Device* lDevice, char* lObjFileName, char* lFXFileName);
+	void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath); // Old not implemented method
 
 private:
 	static ObjectLoader* m_objectLoader;
+
+	// Map + vector saving loaded objects so that a return is faster.
+	// However, if above is done. Let this object take care of memory of loaded objects
 	
-	ObjectLoader();
-	virtual ~ObjectLoader();
+	ObjectLoader(){}
+	virtual ~ObjectLoader(){}
 };
 
 ObjectLoader& GetObjectLoader();

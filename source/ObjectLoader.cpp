@@ -9,9 +9,9 @@ ObjectLoader* ObjectLoader::GetObjectLoader()
 	return m_objectLoader;
 }
 
-
-Object* ObjectLoader::LoadObject(ID3D10Device* lDevice, char* lObjFileName, char* lFXFileName)
+void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath)
 {
+	/* // Old code written for DX10. Keeping til I got a working DX11 version
 	using namespace std;	
 
 	//Vertex position variables
@@ -134,9 +134,9 @@ Object* ObjectLoader::LoadObject(ID3D10Device* lDevice, char* lObjFileName, char
     D3D10_SUBRESOURCE_DATA vinitData;
 	vinitData.pSysMem = lVertex.data();
 	lDevice->CreateBuffer(&vbd, &vinitData, &lVBuffer);
+	*/
+//	Object* lObject = new Object();
+	//lObject->Initialize(lDevice, lVBuffer, lFXFileName, lVertex.size());
 
-	Object* lObject = new Object();
-	lObject->Initialize(lDevice, lVBuffer, lFXFileName, lVertex.size());
-
-	return lObject;
+//	return lObject;
 }
