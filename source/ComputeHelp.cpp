@@ -74,7 +74,7 @@ void ComputeShader::Unset()
 {
 	mD3DDeviceContext->CSSetShader( NULL, NULL, 0 );
 }
-
+/*
 ComputeBuffer* ComputeWrap::CreateBuffer(COMPUTE_BUFFER_TYPE uType,
 	UINT uElementSize, UINT uCount, bool bSRV, bool bUAV, VOID* pInitData, bool bCreateStaging, char* debugName)
 {
@@ -107,7 +107,8 @@ ComputeBuffer* ComputeWrap::CreateBuffer(COMPUTE_BUFFER_TYPE uType,
 
 	return buffer; //return shallow copy
 }
-
+*/
+/*
 ID3D11Buffer* ComputeWrap::CreateStructuredBuffer(UINT uElementSize, UINT uCount,
 									bool bSRV, bool bUAV, VOID* pInitData)
 {
@@ -235,6 +236,7 @@ ID3D11UnorderedAccessView* ComputeWrap::CreateBufferUAV(ID3D11Buffer* pBuffer)
 	return pUAVOut;
 }
 
+
 ID3D11Buffer* ComputeWrap::CreateStagingBuffer(UINT uSize)
 {
     ID3D11Buffer* debugbuf = NULL;
@@ -251,7 +253,9 @@ ID3D11Buffer* ComputeWrap::CreateStagingBuffer(UINT uSize)
 
     return debugbuf;
 }
+*/
 
+/*
 // TEXTURE FUNCTIONS
 ComputeTexture* ComputeWrap::CreateTexture(DXGI_FORMAT dxFormat, UINT uWidth,
 	UINT uHeight, UINT uRowPitch, VOID* pInitData, bool bCreateStaging, char* debugName)
@@ -411,7 +415,8 @@ ID3D11Buffer* ComputeWrap::CreateConstantBuffer(UINT uSize, VOID* pInitData, cha
 
 	return pBuffer;
 }
-
+*/
+	/*
 void ComputeWrap::SetDebugName(ID3D11DeviceChild* object, char* debugName)
 {
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -419,6 +424,7 @@ void ComputeWrap::SetDebugName(ID3D11DeviceChild* object, char* debugName)
 	object->SetPrivateData( WKPDID_D3DDebugObjectName, (UINT)strlen(debugName), debugName );
 #endif
 }
+*/
 
 ComputeShader* ComputeWrap::CreateComputeShader(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines)
 {

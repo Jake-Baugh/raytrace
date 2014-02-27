@@ -321,7 +321,6 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		// New variables for next ray
 		l_ray.origin = l_collidePos; 
 		l_ray.direction = float4(reflect(p_ray.direction.xyz, p_out_collideNormal), 0.0f); // new direction for next jump
-
 	}
 	else if((l_sphereHit != -1 && l_triangleHit != -1 && l_distanceToClosestTriangle < l_distanceToClosestSphere) || l_sphereHit == -1 && l_triangleHit != -1)
 	{	
@@ -411,7 +410,14 @@ float4 Shade(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in f
 	return p_color;
 }
 
-#define max_number_of_bounces 2
+bool CloseToZero(float p_float)
+{
+	if(p_float > -EPSILON && p_float < EPSILON )
+		return true;
+	return false;
+}
+
+#define max_number_of_bounces 5
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -422,32 +428,34 @@ float4 Trace(in Ray p_ray)
 	int l_primitiveIndex;
 	int l_primitiveType;
 	int l_isReflective;
+	float l_reflectiveFactor = 1.0f;
 
-	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
+	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
 
-	if(l_primitiveType != PRIMITIVE_NOTHING)
+	if(l_primitiveType != PRIMITIVE_NOTHING) // As long as it is SOMETHING 
 	{
-		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);
-		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
+		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Get shade 
 	}
 	
-	if(l_isReflective != -1)
+	for(int i = 0; i < max_number_of_bounces-1; i++) // Iterate through all jump
 	{
-		for(int i = 0; i < max_number_of_bounces; i++)
+		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);		// Get if the material is reflective (Used to check if next jump should be executed)					
+		if(l_isReflective == 1) // Is is reflective
 		{
-			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType);
-			if(l_primitiveType != PRIMITIVE_NOTHING)
+			l_reflectiveFactor *= GetReflectiveFactor(l_primitiveIndex, l_primitiveType); // Get the reflectiveness on this material. Get this before next jump
+			if(CloseToZero(l_reflectiveFactor) == true)
+				break;
+			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // Jump to next object to get next color
+			
+			if(l_primitiveType != PRIMITIVE_NOTHING)	// See if the ray hit anything
 			{
-				l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);
-
-			//	if(l_isReflective == 1)
-					colorIllumination += GetReflectiveFactor(l_primitiveIndex, l_primitiveType) * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);
-				//if(l_isReflective == -1)
-				//	break;
+				colorIllumination += l_reflectiveFactor * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Illuminate with new object with multiplied with last objects reflectiveFactor
 			}
-			//else
-			//	break;
+			else if(l_primitiveType == PRIMITIVE_NOTHING)	// If the ray hit NOTHING.
+				break;										// Quit
 		}
+		else // Not reflective at all
+			break;
 	}
 
 	return colorIllumination;

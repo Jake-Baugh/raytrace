@@ -17,7 +17,7 @@
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(p)      { if (p) { delete (p); (p)=NULL; } }
 #endif
-
+/*
 enum COMPUTE_BUFFER_TYPE
 {
 	STRUCTURED_BUFFER,
@@ -139,7 +139,7 @@ private:
 
 	friend class ComputeWrap;
 };
-
+*/
 class ComputeShader
 {
 	friend class ComputeWrap;
@@ -174,24 +174,26 @@ public:
 	}
 
 	ComputeShader* CreateComputeShader(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines);
-
+	/*
 	ID3D11Buffer* CreateConstantBuffer(UINT uSize, VOID* pInitData, char* debugName = NULL);
+	
+	ComputeBuffer* CreateBuffer(COMPUTE_BUFFER_TYPE uType, UINT uElementSize, UINT uCount, bool bSRV, bool bUAV, VOID* pInitData, bool bCreateStaging = false, char* debugName = NULL);
 
-	ComputeBuffer* CreateBuffer(COMPUTE_BUFFER_TYPE uType, UINT uElementSize,
-		UINT uCount, bool bSRV, bool bUAV, VOID* pInitData, bool bCreateStaging = false, char* debugName = NULL);
-
-	ComputeTexture* CreateTexture(DXGI_FORMAT dxFormat,	UINT uWidth,
-		UINT uHeight, UINT uRowPitch, VOID* pInitData, bool bCreateStaging = false, char* debugName = NULL);
+	ComputeTexture* CreateTexture(DXGI_FORMAT dxFormat,	UINT uWidth, UINT uHeight, UINT uRowPitch, VOID* pInitData, bool bCreateStaging = false, char* debugName = NULL);
 
 	ComputeTexture* CreateTexture(TCHAR* textureFilename, char* debugName = NULL);
+	*/
 
 private:
+	/*
 	ID3D11Buffer* CreateStructuredBuffer(UINT uElementSize, UINT uCount, bool bSRV, bool bUAV, VOID* pInitData);
 	ID3D11Buffer* CreateRawBuffer(UINT uSize, VOID* pInitData);
 	ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer);
 	ID3D11UnorderedAccessView* CreateBufferUAV(ID3D11Buffer* pBuffer);
 	ID3D11Buffer* CreateStagingBuffer(UINT uSize);
+	*/
 
+	/*
 	//texture functions
 	ID3D11Texture2D* CreateTextureResource(DXGI_FORMAT dxFormat,
 		UINT uWidth, UINT uHeight, UINT uRowPitch, VOID* pInitData);
@@ -201,4 +203,5 @@ private:
 	ID3D11Texture2D* CreateStagingTexture(ID3D11Texture2D* pTexture);
 	
 	void SetDebugName(ID3D11DeviceChild* object, char* debugName);
+	*/
 };

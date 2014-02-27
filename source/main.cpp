@@ -260,6 +260,27 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	//create helper sys and compute shader instance
 	g_ComputeSys = new ComputeWrap(g_Device, g_DeviceContext);
 	g_ComputeShader = g_ComputeSys->CreateComputeShader(_T("effect\\BasicCompute.fx"), NULL, "main", NULL);
+
+	/*
+	ComputeShader* ComputeWrap::CreateComputeShader(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines)
+	{
+		ComputeShader* cs = new ComputeShader();
+
+		if(cs && !cs->Init(
+			shaderFile,
+			blobFileAppendix,
+			pFunctionName,
+			pDefines,
+			mD3DDevice,
+			mD3DDeviceContext))
+		{
+			SAFE_DELETE(cs);
+		}
+		return cs;
+	}
+	*/
+
+
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
 	return S_OK;
 }
@@ -357,9 +378,9 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
 		l_primitive.Sphere[i].Material.specular = 0.8f;
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
-		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
+		l_primitive.Sphere[i].Material.reflectiveFactor = 0.2f;
 		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
-		l_primitive.Sphere[i].Material.isReflective = -1;
+		l_primitive.Sphere[i].Material.isReflective = 1;
 		l_primitive.Sphere[i].Material.isRefractive = -1;
 
 	}
@@ -384,7 +405,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Triangle[3].Position1			= D3DXVECTOR4(150.0f,	-250.0f,		300.0f, 1.0f);
 	l_primitive.Triangle[3].Position2			= D3DXVECTOR4(-150.0f,	-250.0f,		600.0f, 1.0f);
 
-	l_primitive.Triangle[4].Color				= D3DXVECTOR4(0.0f, 0.0f, 0.0f, 1.0f);
+	l_primitive.Triangle[4].Color				= D3DXVECTOR4(0.5f, 0.5f, 0.5f, 1.0f);
 	l_primitive.Triangle[4].Position0			= D3DXVECTOR4(-3000.0f,	-500.0f,		0.0f, 1.0f);
 	l_primitive.Triangle[4].Position1			= D3DXVECTOR4(1500.0f,	-500.0f,		1500.0f, 1.0f);
 	l_primitive.Triangle[4].Position2			= D3DXVECTOR4(-3000.0f,	-500.0f,		3000.0f, 1.0f);
@@ -396,7 +417,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Triangle[i].Material.diffuse = 0.8f;
 		l_primitive.Triangle[i].Material.specular = 0.8f;
 		l_primitive.Triangle[i].Material.shininess = 30.0f;
-		l_primitive.Triangle[i].Material.reflectiveFactor = 1.0f;
+		l_primitive.Triangle[i].Material.reflectiveFactor = 0.5f;
 		l_primitive.Triangle[i].Material.refractiveFactor = 0.0f;
 		l_primitive.Triangle[i].Material.isReflective = 1;
 		l_primitive.Triangle[i].Material.isRefractive = -1;
