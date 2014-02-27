@@ -32,8 +32,6 @@ public:
 	D3DXMATRIX GetProj()		const{ return mProj;}
 
 private:
-	//static Camera* m_camera;
-	//static Camera* m_camera2;
 	static std::vector<Camera*>* m_camera;
 
 	Camera();
