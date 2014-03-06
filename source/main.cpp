@@ -484,14 +484,14 @@ HRESULT CreateObjectBuffer()
 {
 	HRESULT hr = S_OK;
 
-	D3D11_BUFFER_DESC ObjectDescription;
-	ObjectDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
-	ObjectDescription.Usage				=	D3D11_USAGE_DYNAMIC; 
-	ObjectDescription.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
-	ObjectDescription.MiscFlags			=	0;
-	ObjectDescription.ByteWidth			=	sizeof(5); // change
+	D3D11_BUFFER_DESC ObjectBufferDescription;
+	ObjectBufferDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
+	ObjectBufferDescription.Usage				=	D3D11_USAGE_DYNAMIC; 
+	ObjectBufferDescription.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	ObjectBufferDescription.MiscFlags			=	0;
+	ObjectBufferDescription.ByteWidth			=	sizeof(5); // change
 
-	hr = g_Device->CreateBuffer( &ObjectDescription, NULL, &g_objectBuffer);
+	hr = g_Device->CreateBuffer( &ObjectBufferDescription, NULL, &g_objectBuffer);
 
 	return hr;
 }

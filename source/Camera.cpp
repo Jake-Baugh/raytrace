@@ -1,6 +1,5 @@
 #include "Camera.h"
 
-
 std::vector<Camera*>* Camera::m_camera = new std::vector<Camera*>(10);
 
 Camera* Camera::GetCamera(int index)
@@ -12,99 +11,67 @@ Camera* Camera::GetCamera(int index)
 
 Camera::Camera()
 {
-	mPosition = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	mRight    = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-	mUp       = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
-	mLook     = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+	mPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	mRight    = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	mUp       = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	mLook     = XMFLOAT3(0.0f, 0.0f, 1.0f);
 
-	D3DXMatrixIdentity(&mView);
-	D3DXMatrixIdentity(&mProj);
+	mView = XMMatrixIdentity();
+	mProj = XMMatrixIdentity();
 }
 
 Camera::~Camera()
 {
 }
 
-void Camera::SetPosition(D3DXVECTOR3 lPos)
+void Camera::SetPosition(XMFLOAT3 lPos)
 {
 	mPosition = lPos;
 }
-
 
 void Camera::setYPosition(float y)
 {
 	mPosition.y = y;
 }
 
-
 void Camera::setLens(float fovY, float aspect, float zn, float zf)
 {
-	D3DXMatrixPerspectiveFovLH(&mProj, fovY, aspect, zn, zf);
+	mProj = XMMatrixPerspectiveFovLH(fovY, aspect, zn, zf);
 }
 
 void Camera::strafe(float d)
 {
-	mPosition += d*mRight;
+	mPosition += d * mRight;
 }
 
 void Camera::walk(float d)
 {
-	mPosition += d*mLook;
+	mPosition += d * mLook;
 }
+
 void Camera::pitch(float angle)
 {
-	D3DXMATRIX R;
-	D3DXMatrixRotationAxis(&R, &mRight, angle);
+	XMMATRIX R;
+	
+	R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
 
-	D3DXVec3TransformNormal(&mUp, &mUp, &R);
-	D3DXVec3TransformNormal(&mLook, &mLook, &R);
+	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
+	XMStoreFloat3(&mLook, XMVector3TransformNormal( XMLoadFloat3(&mLook), R));
 }
 
 void Camera::rotateY(float angle)
 {
-	D3DXMATRIX R;
-	D3DXMatrixRotationY(&R, angle);
+	XMMATRIX R;
+	R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
 
-	D3DXVec3TransformNormal(&mRight, &mRight, &R);
-	D3DXVec3TransformNormal(&mUp, &mUp, &R);
-	D3DXVec3TransformNormal(&mLook, &mLook, &R);
+	XMStoreFloat3(&mRight, XMVector3TransformNormal( XMLoadFloat3(&mRight), R));
+	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
+	XMStoreFloat3(&mLook, XMVector3TransformNormal( XMLoadFloat3(&mLook), R));
 }
 
 void Camera::rebuildView()
 {
-	// Keep camera's axes orthogonal to each other and of unit length.
-	D3DXVec3Normalize(&mLook, &mLook);
-
-	D3DXVec3Cross(&mUp, &mLook, &mRight);
-	D3DXVec3Normalize(&mUp, &mUp);
-
-	D3DXVec3Cross(&mRight, &mUp, &mLook);
-	D3DXVec3Normalize(&mRight, &mRight);
-	
-	// Fill in the view matrix entries.
-	float x = -D3DXVec3Dot(&mPosition, &mRight);
-	float y = -D3DXVec3Dot(&mPosition, &mUp);
-	float z = -D3DXVec3Dot(&mPosition, &mLook);
-	
-	mView(0,0) = mRight.x; 
-	mView(1,0) = mRight.y; 
-	mView(2,0) = mRight.z; 
-	mView(3,0) = x;   
-
-	mView(0,1) = mUp.x;
-	mView(1,1) = mUp.y;
-	mView(2,1) = mUp.z;
-	mView(3,1) = y;  
-
-	mView(0,2) = mLook.x; 
-	mView(1,2) = mLook.y; 
-	mView(2,2) = mLook.z; 
-	mView(3,2) = z;   
-
-	mView(0,3) = 0.0f;
-	mView(1,3) = 0.0f;
-	mView(2,3) = 0.0f;
-	mView(3,3) = 1.0f;
+	mView = XMMatrixLookAtLH(XMLoadFloat3(&mPosition), XMLoadFloat3(&mLook), XMLoadFloat3(&mUp)); 
 }
 
 void Camera::MoveY(float p_step)

@@ -72,6 +72,9 @@ cbuffer LightBuffer : register(c2)
 	PointLightData PointLight[LIGHT_COUNT];
 }
 
+StructuredBuffer<TriangleStruct> AllTriangles;
+
+
 Ray createRay(int x, int y)
 {
 	Ray l_ray;
@@ -442,8 +445,8 @@ float4 Trace(in Ray p_ray)
 		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);		// Get if the material is reflective (Used to check if next jump should be executed)					
 		if(l_isReflective == 1) // Is is reflective
 		{
-			l_reflectiveFactor *= GetReflectiveFactor(l_primitiveIndex, l_primitiveType); // Get the reflectiveness on this material. Get this before next jump
-			if(CloseToZero(l_reflectiveFactor) == true)
+			l_reflectiveFactor *= GetReflectiveFactor(l_primitiveIndex, l_primitiveType); // Get the reflectiveness on this material and multiplies with previuous reflectivefactor. Get this before next jump
+			if(CloseToZero(l_reflectiveFactor) == true) // Breaks if the reflection is very close to zero
 				break;
 			l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // Jump to next object to get next color
 			
@@ -487,12 +490,10 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	Dynamiska buffrar
 	Ladda in objekt
 	Material
-	Ljus som studsar? :3
 
 	Tankar
 		Octatree
 		Hashtable som använder pekare som nyckel
 		Boundingbox för varje objekt för snabbare koll.
 		Skapa egna ComputeShaders
-
 */

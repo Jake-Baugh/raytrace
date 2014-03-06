@@ -3,8 +3,7 @@
 
 #include <windows.h>
 #include <D3D11.h>
-#include <D3DX11.h>
-#include <D3DX10math.h>
+#include <DirectXMath.h>
 #include <d3dCompiler.h>
 
 #include <string>
@@ -65,6 +64,65 @@
 #endif 
 //////////////////////////////////////////////////////////////////////////
 
+XMFLOAT3 operator*(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec *= rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	
+	return a;
+}
+
+XMFLOAT3 operator*(XMFLOAT3 l, float r) {
+    
+	XMVECTOR lvec(XMLoadFloat3(&l));
+	
+	lvec *= r;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	return a;
+}
+
+XMFLOAT3 operator*(float l, XMFLOAT3 r) 
+{
+	XMVECTOR lvec(XMLoadFloat3(&r));
+	
+	lvec *= l;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	return a;
+}
+
+
+XMFLOAT3 operator+(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec += rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);	
+	return a;
+}
+
+XMFLOAT3 operator+=(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec += rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);	
+	return a;
+}
 
 
 #endif
