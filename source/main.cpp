@@ -295,7 +295,7 @@ void FillCameraBuffer()
 
 	XMStoreFloat(&l_determinant, XMMatrixDeterminant(l_view));
 	l_inverseView = XMMatrixInverse(&XMLoadFloat(&l_determinant), l_view);
-
+	 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 

@@ -116,7 +116,7 @@ void Camera::pitch(float angle)
 {
 	XMMATRIX R;
 	
-	R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
+	R = XMMatrixRotationX(angle);
 
 	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
 	XMStoreFloat3(&mLook, XMVector3TransformNormal( XMLoadFloat3(&mLook), R));
@@ -125,7 +125,7 @@ void Camera::pitch(float angle)
 void Camera::rotateY(float angle)
 {
 	XMMATRIX R;
-	R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
+	R = XMMatrixRotationY(angle);
 
 	XMStoreFloat3(&mRight, XMVector3TransformNormal( XMLoadFloat3(&mRight), R));
 	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
@@ -134,7 +134,17 @@ void Camera::rotateY(float angle)
 
 void Camera::rebuildView()
 {
-	mView = XMMatrixLookAtLH(XMLoadFloat3(&mPosition), XMLoadFloat3(&mLook), XMLoadFloat3(&mUp)); 
+	// Not sure which one to use. I would pressume that I'd use "LookAt", however, "LookTo" is the one to give the right results
+
+	/* Definitions on both functions
+	// XMMatrixLookAtLH method
+	// Builds a view matrix for a left-handed coordinate system using a camera position, an up direction, and a focal point. 	
+
+	// XMMatrixLookToLH method
+	// Builds a view matrix for a left-handed coordinate system using a camera position, an up direction, and a camera direction. 	
+	*/
+
+	mView = XMMatrixLookToLH(XMLoadFloat3(&mPosition), XMLoadFloat3(&mLook), XMLoadFloat3(&mUp));
 }
 
 void Camera::MoveY(float p_step)
