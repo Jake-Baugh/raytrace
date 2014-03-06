@@ -342,7 +342,11 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	}	
 	else // This is a debug place, should never happen.
 	{
-		// Mighty guy
+		// Out variables		
+		p_out_collideNormal = float4(-1.0f, -1.0f,-1.0f,-1.0f);
+		p_out_material = Triangle[l_triangleindex].material;
+		p_out_primitiveIndex = -1;
+		p_out_primitiveType = PRIMITIVE_NOTHING;
 	}
 
 	return l_ray;

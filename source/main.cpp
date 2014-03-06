@@ -25,8 +25,7 @@ ID3D11Buffer*				g_LightBuffer			= NULL;
 ID3D11Buffer*				g_objectBuffer			= nullptr;
 
 
-ComputeWrap*				g_ComputeSys			= NULL;
-ComputeShader*				g_ComputeShader			= NULL;
+ComputeShader*				g_ComputeShader			= nullptr;
 
 D3D11Timer*					g_Timer					= NULL;
 
@@ -259,27 +258,8 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	hr = g_Device->CreateUnorderedAccessView( pBackBuffer, NULL, &g_BackBufferUAV );
 
 	//create helper sys and compute shader instance
-	g_ComputeSys = new ComputeWrap(g_Device, g_DeviceContext);
-	g_ComputeShader = g_ComputeSys->CreateComputeShader(_T("effect\\BasicCompute.fx"), NULL, "main", NULL);
-
-	/*
-	ComputeShader* ComputeWrap::CreateComputeShader(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines)
-	{
-		ComputeShader* cs = new ComputeShader();
-
-		if(cs && !cs->Init(
-			shaderFile,
-			blobFileAppendix,
-			pFunctionName,
-			pDefines,
-			mD3DDevice,
-			mD3DDeviceContext))
-		{
-			SAFE_DELETE(cs);
-		}
-		return cs;
-	}
-	*/
+	g_ComputeShader = new ComputeShader();
+	g_ComputeShader->Init(L"effect\\BasicCompute.fx", NULL, "main", NULL, g_Device, g_DeviceContext);
 
 
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
@@ -303,16 +283,18 @@ HRESULT CreateCameraBuffer()
 
 void FillCameraBuffer()
 {
-	D3DXMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
+	using namespace DirectX;
+
+	XMMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
 	float l_determinant;
 	l_view		 = Camera::GetCamera(g_cameraIndex)->GetProj();
 	l_projection = Camera::GetCamera(g_cameraIndex)->GetView();
 
-	l_determinant = D3DXMatrixDeterminant(&l_projection);
-	D3DXMatrixInverse(&l_inverseProjection, &l_determinant, &l_projection);
+	XMStoreFloat(&l_determinant, XMMatrixDeterminant(l_projection));
+	l_inverseProjection = XMMatrixInverse(&XMLoadFloat(&l_determinant), l_projection);
 
-    l_determinant  = D3DXMatrixDeterminant(&l_view);
-    D3DXMatrixInverse(&l_inverseView, &l_determinant, &l_view);
+	XMStoreFloat(&l_determinant, XMMatrixDeterminant(l_view));
+	l_inverseView = XMMatrixInverse(&XMLoadFloat(&l_determinant), l_view);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -345,8 +327,6 @@ HRESULT CreatePrimitiveBuffer()
 	return hr;
 }
 
-float a = 1.0f;
-D3DXVECTOR4 b;
 void FillPrimitiveBuffer(float l_deltaTime)
 {
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
@@ -359,19 +339,17 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.padding2 = -1;
 
 	
-	l_primitive.Sphere[0].MidPosition			= D3DXVECTOR4 (0.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 0.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
-	l_primitive.Sphere[0].Color					= D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+	l_primitive.Sphere[0].Color					= XMFLOAT3(1.0f, 0.0f, 0.0f);
 	
-	l_primitive.Sphere[1].MidPosition			= D3DXVECTOR4 (-900.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[1].MidPosition			= XMFLOAT4 (-900.0f, 0.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[1].Radius				= 200.0f;
-	l_primitive.Sphere[1].Color					= D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+	l_primitive.Sphere[1].Color					= XMFLOAT3(0.0f, 0.0f, 1.0f);
 
-	b = D3DXVECTOR4(0.0f, 500, 0.0f, 0.0f); // make it move in circles
-	//l_primitive.Sphere[2].MidPosition			= Camera::GetCamera()->GetPosition(); 
-	l_primitive.Sphere[2].MidPosition			= b;
+	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(0.0f, 500, 0.0f, 0.0f);
 	l_primitive.Sphere[2].Radius				= 200.0f;
-	l_primitive.Sphere[2].Color					= D3DXVECTOR3(1.0f, 0.55f, 0.0f);
+	l_primitive.Sphere[2].Color					= XMFLOAT3(1.0f, 0.55f, 0.0f);
 
 	for(int i = 0; i < l_primitive.SphereCount; i++)
 	{
@@ -386,30 +364,30 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	}
 
-	l_primitive.Triangle[0].Color				= D3DXVECTOR4(0.5f, 1.0f, 0.5f, 1.0f);
-	l_primitive.Triangle[0].Position0			= D3DXVECTOR4(400.0f,	-50.0f,		700.0f, 1.0f);
-	l_primitive.Triangle[0].Position1			= D3DXVECTOR4(400.0f,	 50.0f,	700.0f, 1.0f);
-	l_primitive.Triangle[0].Position2			= D3DXVECTOR4(400.0f,	-50.0f,		800.0f, 1.0f);
+	l_primitive.Triangle[0].Color				= XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f);
+	l_primitive.Triangle[0].Position0			= XMFLOAT4(400.0f,	-50.0f,		700.0f, 1.0f);
+	l_primitive.Triangle[0].Position1			= XMFLOAT4(400.0f,	 50.0f,	700.0f, 1.0f);
+	l_primitive.Triangle[0].Position2			= XMFLOAT4(400.0f,	-50.0f,		800.0f, 1.0f);
 
-	l_primitive.Triangle[1].Color				= D3DXVECTOR4(1.0f, 0.5f, 0.5f, 1.0f);
-	l_primitive.Triangle[1].Position0			= D3DXVECTOR4(400.0f,	50.0f,		700.0f, 1.0f);
-	l_primitive.Triangle[1].Position1			= D3DXVECTOR4(400.0f,	 50.0f,	800.0f, 1.0f);
-	l_primitive.Triangle[1].Position2			= D3DXVECTOR4(400.0f,	-50.0f,		800.0f, 1.0f);
+	l_primitive.Triangle[1].Color				= XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	l_primitive.Triangle[1].Position0			= XMFLOAT4(400.0f,	50.0f,		700.0f, 1.0f);
+	l_primitive.Triangle[1].Position1			= XMFLOAT4(400.0f,	 50.0f,	800.0f, 1.0f);
+	l_primitive.Triangle[1].Position2			= XMFLOAT4(400.0f,	-50.0f,		800.0f, 1.0f);
 	
-	l_primitive.Triangle[2].Color				= D3DXVECTOR4(1.0f, 0.0f, 1.0f, 1.0f);
-	l_primitive.Triangle[2].Position0			= D3DXVECTOR4(-200.0f,	-300.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[2].Position1			= D3DXVECTOR4(200.0f,	-300.0f,		400.0f, 1.0f);
-	l_primitive.Triangle[2].Position2			= D3DXVECTOR4(-200.0f,	-300.0f,		800.0f, 1.0f);
+	l_primitive.Triangle[2].Color				= XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f);
+	l_primitive.Triangle[2].Position0			= XMFLOAT4(-200.0f,	-300.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[2].Position1			= XMFLOAT4(200.0f,	-300.0f,		400.0f, 1.0f);
+	l_primitive.Triangle[2].Position2			= XMFLOAT4(-200.0f,	-300.0f,		800.0f, 1.0f);
 
-	l_primitive.Triangle[3].Color				= D3DXVECTOR4(1.0f, 1.0f, 0.5f, 1.0f);
-	l_primitive.Triangle[3].Position0			= D3DXVECTOR4(-150.0f,	-250.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[3].Position1			= D3DXVECTOR4(150.0f,	-250.0f,		300.0f, 1.0f);
-	l_primitive.Triangle[3].Position2			= D3DXVECTOR4(-150.0f,	-250.0f,		600.0f, 1.0f);
+	l_primitive.Triangle[3].Color				= XMFLOAT4(1.0f, 1.0f, 0.5f, 1.0f);
+	l_primitive.Triangle[3].Position0			= XMFLOAT4(-150.0f,	-250.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[3].Position1			= XMFLOAT4(150.0f,	-250.0f,		300.0f, 1.0f);
+	l_primitive.Triangle[3].Position2			= XMFLOAT4(-150.0f,	-250.0f,		600.0f, 1.0f);
 
-	l_primitive.Triangle[4].Color				= D3DXVECTOR4(0.5f, 0.5f, 0.5f, 1.0f);
-	l_primitive.Triangle[4].Position0			= D3DXVECTOR4(-3000.0f,	-500.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[4].Position1			= D3DXVECTOR4(1500.0f,	-500.0f,		1500.0f, 1.0f);
-	l_primitive.Triangle[4].Position2			= D3DXVECTOR4(-3000.0f,	-500.0f,		3000.0f, 1.0f);
+	l_primitive.Triangle[4].Color				= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	l_primitive.Triangle[4].Position0			= XMFLOAT4(-3000.0f,	-500.0f,		0.0f, 1.0f);
+	l_primitive.Triangle[4].Position1			= XMFLOAT4(1500.0f,	-500.0f,		1500.0f, 1.0f);
+	l_primitive.Triangle[4].Position2			= XMFLOAT4(-3000.0f,	-500.0f,		3000.0f, 1.0f);
 
 
 	for(int i = 0; i < l_primitive.TriangleCount; i++)
@@ -452,12 +430,12 @@ void FillLightBuffer()
 	CustomLightStruct::LightBuffer l_light;
 
 	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight			= D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	l_light.ambientLight			= XMFLOAT3(0.0f, 0.0f, 0.0f);
 	
 	for(int i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	/*

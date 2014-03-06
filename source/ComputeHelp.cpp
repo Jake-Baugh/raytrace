@@ -5,7 +5,7 @@
 #include <cstdio>
 
 ComputeShader::ComputeShader()
-	: mD3DDevice(NULL), mD3DDeviceContext(NULL)
+	: mD3DDevice(nullptr), mD3DDeviceContext(nullptr)
 {
 
 }
@@ -15,15 +15,15 @@ ComputeShader::~ComputeShader()
 	SAFE_RELEASE(mD3DDevice);
 }
 
-bool ComputeShader::Init(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines,
+bool ComputeShader::Init(LPCWSTR shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines,
 	ID3D11Device* d3dDevice, ID3D11DeviceContext*d3dContext)
 {
 	HRESULT hr = S_OK;
 	mD3DDevice = d3dDevice;
 	mD3DDeviceContext = d3dContext;
 
-	ID3DBlob* pCompiledShader = NULL;
-	ID3DBlob* pErrorBlob = NULL;
+	ID3DBlob* pCompiledShader = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
 	
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -36,9 +36,13 @@ bool ComputeShader::Init(TCHAR* shaderFile, char* blobFileAppendix, char* pFunct
 	#endif
 	*/
 
-	hr = D3DX11CompileFromFile(shaderFile, pDefines, NULL, pFunctionName, "cs_5_0", 
-		dwShaderFlags, NULL, NULL, &pCompiledShader, &pErrorBlob, NULL);
+	hr = D3DCompileFromFile(shaderFile, pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, pFunctionName, "cs_5_0", dwShaderFlags, 0, &pCompiledShader, &pErrorBlob);
+	
+	//hr = D3DCompileFromFile();
 
+	/*	hr = D3DX11CompileFromFile(shaderFile, pDefines, NULL, pFunctionName, "cs_5_0", 
+		dwShaderFlags, NULL, NULL, &pCompiledShader, &pErrorBlob, NULL);
+	*/
 	if (pErrorBlob)
 	{
 		OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
@@ -426,7 +430,8 @@ void ComputeWrap::SetDebugName(ID3D11DeviceChild* object, char* debugName)
 }
 */
 
-ComputeShader* ComputeWrap::CreateComputeShader(TCHAR* shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines)
+/*
+ComputeShader* CreateComputeShader(LPCWSTR shaderFile, char* blobFileAppendix, char* pFunctionName, D3D10_SHADER_MACRO* pDefines)
 {
 	ComputeShader* cs = new ComputeShader();
 
@@ -442,3 +447,4 @@ ComputeShader* ComputeWrap::CreateComputeShader(TCHAR* shaderFile, char* blobFil
 	}
 	return cs;
 }
+*/

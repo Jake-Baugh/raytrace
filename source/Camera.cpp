@@ -1,5 +1,68 @@
 #include "Camera.h"
 
+
+
+XMFLOAT3 operator*(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec *= rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	
+	return a;
+}
+
+XMFLOAT3 operator*(XMFLOAT3 l, float r) {
+    
+	XMVECTOR lvec(XMLoadFloat3(&l));
+	
+	lvec *= r;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	return a;
+}
+
+XMFLOAT3 operator*(float l, XMFLOAT3 r) 
+{
+	XMVECTOR lvec(XMLoadFloat3(&r));
+	
+	lvec *= l;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);
+	return a;
+}
+
+
+XMFLOAT3 operator+(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec += rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);	
+	return a;
+}
+
+XMFLOAT3 operator+=(XMFLOAT3 l, XMFLOAT3 r) 
+{
+    XMVECTOR lvec(XMLoadFloat3(&l));
+    XMVECTOR rvec(XMLoadFloat3(&r));
+
+	lvec += rvec;
+
+	XMFLOAT3 a;
+	XMStoreFloat3(&a, lvec);	
+	return a;
+}
+
+
 std::vector<Camera*>* Camera::m_camera = new std::vector<Camera*>(10);
 
 Camera* Camera::GetCamera(int index)
@@ -41,12 +104,12 @@ void Camera::setLens(float fovY, float aspect, float zn, float zf)
 
 void Camera::strafe(float d)
 {
-	mPosition += d * mRight;
+	mPosition = mPosition+ d * mRight;
 }
 
 void Camera::walk(float d)
 {
-	mPosition += d * mLook;
+	mPosition = mPosition + d * mLook;
 }
 
 void Camera::pitch(float angle)
@@ -76,5 +139,5 @@ void Camera::rebuildView()
 
 void Camera::MoveY(float p_step)
 {
-	mPosition.y += p_step;
+	mPosition.y = mPosition.y + p_step;
 }

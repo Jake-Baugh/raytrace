@@ -16,8 +16,8 @@ public:
 	virtual void Draw();
 
 protected:
-	D3DXVECTOR4 mPosition;
-	D3DXMATRIX mWorldMatrix;
+	XMFLOAT4 mPosition;
+	XMMATRIX mWorldMatrix;
 	
 	/*
 	ID3D10Device* mDevice;

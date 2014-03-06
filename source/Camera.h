@@ -4,8 +4,6 @@
 #include "stdafx.h"
 #include <vector>
 
-using namespace DirectX;
-
 class Camera
 {
 public:
@@ -23,8 +21,6 @@ public:
 
 	void MoveY(float p_step);
 
-
-	//
 	XMFLOAT4 GetPosition()		const { return XMFLOAT4(mPosition.x, mPosition.y, mPosition.z, 1);};
 	XMFLOAT4 GetLookAt()		const { return XMFLOAT4(mLook.x, mLook.y, mLook.z, 1);};
 	XMFLOAT4 GetUp()			const { return XMFLOAT4(mUp.x, mUp.y, mUp.z, 1);};

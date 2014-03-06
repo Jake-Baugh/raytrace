@@ -5,17 +5,18 @@
 
 namespace CustomLightStruct
 {
+	using namespace DirectX;
 
 	struct PointLightData
 	{
-		D3DXVECTOR4 position;
-		D3DXVECTOR4 color;
+		XMFLOAT4 position;
+		XMFLOAT4 color;
 	};
 
 	struct LightBuffer
 	{
 		float lightCount;
-		D3DXVECTOR3 ambientLight;
+		XMFLOAT3 ambientLight;
 		PointLightData pointLight[LIGHT_COUNT];
 	};
 }

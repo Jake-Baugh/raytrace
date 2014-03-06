@@ -3,12 +3,13 @@
 
 #include "stdafx.h"
 
+using namespace DirectX;
 
 struct ObjectVertex
 {
-	D3DXVECTOR4 mPosition;
-	D3DXVECTOR3 mNormal;
-	D3DXVECTOR2 mTextureCoord;
+	XMFLOAT4 mPosition;
+	XMFLOAT3 mNormal;
+	XMFLOAT2 mTextureCoord;
 };
 
 const D3D10_INPUT_ELEMENT_DESC ObjectVertexDescription[] =

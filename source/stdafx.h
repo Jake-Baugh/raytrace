@@ -4,7 +4,6 @@
 #include <windows.h>
 #include <D3D11.h>
 #include <DirectXMath.h>
-#include <d3dCompiler.h>
 
 #include <string>
 #include <vector>
@@ -17,18 +16,7 @@
 #define PI (3.14159265358979323846f)
 
 #pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment (lib,"dxerr.lib")
-
-#ifdef _DEBUG
-#pragma comment(lib, "d3dx11d.lib")
-#pragma comment(lib, "d3dx10d.lib")
-#else
-#pragma comment(lib, "d3dx11.lib")
-#pragma comment(lib, "d3dx10.lib")
-#endif
-
-
+using namespace DirectX;
 
 //////////////////////////////////////////////////////////////////////////
 // to find memory leaks
@@ -63,66 +51,5 @@
 #define myDumpMemoryLeaks()
 #endif 
 //////////////////////////////////////////////////////////////////////////
-
-XMFLOAT3 operator*(XMFLOAT3 l, XMFLOAT3 r) 
-{
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
-
-	lvec *= rvec;
-
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
-	
-	return a;
-}
-
-XMFLOAT3 operator*(XMFLOAT3 l, float r) {
-    
-	XMVECTOR lvec(XMLoadFloat3(&l));
-	
-	lvec *= r;
-
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
-	return a;
-}
-
-XMFLOAT3 operator*(float l, XMFLOAT3 r) 
-{
-	XMVECTOR lvec(XMLoadFloat3(&r));
-	
-	lvec *= l;
-
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
-	return a;
-}
-
-
-XMFLOAT3 operator+(XMFLOAT3 l, XMFLOAT3 r) 
-{
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
-
-	lvec += rvec;
-
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);	
-	return a;
-}
-
-XMFLOAT3 operator+=(XMFLOAT3 l, XMFLOAT3 r) 
-{
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
-
-	lvec += rvec;
-
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);	
-	return a;
-}
-
 
 #endif
