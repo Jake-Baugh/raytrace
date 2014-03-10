@@ -39,7 +39,7 @@ namespace CustomPrimitiveStruct
 		Material	Material;
 	};
 
-	struct TriangleStruct
+	struct TriangleStruct // Used for hardcoded triangles
 	{
 		XMFLOAT4	Position0;
 		XMFLOAT4	Position1;
@@ -48,13 +48,36 @@ namespace CustomPrimitiveStruct
 		Material	Material;
 	};
 
+	struct Point
+	{
+		XMFLOAT4 Position;
+	};
+
+	struct TriangleStruct2 // Used for loadedobjects triangles
+	{
+		Point	Point1;
+		Point	Point2;
+		Point	Point3;
+		Material	Material;
+	};
+
+	
+	struct TriangleDescription // Used for loadedobjects triangles
+	{
+		int	Point1;
+		int	Point2;
+		int	Point3;
+		Material	Material;
+		//int TexCoord;
+	};
+
 	struct Primitive
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
 		TriangleStruct		Triangle[TRIANGLE_COUNT];
 		float SphereCount;
 		float TriangleCount;
-		float padding1;
+		float TriangleCountFromObject;
 		float padding2;
 	};
 }

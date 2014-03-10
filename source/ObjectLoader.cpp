@@ -1,5 +1,12 @@
 #include "ObjectLoader.h"
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include "Primitives.h"
+//#include <cstdio>
+
 ObjectLoader* ObjectLoader::m_objectLoader = nullptr;
 
 ObjectLoader* ObjectLoader::GetObjectLoader()
@@ -9,31 +16,35 @@ ObjectLoader* ObjectLoader::GetObjectLoader()
 	return m_objectLoader;
 }
 
-void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath)
+HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath, std::vector<CustomPrimitiveStruct::TriangleStruct>** p_out_vertices, std::vector<int>** p_out_indices)
+
 {
-	/* // Old code written for DX10. Keeping til I got a working DX11 version
+	HRESULT hr = S_OK;
+
 	using namespace std;	
 
-	//Vertex position variables
-	vector<D3DXVECTOR4> lVertexPosition;
-	lVertexPosition = vector<D3DXVECTOR4>();
+	// Vertex worldposition variables
+	vector<XMFLOAT4> lVertexPosition;
+	lVertexPosition = vector<XMFLOAT4>();
 	float lX, lY, lZ;
 
-	//Vertex normal variables
-	vector<D3DXVECTOR3> lVertexNormal;
-	lVertexNormal = vector<D3DXVECTOR3>();
+	// Vertex normal variables
+	vector<XMFLOAT3> lVertexNormal;
+	lVertexNormal = vector<XMFLOAT3>();
 	float lNormalX, lNormalY, lNormalZ;
 
-	//Vertex texture variables
-	vector<D3DXVECTOR2> lTextureCoord;
-	lTextureCoord = vector<D3DXVECTOR2>();
+	// Vertex texture variables
+	vector<XMFLOAT2> lTextureCoord;
+	lTextureCoord = vector<XMFLOAT2>();
 	float uvx, uvy;
 
 	//Face variables
-	vector<D3DXVECTOR3> lFaceDesc;
-	lFaceDesc = vector<D3DXVECTOR3>();
+	vector<XMFLOAT3> lFaceDesc;
+	lFaceDesc = vector<XMFLOAT3>();
 
-	float x_1,x_2,x_3,y_1,y_2,y_3,z_1,z_2,z_3;
+	float x_1, x_2, x_3,
+		  y_1, y_2, y_3,
+		  z_1, z_2, z_3;
 
 	ifstream lStream;
 	lStream.open("Objects/bth.obj");
@@ -45,11 +56,12 @@ void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_s
 		char lKey[20];
 
 		//Vertex Positions
-		sscanf(lBuffer, "%s ", lKey);
+		//fscanf_s(
+		sscanf_s(lBuffer, "%s ", lKey);
 		if (lKey[0] == 'v' && lKey[1] != 't' && lKey[1] != 'n')
 		{
-			sscanf(lBuffer,"v %f %f %f", &lX, &lY, &lZ);
-			D3DXVECTOR4 lVector;
+			sscanf_s(lBuffer,"v %f %f %f", &lX, &lY, &lZ);
+			XMFLOAT4 lVector;
 			lVector.x = lX;
 			lVector.y = lY;
 			lVector.z = lZ;
@@ -58,11 +70,11 @@ void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_s
 		}
 
 		//Vertex Normals
-		sscanf(lBuffer, "%s ", lKey);
+		sscanf_s(lBuffer, "%s ", lKey);
 		if (lKey[0] == 'v' && lKey[1] == 'n') 
 		{
-			sscanf(lBuffer,"vn %f %f %f", &lNormalX, &lNormalY, &lNormalZ);
-			D3DXVECTOR3 lVector;
+			sscanf_s(lBuffer,"vn %f %f %f", &lNormalX, &lNormalY, &lNormalZ);
+			XMFLOAT3 lVector;
 			lVector.x = lNormalX;
 			lVector.y = lNormalY;
 			lVector.z = lNormalZ;
@@ -70,73 +82,70 @@ void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_s
 		}
 
 		//Texture Coordinates
-		sscanf(lBuffer, "%s ", lKey);
+		sscanf_s(lBuffer, "%s ", lKey);
 		if (lKey[0] == 'v' && lKey[1] == 't') 
 		{
-			sscanf(lBuffer,"vt %f %f", &uvx, &uvy);
-			D3DXVECTOR2 lVector;
+			sscanf_s(lBuffer,"vt %f %f", &uvx, &uvy);
+			XMFLOAT2 lVector;
 			lVector.x = uvx;
 			lVector.y = uvy;
 			lTextureCoord.push_back(lVector);
 		}
 
-		//Faces
-		sscanf(lBuffer, "%s ", lKey);
+		// Triangle
+		sscanf_s(lBuffer, "%s ", lKey);
 		if (lKey[0] == 'f')	
 		{
-			sscanf(lBuffer, "f %f/%f/%f %f/%f/%f %f/%f/%f", &x_1, &y_1, &z_1, &x_2, &y_2, &z_2, &x_3, &y_3, &z_3);
+			sscanf_s(lBuffer, "f %f/%f/%f %f/%f/%f %f/%f/%f", &x_1, &y_1, &z_1, &x_2, &y_2, &z_2, &x_3, &y_3, &z_3);
 
-				D3DXVECTOR3 lVector;
-				lVector.x = x_1-1;
-				lVector.y = y_1-1;
-				lVector.z = z_1-1;
-				lFaceDesc.push_back(lVector);
+			XMFLOAT3 lVector;
+			lVector.x = x_1-1;
+			lVector.y = y_1-1;
+			lVector.z = z_1-1;
+			lFaceDesc.push_back(lVector);
 
-				lVector.x = x_2-1;
-				lVector.y = y_2-1;
-				lVector.z = z_2-1;
-				lFaceDesc.push_back(lVector);	
+			lVector.x = x_2-1;
+			lVector.y = y_2-1;
+			lVector.z = z_2-1;
+			lFaceDesc.push_back(lVector);	
 
-				lVector.x = x_3-1;
-				lVector.y = y_3-1;
-				lVector.z = z_3-1;
-				lFaceDesc.push_back(lVector);
-			
+			lVector.x = x_3-1;
+			lVector.y = y_3-1;
+			lVector.z = z_3-1;
+			lFaceDesc.push_back(lVector);			
 		}
 	}
 	
+	lStream.close();
+	
+	
 	//Vertices
-	vector<ObjectVertex> lVertex;
-	lVertex = vector<ObjectVertex>();
+	vector<CustomPrimitiveStruct::TriangleStruct2> lVertex;
+	lVertex = vector<CustomPrimitiveStruct::TriangleStruct2>();
 	lVertex.resize(lFaceDesc.size());
 
 
 	for(int i = 0; i < lFaceDesc.size(); i++)
 	{
-		lVertex[i].mPosition		 = lVertexPosition[	lFaceDesc[i].x];
-		lVertex[i].mNormal			 = lVertexNormal[	lFaceDesc[i].y];
-		lVertex[i].mTextureCoord	 = lTextureCoord[	lFaceDesc[i].z];
+		lVertex[i].Point1.Position	= (int)lFaceDesc[i].x;
+	//	lVertex[i].mNormal			= lVertexNormal[	lFaceDesc[i].y];
+		lVertex[i].mTextureCoord	= (int)lFaceDesc[i].z;
 	}
-	
-	lStream.close();
 
-	//Set Vertex Buffer
+	// This is going back
 
-	ID3D10Buffer* lVBuffer = 0;
+	// A list of all vertices, no copies. ONLY POSITIONS. (lVertexPosition)
+	// A list of how to use theese vertices to build triangles. A list of indices. This list should also contain texture coordinate to respective triangle, and maybe normals.
 
-	// Create the buffer to kick-off the particle system.
-	D3D10_BUFFER_DESC vbd;
-    vbd.Usage = D3D10_USAGE_DEFAULT;
-	vbd.ByteWidth = sizeof(ObjectVertex) * lVertex.size();
-    vbd.BindFlags = D3D10_BIND_VERTEX_BUFFER;
-    vbd.CPUAccessFlags = 0;
-    vbd.MiscFlags = 0;
-    D3D10_SUBRESOURCE_DATA vinitData;
-	vinitData.pSysMem = lVertex.data();
-	lDevice->CreateBuffer(&vbd, &vinitData, &lVBuffer);
-	*/
-//	Object* lObject = new Object();
-	//lObject->Initialize(lDevice, lVBuffer, lFXFileName, lVertex.size());
 
-//	return lObject;
+
+	return hr;
 }
+
+struct TriangleDescription
+{
+	int Vertex0Index;
+	int Vertex1Index;
+	int Vertex2Index;
+
+};

@@ -1,19 +1,17 @@
 #ifndef OBJECTLOADER_H
 #define OBJECTLOADER_H
 
-#include "Object.h"
-#include "ObjectVertex.h"
-#include <iostream>
-#include <fstream>
-#include <string>
+
 #include <vector>
+#include "stdafx.h"
+#include "Primitives.h"
 
 class ObjectLoader
 {
 public:
 	static ObjectLoader* GetObjectLoader();
 
-	void LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath); // Old not implemented method
+	HRESULT LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath, std::vector<CustomPrimitiveStruct::TriangleStruct>** p_out_vertices, std::vector<int>** p_out_indices);
 
 private:
 	ObjectLoader(){}

@@ -5,31 +5,9 @@
 //--------------------------------------------------------------------------------------
 
 #include "LightHelper.fx"
-#define EPSILON 0.000001
-#define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 5
-#define LIGHT_COUNT 3
-
-
-#define WHITE float3(1.0f, 1.0f, 1.0f)
-#define BLACK float3(0.0f, 0.0f, 0.0f)
-#define RED   float3(1.0f, 0.0f, 0.0f)
-#define GREEN float3(0.0f, 1.0f, 0.0f)
-#define BLUE  float3(0.0f, 0.0f, 1.0f)
-
-#define WHITE4 float4(1.0f, 1.0f, 1.0f, 1.0f)
-#define BLACK4 float4(0.0f, 0.0f, 0.0f, 1.0f)
-#define RED4   float4(1.0f, 0.0f, 0.0f, 1.0f)
-#define GREEN4 float4(0.0f, 1.0f, 0.0f, 1.0f)
-#define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
-#define ORANGE4  float4(1.0f, 0.55f, 0.0f, 1.0f)
-#define TEAL4  float4(0.0f, 1.0f, 1.0f, 1.0f)
+#include "Utilities.fx"
 
 #pragma pack_matrix(row_major)
-
-#define PRIMITIVE_NOTHING 0
-#define SPHERE 1
-#define TRIANGLE 2
 
 RWTexture2D<float4> output : register(u0);
 
@@ -72,8 +50,12 @@ cbuffer LightBuffer : register(c2)
 	PointLightData PointLight[LIGHT_COUNT];
 }
 
-StructuredBuffer<TriangleStruct> AllTriangles;
+cbuffer AllTrianglesCBuffer : register(c3)
+{
+	int amountOfTriangles;
+}
 
+StructuredBuffer<TriangleStruct> AllTriangles;
 
 Ray createRay(int x, int y)
 {
@@ -286,7 +268,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 
 	// Variables used by all intersections
 	float4 l_collidePos;
-
+		
 	int l_sphereindex = 0;	
 	int l_triangleindex = 0;
 	float l_distanceToClosestSphere	= 0.0f;
@@ -494,6 +476,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	Dynamiska buffrar
 	Ladda in objekt
 	Material
+	Kolla över blinnphong och normaler med reverse normaler beräkningar blebb
 
 	Tankar
 		Octatree

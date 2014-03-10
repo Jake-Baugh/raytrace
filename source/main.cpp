@@ -335,7 +335,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		
 	l_primitive.SphereCount = SPHERE_COUNT;
 	l_primitive.TriangleCount = TRIANGLE_COUNT;
-	l_primitive.padding1 = -1;
+	l_primitive.TriangleCountFromObject = -1;
 	l_primitive.padding2 = -1;
 
 	
@@ -438,32 +438,21 @@ void FillLightBuffer()
 		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	/*
-	l_light.pointLight[1].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[2].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[3].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[4].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[5].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[6].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[7].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.pointLight[8].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	*/
-	/*
-		l_light.pointLight[9].position	= Camera::GetCamera(9)->GetPosition();
-		l_light.pointLight[9].color		= D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f);
-	*/
-
-
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
+#include <vector>
+using namespace std;
+
+
 
 HRESULT CreateObjectBuffer()
 {
 	HRESULT hr = S_OK;
 
+
 	D3D11_BUFFER_DESC ObjectBufferDescription;
-	ObjectBufferDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
+	ObjectBufferDescription.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
 	ObjectBufferDescription.Usage				=	D3D11_USAGE_DYNAMIC; 
 	ObjectBufferDescription.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
 	ObjectBufferDescription.MiscFlags			=	0;
@@ -476,7 +465,7 @@ HRESULT CreateObjectBuffer()
 
 void FillObjectBuffer()
 {
-	// DO I NEED THIS FUNCTION??!
+	vector<CustomPrimitiveStruct::TriangleStruct>* a;
 }
 
 HRESULT Update(float deltaTime)
@@ -541,7 +530,7 @@ HRESULT Update(float deltaTime)
 HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV };
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
+	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, NULL);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
