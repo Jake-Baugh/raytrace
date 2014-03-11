@@ -19,7 +19,7 @@ struct SphereStruct
 	Material material;
 };
 
-struct TriangleStruct
+struct TriangleStruct // For hardcoded triangles
 {	
 	float4  pos0;
 	float4  pos1;
@@ -27,6 +27,11 @@ struct TriangleStruct
 	float4  color;			//float4 for padding reasons 
 	Material material;
 };
+
+struct TriangleDescription // For meshes
+{
+
+}
 
 cbuffer EveryFrameBuffer : register(c0) 
 {
@@ -55,7 +60,7 @@ cbuffer AllTrianglesCBuffer : register(c3)
 	int amountOfTriangles;
 }
 
-StructuredBuffer<TriangleStruct> AllTriangles;
+StructuredBuffer<TriangleStruct> AllTriangles; // Put a register sign here maybe?
 
 Ray createRay(int x, int y)
 {
