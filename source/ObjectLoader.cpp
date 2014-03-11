@@ -5,7 +5,6 @@
 #include <string>
 
 #include "Primitives.h"
-//#include <cstdio>
 
 ObjectLoader* ObjectLoader::m_objectLoader = nullptr;
 
@@ -16,16 +15,16 @@ ObjectLoader* ObjectLoader::GetObjectLoader()
 	return m_objectLoader;
 }
 
-HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath, std::vector<CustomPrimitiveStruct::TriangleStruct>** p_out_vertices, std::vector<int>** p_out_indices)
+HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, std::vector<XMFLOAT4>** p_out_vertices, std::vector<XMFLOAT2>** p_out_texCoords, std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices)
 
 {
-	HRESULT hr = S_OK;
+	HRESULT hr = S_OK; // THIS VALUE IS ALWAYS S_OK
 
 	using namespace std;	
 
 	// Vertex worldposition variables
-	vector<XMFLOAT4> lVertexPosition;
-	lVertexPosition = vector<XMFLOAT4>();
+	vector<XMFLOAT4>* lVertexPosition;
+	lVertexPosition = new vector<XMFLOAT4>;
 	float lX, lY, lZ;
 
 	// Vertex normal variables
@@ -34,20 +33,29 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 	float lNormalX, lNormalY, lNormalZ;
 
 	// Vertex texture variables
-	vector<XMFLOAT2> lTextureCoord;
-	lTextureCoord = vector<XMFLOAT2>();
+	vector<XMFLOAT2>* lTextureCoord;
+	lTextureCoord = new vector<XMFLOAT2>;
+
 	float uvx, uvy;
 
-	//Face variables
-	vector<XMFLOAT3> lFaceDesc;
-	lFaceDesc = vector<XMFLOAT3>();
+	// Mesh description	
+	vector<CustomPrimitiveStruct::TriangleDescription>* l_meshDescription;
+	l_meshDescription = new vector<CustomPrimitiveStruct::TriangleDescription>;
 
-	float x_1, x_2, x_3,
-		  y_1, y_2, y_3,
-		  z_1, z_2, z_3;
+	int		point_index1, point_index2, point_index3,
+			normal_index1, normal_index2, normal_index3,
+			texCoord_index1, texCoord_index2, texCoord_index3;
 
 	ifstream lStream;
-	lStream.open("Objects/bth.obj");
+	//try
+	//{
+		lStream.open("CUBE.obj");
+	/*}
+	catch(exception e)
+	{
+		hr = S_FALSE;
+		return hr;
+	}*/
 
 	char lBuffer[1024];
 
@@ -55,9 +63,21 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 	{
 		char lKey[20];
 
-		//Vertex Positions
-		//fscanf_s(
-		sscanf_s(lBuffer, "%s ", lKey);
+		// Texture
+		sscanf_s(lBuffer, "%s ", lKey, sizeof(lKey));
+		if (lKey[0] == 't' && lKey[1] == 'e' && lKey[2] == 'x')
+		{
+			sscanf_s(lBuffer,"v %f %f %f", &lX, &lY, &lZ);
+			XMFLOAT4 lVector;
+			lVector.x = lX;
+			lVector.y = lY;
+			lVector.z = lZ;
+			lVector.w = 1;
+			// DO SOMETHING MOAR HERE
+		}
+
+		// Vertex Positions
+		sscanf_s(lBuffer, "%s ", lKey, sizeof(lKey));
 		if (lKey[0] == 'v' && lKey[1] != 't' && lKey[1] != 'n')
 		{
 			sscanf_s(lBuffer,"v %f %f %f", &lX, &lY, &lZ);
@@ -66,11 +86,11 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			lVector.y = lY;
 			lVector.z = lZ;
 			lVector.w = 1;
-			lVertexPosition.push_back(lVector);
+			lVertexPosition->push_back(lVector);
 		}
 
-		//Vertex Normals
-		sscanf_s(lBuffer, "%s ", lKey);
+		// Vertex Normals
+		sscanf_s(lBuffer, "%s ", lKey, sizeof(lKey));
 		if (lKey[0] == 'v' && lKey[1] == 'n') 
 		{
 			sscanf_s(lBuffer,"vn %f %f %f", &lNormalX, &lNormalY, &lNormalZ);
@@ -81,71 +101,55 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			lVertexNormal.push_back(lVector);
 		}
 
-		//Texture Coordinates
-		sscanf_s(lBuffer, "%s ", lKey);
+		// Texture Coordinates
+		sscanf_s(lBuffer, "%s ", lKey, sizeof(lKey));
 		if (lKey[0] == 'v' && lKey[1] == 't') 
 		{
 			sscanf_s(lBuffer,"vt %f %f", &uvx, &uvy);
 			XMFLOAT2 lVector;
 			lVector.x = uvx;
 			lVector.y = uvy;
-			lTextureCoord.push_back(lVector);
+			lTextureCoord->push_back(lVector);
 		}
 
 		// Triangle
-		sscanf_s(lBuffer, "%s ", lKey);
+		sscanf_s(lBuffer, "%s ", lKey, sizeof(lKey));
 		if (lKey[0] == 'f')	
 		{
-			sscanf_s(lBuffer, "f %f/%f/%f %f/%f/%f %f/%f/%f", &x_1, &y_1, &z_1, &x_2, &y_2, &z_2, &x_3, &y_3, &z_3);
+			sscanf_s(lBuffer, "f %i/%i/%i %i/%i/%i %i/%i/%i", 
+				&point_index1, &texCoord_index1, &normal_index1, 
+				&point_index2, &texCoord_index2, &normal_index2,
+				&point_index3, &texCoord_index3, &normal_index3);
 
-			XMFLOAT3 lVector;
-			lVector.x = x_1-1;
-			lVector.y = y_1-1;
-			lVector.z = z_1-1;
-			lFaceDesc.push_back(lVector);
+			CustomPrimitiveStruct::TriangleDescription l_triangleDesc;
+			
+			l_triangleDesc.Point1 = point_index1-1;
+			l_triangleDesc.Point2 = point_index2-1;
+			l_triangleDesc.Point3 = point_index3-1;
+			l_triangleDesc.TexCoord1 = texCoord_index1-1;
+			l_triangleDesc.TexCoord2 = texCoord_index2-1;
+			l_triangleDesc.TexCoord3 = texCoord_index3-1;
+			
+			l_triangleDesc.Material.ambient = 0.5f;
+			l_triangleDesc.Material.diffuse = 0.8f;
+			l_triangleDesc.Material.specular = 0.8f;
+			l_triangleDesc.Material.shininess = 30.0f;
+			l_triangleDesc.Material.reflectiveFactor = 1.0f;
+			l_triangleDesc.Material.refractiveFactor = 0.0f;
+			l_triangleDesc.Material.isReflective = 1;
+			l_triangleDesc.Material.isRefractive = -1;
 
-			lVector.x = x_2-1;
-			lVector.y = y_2-1;
-			lVector.z = z_2-1;
-			lFaceDesc.push_back(lVector);	
-
-			lVector.x = x_3-1;
-			lVector.y = y_3-1;
-			lVector.z = z_3-1;
-			lFaceDesc.push_back(lVector);			
+			// TODO remove hardcoded
+			l_meshDescription->push_back(l_triangleDesc);
 		}
 	}
 	
 	lStream.close();
-	
-	
-	//Vertices
-	vector<CustomPrimitiveStruct::TriangleStruct2> lVertex;
-	lVertex = vector<CustomPrimitiveStruct::TriangleStruct2>();
-	lVertex.resize(lFaceDesc.size());
 
-
-	for(int i = 0; i < lFaceDesc.size(); i++)
-	{
-		lVertex[i].Point1.Position	= (int)lFaceDesc[i].x;
-	//	lVertex[i].mNormal			= lVertexNormal[	lFaceDesc[i].y];
-		lVertex[i].mTextureCoord	= (int)lFaceDesc[i].z;
-	}
-
-	// This is going back
-
-	// A list of all vertices, no copies. ONLY POSITIONS. (lVertexPosition)
-	// A list of how to use theese vertices to build triangles. A list of indices. This list should also contain texture coordinate to respective triangle, and maybe normals.
-
+	*p_out_vertices = lVertexPosition;
+	*p_out_texCoords = lTextureCoord;
+	*p_out_indices = l_meshDescription;
 
 
 	return hr;
 }
-
-struct TriangleDescription
-{
-	int Vertex0Index;
-	int Vertex1Index;
-	int Vertex2Index;
-
-};

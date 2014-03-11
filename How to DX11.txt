@@ -1,0 +1,37 @@
+Create a buffer.
+
+1. Fill a D3D11_BUFFER_DESC
+
+2. Create the buffer using the D3D11_BUFFER_DESC and a ID3D11Buffer using  the function "CreateBuffer". (Can also send a datapointer with into the buffer)
+
+3. Create a D3D11_MAPPED_SUBRESOURCE
+
+4. Using the function "Map" and the ID3D11Buffer and the D3D11_MAPPED_SUBRESOURCE we can make it writeable.
+
+5. Fill whatever datastructure with data.
+
+6. Fill the D3D11_MAPPED_SUBRESOURCE with the data with the = sign.
+
+7. Unmap the buffer again.
+
+All done
+
+ID3D11DeviceContext* 	g_DeviceContext;
+ID3D11Buffer*			g_LightBuffer;
+
+D3D11_MAPPED_SUBRESOURCE LightResources;
+g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
+
+CustomLightStruct::LightBuffer l_light;
+
+l_light.lightCount = LIGHT_COUNT;
+l_light.ambientLight			= XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+for(int i = 0; i < LIGHT_COUNT; i++)
+{
+	l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
+	l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
+g_DeviceContext->Unmap(g_LightBuffer, 0);

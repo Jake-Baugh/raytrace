@@ -1,9 +1,11 @@
 #include "stdafx.h"
+#include <vector>
 #include "ComputeHelp.h"
 #include "D3D11Timer.h"
 #include "Primitives.h"
 #include "Light.h"
 #include "Camera.h"
+#include "ObjectLoader.h"
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  150.0f
@@ -22,8 +24,15 @@ ID3D11UnorderedAccessView*	g_BackBufferUAV			= NULL;
 ID3D11Buffer*				g_EveryFrameBuffer		= NULL; 	
 ID3D11Buffer*				g_PrimitivesBuffer		= NULL;
 ID3D11Buffer*				g_LightBuffer			= NULL;
+ID3D11Buffer*				g_vertexBuffer			= nullptr;
+ID3D11Buffer*				g_TexCoordBuffer		= nullptr;
 ID3D11Buffer*				g_objectBuffer			= nullptr;
 
+
+// Triangle mesh variables
+std::vector<XMFLOAT4>* g_allTrianglesVertex = nullptr;
+std::vector<XMFLOAT2>* g_allTrianglesTexCoord = nullptr;
+std::vector<CustomPrimitiveStruct::TriangleDescription>* g_allTrianglesIndex = nullptr;
 
 ComputeShader*				g_ComputeShader			= nullptr;
 
@@ -44,6 +53,9 @@ HRESULT				CreatePrimitiveBuffer();
 void				FillPrimitiveBuffer(float l_deltaTime);
 HRESULT				CreateLightBuffer();
 void				FillLightBuffer();
+HRESULT				LoadMesh(char* p_path);
+HRESULT				LoadObjectData();
+HRESULT				CreateObjectBuffer();
 HRESULT				CreateCameraBuffer();
 void				FillCameraBuffer();
 HRESULT				Render(float deltaTime);
@@ -149,8 +161,9 @@ HRESULT Init()
 	
 	
 	// My things
-	//Camera::GetCamera()->setLens(0.5f * PI, 1.0f, 1.0f, 1000.0f);
-	//Camera::GetCamera()->setLens(0.25f*PI, ScreenAspect, NearPlane, FarPlane);
+	g_allTrianglesVertex	= new std::vector<XMFLOAT4>;
+	g_allTrianglesTexCoord	= new std::vector<XMFLOAT2>;
+	g_allTrianglesIndex		= new std::vector<CustomPrimitiveStruct::TriangleDescription>;
 	
 	hr = CreateCameraBuffer();
 	if(FAILED(hr))	
@@ -164,16 +177,21 @@ HRESULT Init()
 	if(FAILED(hr))	
 		return hr;
 
-
-//	FillPrimitiveBuffer();
 	FillLightBuffer();
+
+	hr = LoadObjectData();
+	if(FAILED(hr))	
+		return hr;
+
+	hr = CreateObjectBuffer();
+	if(FAILED(hr))	
+		return hr;
 
 	return S_OK;
 }
 HRESULT InitializeDXDeviceAndSwapChain()
 {
 	HRESULT hr = S_OK;;
-
 	RECT rc;
 	GetClientRect( g_hWnd, &rc );
 	g_Width = rc.right - rc.left;;
@@ -441,31 +459,108 @@ void FillLightBuffer()
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
-#include <vector>
-using namespace std;
 
 
+HRESULT LoadMesh(char* p_path)
+{
+	// Memory leaks everywhere
+	HRESULT hr = S_OK;
+
+	using namespace std;
+	vector<XMFLOAT4>* l_rawVertex	= nullptr;
+	vector<XMFLOAT2>* l_rawTexCoord = nullptr;
+	vector<CustomPrimitiveStruct::TriangleDescription>* l_triangleDescription = nullptr;
+
+	hr = ObjectLoader::GetObjectLoader()->LoadObject(g_DeviceContext, p_path, &l_rawVertex, &l_rawTexCoord, &l_triangleDescription);
+	if(FAILED(hr))
+		return hr;
+
+	// Take sizes before updating
+	int allVertexSize = g_allTrianglesVertex->size();
+	int allTexCoordSize = g_allTrianglesTexCoord->size();
+	int allTrianglesIndexSize = g_allTrianglesIndex->size();
+
+	// Move raw vertices
+	for(int i = 0; i < l_rawVertex->size(); i++)
+		g_allTrianglesVertex->push_back(l_rawVertex->at(i));
+
+	// Move raw triangle coords
+	for(int i = 0; i < l_rawTexCoord->size(); i++)
+		g_allTrianglesTexCoord->push_back(l_rawTexCoord->at(i));
+	
+	// Move Triangle descriptions
+	for(int i = 0; i < l_triangleDescription->size(); i++)
+		g_allTrianglesIndex->push_back(l_triangleDescription->at(i));
+	
+	// Update triangle descriptions indexes
+	for(int i = allTrianglesIndexSize; i < g_allTrianglesIndex->size(); i++)
+	{
+		g_allTrianglesIndex->at(i).Point1 += allVertexSize;
+		g_allTrianglesIndex->at(i).Point2 += allVertexSize;
+		g_allTrianglesIndex->at(i).Point3 += allVertexSize;
+		g_allTrianglesIndex->at(i).TexCoord1 += allTexCoordSize;
+		g_allTrianglesIndex->at(i).TexCoord2 += allTexCoordSize;
+		g_allTrianglesIndex->at(i).TexCoord3 += allTexCoordSize;
+	}
+
+	return hr;
+}
+
+HRESULT LoadObjectData()
+{
+	HRESULT hr = S_OK;
+	hr = LoadMesh("CUBE.obj");
+	if(FAILED(hr))
+		return hr;
+
+
+	return hr; 
+}
 
 HRESULT CreateObjectBuffer()
 {
 	HRESULT hr = S_OK;
 
+		// I am only moving pointers, or am I actually move the data. ?
+//	*(CustomLightStruct::LightBuffer*)LightResources.pData
 
+	D3D11_SUBRESOURCE_DATA l_data;
+	l_data.pSysMem = g_allTrianglesVertex->data();
+
+	D3D11_BUFFER_DESC RawVertex;
+	RawVertex.BindFlags			=	D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_CREATE_DEVICE_DEBUG;			// 
+	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;					// 
+	RawVertex.CPUAccessFlags	=	0;					// 
+	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;	// This is correct 
+	RawVertex.ByteWidth			=	g_allTrianglesVertex->size() * sizeof(XMFLOAT4);
+
+	hr = g_Device->CreateBuffer(&RawVertex, NULL, &g_vertexBuffer);
+//	if(FAILED(hr))
+//		return hr;
+	
+	l_data.pSysMem = g_allTrianglesTexCoord->data();
+	D3D11_BUFFER_DESC RawTexCoord;
+	RawTexCoord.BindFlags			=	D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;;
+	RawTexCoord.Usage				=	D3D11_USAGE_DEFAULT; 
+	RawTexCoord.CPUAccessFlags		=	0;
+	RawTexCoord.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	RawTexCoord.ByteWidth			=	g_allTrianglesTexCoord->size() * sizeof(XMFLOAT2);
+	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
+	if(FAILED(hr))
+		return hr;
+	
+	l_data.pSysMem = g_allTrianglesIndex->data();
 	D3D11_BUFFER_DESC ObjectBufferDescription;
-	ObjectBufferDescription.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS; //D3D11_BIND_CONSTANT_BUFFER; // WHAT HERE
-	ObjectBufferDescription.Usage				=	D3D11_USAGE_DYNAMIC; 
+	ObjectBufferDescription.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS; 
+	ObjectBufferDescription.Usage				=	D3D11_USAGE_STAGING; 
 	ObjectBufferDescription.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
-	ObjectBufferDescription.MiscFlags			=	0;
-	ObjectBufferDescription.ByteWidth			=	sizeof(5); // change
-
-	hr = g_Device->CreateBuffer( &ObjectBufferDescription, NULL, &g_objectBuffer);
+	ObjectBufferDescription.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	ObjectBufferDescription.ByteWidth			=	g_allTrianglesIndex->size() * sizeof(CustomPrimitiveStruct::TriangleDescription);
+	hr = g_Device->CreateBuffer( &ObjectBufferDescription, &l_data, &g_objectBuffer);
+	if(FAILED(hr))
+		return hr;
 
 	return hr;
-}
-
-void FillObjectBuffer()
-{
-	vector<CustomPrimitiveStruct::TriangleStruct>* a;
 }
 
 HRESULT Update(float deltaTime)

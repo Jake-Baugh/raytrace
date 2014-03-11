@@ -47,28 +47,16 @@ namespace CustomPrimitiveStruct
 		XMFLOAT4	Color;
 		Material	Material;
 	};
-
-	struct Point
-	{
-		XMFLOAT4 Position;
-	};
-
-	struct TriangleStruct2 // Used for loadedobjects triangles
-	{
-		Point	Point1;
-		Point	Point2;
-		Point	Point3;
-		Material	Material;
-	};
-
 	
 	struct TriangleDescription // Used for loadedobjects triangles
 	{
 		int	Point1;
 		int	Point2;
 		int	Point3;
-		Material	Material;
-		//int TexCoord;
+		int TexCoord1;
+		int TexCoord2;
+		int TexCoord3;
+		Material Material;
 	};
 
 	struct Primitive

@@ -11,7 +11,9 @@ class ObjectLoader
 public:
 	static ObjectLoader* GetObjectLoader();
 
-	HRESULT LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, char* p_shaderPath, std::vector<CustomPrimitiveStruct::TriangleStruct>** p_out_vertices, std::vector<int>** p_out_indices);
+	HRESULT LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, std::vector<XMFLOAT4>** p_out_vertices, std::vector<XMFLOAT2>** p_out_texCoords, std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices);
+
+
 
 private:
 	ObjectLoader(){}
