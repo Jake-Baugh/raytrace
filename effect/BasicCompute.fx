@@ -30,8 +30,14 @@ struct TriangleStruct // For hardcoded triangles
 
 struct TriangleDescription // For meshes
 {
-
-}
+	int	Point1;
+	int	Point2;
+	int	Point3;
+	int TexCoord1;
+	int TexCoord2;
+	int TexCoord3;
+	Material Material;
+};
 
 cbuffer EveryFrameBuffer : register(c0) 
 {
@@ -60,7 +66,9 @@ cbuffer AllTrianglesCBuffer : register(c3)
 	int amountOfTriangles;
 }
 
-StructuredBuffer<TriangleStruct> AllTriangles; // Put a register sign here maybe?
+StructuredBuffer<float4> AllVertex						: register(u1);	
+StructuredBuffer<float2> AllTexCoord					: register(u2);	
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u3);	
 
 Ray createRay(int x, int y)
 {

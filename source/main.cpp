@@ -664,7 +664,7 @@ HRESULT Update(float deltaTime)
 
 HRESULT Render(float deltaTime)
 {
-	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV };
+	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV ,g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, NULL);
