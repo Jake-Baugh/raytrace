@@ -386,6 +386,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	}
 
+	/*
 	l_primitive.Triangle[0].Color				= XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f);
 	l_primitive.Triangle[0].Position0			= XMFLOAT4(400.0f,	-50.0f,		700.0f, 1.0f);
 	l_primitive.Triangle[0].Position1			= XMFLOAT4(400.0f,	 50.0f,	700.0f, 1.0f);
@@ -423,6 +424,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Triangle[i].Material.isReflective = 1;
 		l_primitive.Triangle[i].Material.isRefractive = -1;
 	}
+	*/
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
@@ -452,7 +454,7 @@ void FillLightBuffer()
 	CustomLightStruct::LightBuffer l_light;
 
 	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight			= XMFLOAT3(0.0f, 0.0f, 0.0f);
+	l_light.ambientLight			= XMFLOAT3(1.0f, 1.0f, 1.0f);
 	
 	for(int i = 0; i < LIGHT_COUNT; i++)
 	{

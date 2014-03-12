@@ -19,6 +19,7 @@ struct SphereStruct
 	Material material;
 };
 
+/*
 struct TriangleStruct // For hardcoded triangles
 {	
 	float4  pos0;
@@ -27,16 +28,17 @@ struct TriangleStruct // For hardcoded triangles
 	float4  color;			//float4 for padding reasons 
 	Material material;
 };
+*/
 
 struct TriangleDescription // For meshes
 {
+	int	Point0;
 	int	Point1;
 	int	Point2;
-	int	Point3;
+	int TexCoord0;
 	int TexCoord1;
 	int TexCoord2;
-	int TexCoord3;
-	Material Material;
+	Material material;
 };
 
 cbuffer EveryFrameBuffer : register(c0) 
@@ -50,7 +52,7 @@ cbuffer EveryFrameBuffer : register(c0)
 cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[SPHERE_COUNT];
-	TriangleStruct	Triangle[TRIANGLE_COUNT];
+//	TriangleStruct	Triangle[TRIANGLE_COUNT];
 	float4			countVariable;
 }
 
@@ -89,13 +91,19 @@ Ray createRay(int x, int y)
 	return l_ray;
 }
 
-float3 TriangleNormalCounterClockwise(int index)
+float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 {
 	float3 e1, e2;  //Edge1, Edge2
  
+	int Point0, Point1, Point2;
+
+	Point0 = AllTriangleDesc[DescriptionIndex].Point0;
+	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
+	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
+		 
 	//Find vectors for two edges sharing V0
-	e1 = Triangle[index].pos1.xyz - Triangle[index].pos0.xyz;
-	e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
+	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;
+	e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;
 	
 	float3 normal = cross(e1, e2);
 	return normalize(normal);	
@@ -142,10 +150,16 @@ class TriangleIntersect : IntersectInterface
 		float3 e1, e2;  //Edge1, Edge2
 		float det, inv_det, u, v;
 		float t;
+
+		int Point0, Point1, Point2;
+
+		Point0 = AllTriangleDesc[index].Point0;
+		Point1 = AllTriangleDesc[index].Point1;
+		Point2 = AllTriangleDesc[index].Point2;
  
 		//Find vectors for two edges sharing V0
-		e1 = Triangle[index].pos1.xyz - Triangle[index].pos0.xyz;
-		e2 = Triangle[index].pos2.xyz - Triangle[index].pos0.xyz;	
+		e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;
+		e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;	
 	
 		//Begin calculating determinant - also used to calculate u parameter
 		float3 P = cross(p_ray.direction.xyz, e2);
@@ -160,7 +174,7 @@ class TriangleIntersect : IntersectInterface
 		inv_det = 1.0f / det;
 
 		//calculate distance from V0 to ray origin
-		float3 T = p_ray.origin.xyz - Triangle[index].pos0.xyz;
+		float3 T = p_ray.origin.xyz - AllVertex[Point0].xyz;
 
 		//Calculate u parameter and test bound
 		u = dot(T, P) * inv_det;
@@ -311,10 +325,10 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		l_collidePos = p_ray.origin + (l_distanceToClosestSphere - 0.0001) * p_ray.direction;
 
 		// Out variables
-		p_out_collideNormal = -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
-		p_out_material = Sphere[l_sphereindex].material;
-		p_out_primitiveIndex = l_sphereindex;
-		p_out_primitiveType = SPHERE;
+		p_out_collideNormal		= -normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
+		p_out_material			= Sphere[l_sphereindex].material;
+		p_out_primitiveIndex	= l_sphereindex;
+		p_out_primitiveType		= SPHERE;
 
 		// New variables for next ray
 		l_ray.origin = l_collidePos; 
@@ -326,10 +340,10 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		l_collidePos = p_ray.origin + (l_distanceToClosestTriangle - 0.0001) * p_ray.direction;
 		
 		// Out variables		
-		p_out_collideNormal = float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
-		p_out_material = Triangle[l_triangleindex].material;
-		p_out_primitiveIndex = l_triangleindex;
-		p_out_primitiveType = TRIANGLE;
+		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		p_out_material			= AllTriangleDesc[l_triangleindex].material;
+		p_out_primitiveIndex	= l_triangleindex;
+		p_out_primitiveType		= TRIANGLE;
 
 		// New variables for next ray
 		l_ray.origin = l_collidePos;
@@ -339,7 +353,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	{
 		// Out variables		
 		p_out_collideNormal = float4(-1.0f, -1.0f,-1.0f,-1.0f);
-		p_out_material = Triangle[l_triangleindex].material;
+		p_out_material		= Sphere[l_sphereindex].material;
 		p_out_primitiveIndex = -1;
 		p_out_primitiveType = PRIMITIVE_NOTHING;
 	}
@@ -373,7 +387,8 @@ float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
 	if(p_primitiveType == SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
 	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return Triangle[p_primitiveIndex].color;	
+		return BLUE4; // All triangles are hardcoded red.
+		//return Triangle[p_primitiveIndex].color;	
 	return BLACK4;
 }
 
@@ -382,7 +397,8 @@ float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
 	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return Triangle[p_primitiveIndex].material.reflective;
+		return 1.0f; // All triangles are 1.0 reflective. HARDCODED
+		//return Triangle[p_primitiveIndex].material.reflective;
 	return 0;
 }
 
@@ -391,7 +407,8 @@ int GetReflective(in int p_primitiveIndex, in int p_primitiveType)
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return Triangle[p_primitiveIndex].material.isReflective;
+		return 1;
+		//return Triangle[p_primitiveIndex].material.isReflective;
 	return 0;
 }
 
