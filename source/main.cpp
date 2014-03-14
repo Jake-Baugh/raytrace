@@ -379,7 +379,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
 		l_primitive.Sphere[i].Material.specular = 0.8f;
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
-		l_primitive.Sphere[i].Material.reflectiveFactor = 0.2f;
+		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
 		l_primitive.Sphere[i].Material.isReflective = 1.0f;
 		l_primitive.Sphere[i].Material.isRefractive = -1.0f;
@@ -457,7 +457,7 @@ void FillLightBuffer()
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].color		= XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -598,8 +598,6 @@ HRESULT CreateObjectBuffer()
 	TrinagleIndex_UAccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
 	TrinagleIndex_UAccessView_Desc.ViewDimension		=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_objectBuffer, &TrinagleIndex_UAccessView_Desc, &g_TriangleIndexUAccessView);
-
-	
 	if(FAILED(hr))
 		return hr;
 
@@ -667,8 +665,7 @@ HRESULT Update(float deltaTime)
 
 HRESULT Render(float deltaTime)
 {
-	ID3D11UnorderedAccessView* uav[] = { g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView, g_BackBufferUAV};
-//	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV};
+	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV, g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, NULL);

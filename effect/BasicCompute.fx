@@ -18,16 +18,6 @@ struct SphereStruct
 	Material material;
 };
 
-/*
-struct TriangleStruct // For hardcoded triangles
-{	
-	float4  pos0;
-	float4  pos1;
-	float4  pos2;
-	float4  color;			//float4 for padding reasons 
-	Material material;
-};
-*/
 
 struct TriangleDescription // For meshes
 {
@@ -53,7 +43,6 @@ cbuffer EveryFrameBuffer : register(c0)
 cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[SPHERE_COUNT];
-//	TriangleStruct	Triangle[TRIANGLE_COUNT];
 	float4			countVariable;
 }
 
@@ -69,10 +58,10 @@ cbuffer AllTrianglesCBuffer : register(c3)
 	int amountOfTriangles;
 }
 
-RWTexture2D<float4> output								: register(u3);
-StructuredBuffer<float4> AllVertex						: register(u0);	
-StructuredBuffer<float2> AllTexCoord					: register(u1);	
-StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u2);
+RWTexture2D<float4> output								: register(u0);
+StructuredBuffer<float4> AllVertex						: register(u1);	
+StructuredBuffer<float2> AllTexCoord					: register(u2);	
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u3);
 
 
 Ray createRay(int x, int y)
@@ -251,7 +240,7 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 	int l_TriangleHit;
 		
 	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
-	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, countVariable.y, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
+	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, 12, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
@@ -312,7 +301,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	int l_sphereHit, l_triangleHit;
 
 	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
-	GetClosestPrimitive(p_ray, triangleIntersect, countVariable.y, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
+	GetClosestPrimitive(p_ray, triangleIntersect, 12, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
 	
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
