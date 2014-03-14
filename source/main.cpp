@@ -339,7 +339,7 @@ HRESULT CreatePrimitiveBuffer()
 	HRESULT hr = S_OK;
 
 	D3D11_BUFFER_DESC PrimitiveData;
-	PrimitiveData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
+	PrimitiveData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER;
 	PrimitiveData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	PrimitiveData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	PrimitiveData.MiscFlags			=	0;
@@ -358,7 +358,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.SphereCount = SPHERE_COUNT;
 	l_primitive.TriangleCount = TRIANGLE_COUNT;
 	l_primitive.TriangleCountFromObject = -1;
-	l_primitive.padding2 = -1;
+	l_primitive.padding1 = -1;
 
 	
 	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 0.0f, 700.0f, 1.0f);
@@ -381,8 +381,8 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 0.2f;
 		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
-		l_primitive.Sphere[i].Material.isReflective = 1;
-		l_primitive.Sphere[i].Material.isRefractive = -1;
+		l_primitive.Sphere[i].Material.isReflective = 1.0f;
+		l_primitive.Sphere[i].Material.isRefractive = -1.0f;
 	}
 
 	/*
@@ -444,7 +444,6 @@ HRESULT CreateLightBuffer()
 	return hr;
 }
 
-
 void FillLightBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE LightResources;
@@ -464,7 +463,6 @@ void FillLightBuffer()
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
 }
-
 
 HRESULT LoadMesh(char* p_path)
 {
@@ -521,7 +519,6 @@ HRESULT LoadObjectData()
 	if(FAILED(hr))
 		return hr;
 
-
 	return hr; 
 }
 
@@ -537,7 +534,7 @@ HRESULT CreateObjectBuffer()
 	
 
 	// RAW VERTEX SAVING
-	l_data.pSysMem = g_allTrianglesVertex->data();	
+	l_data.pSysMem = a;//g_allTrianglesVertex->data();	
 	D3D11_BUFFER_DESC RawVertex;
 	RawVertex.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
@@ -573,10 +570,10 @@ HRESULT CreateObjectBuffer()
 	if(FAILED(hr))
 		return hr;	
 	D3D11_UNORDERED_ACCESS_VIEW_DESC AllTexCoord_AccessView_Desc;
-	AllTexCoord_AccessView_Desc.Buffer.FirstElement	=	0;
+	AllTexCoord_AccessView_Desc.Buffer.FirstElement		=	0;
 	AllTexCoord_AccessView_Desc.Buffer.Flags			=	0;
-	AllTexCoord_AccessView_Desc.Buffer.NumElements	=	g_allTrianglesTexCoord->size();
-	AllTexCoord_AccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
+	AllTexCoord_AccessView_Desc.Buffer.NumElements		=	g_allTrianglesTexCoord->size();
+	AllTexCoord_AccessView_Desc.Format					=	DXGI_FORMAT_UNKNOWN;
 	AllTexCoord_AccessView_Desc.ViewDimension			=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_TexCoordBuffer, &AllTexCoord_AccessView_Desc, &g_TexCoordUAccessView);
 	if(FAILED(hr))
@@ -601,6 +598,8 @@ HRESULT CreateObjectBuffer()
 	TrinagleIndex_UAccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
 	TrinagleIndex_UAccessView_Desc.ViewDimension		=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_objectBuffer, &TrinagleIndex_UAccessView_Desc, &g_TriangleIndexUAccessView);
+
+	
 	if(FAILED(hr))
 		return hr;
 
@@ -668,10 +667,11 @@ HRESULT Update(float deltaTime)
 
 HRESULT Render(float deltaTime)
 {
-	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV ,g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
+	ID3D11UnorderedAccessView* uav[] = { g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView, g_BackBufferUAV};
+//	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
 
-	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, NULL);
+	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, NULL);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
 
 
@@ -683,7 +683,8 @@ HRESULT Render(float deltaTime)
 
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
-
+	
+	/*
 	float x = Camera::GetCamera(g_cameraIndex)->GetPosition().x;
 	float y = Camera::GetCamera(g_cameraIndex)->GetPosition().y;
 	float z = Camera::GetCamera(g_cameraIndex)->GetPosition().z;
@@ -695,7 +696,7 @@ HRESULT Render(float deltaTime)
 		"BTH - DirectCompute raytracing - Dispatch time: %f - camera_position = %f %f %f",
 		g_Timer->GetTime(), x, y, z
 	);
-	SetWindowText(g_hWnd, title);
+	SetWindowText(g_hWnd, title);*/
 
 	return S_OK;
 }

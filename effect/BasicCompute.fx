@@ -9,7 +9,6 @@
 
 #pragma pack_matrix(row_major)
 
-RWTexture2D<float4> output : register(u0);
 
 struct SphereStruct
 {
@@ -33,13 +32,13 @@ struct TriangleStruct // For hardcoded triangles
 struct TriangleDescription // For meshes
 {
 	int	Point0;
-	int	Point1;
+	int Point1;
 	int	Point2;
-	int TexCoord0;
-	int TexCoord1;
-	int TexCoord2;
-//	int a;
-//	int b;
+	float TexCoord0;
+	float TexCoord1;
+	float TexCoord2;
+//	float padding1;
+//	float padding2;
 	Material material;
 };
 
@@ -55,7 +54,7 @@ cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[SPHERE_COUNT];
 //	TriangleStruct	Triangle[TRIANGLE_COUNT];
-	int4			countVariable;
+	float4			countVariable;
 }
 
 cbuffer LightBuffer : register(c2) 
@@ -70,9 +69,11 @@ cbuffer AllTrianglesCBuffer : register(c3)
 	int amountOfTriangles;
 }
 
-StructuredBuffer<float4> AllVertex						: register(u1);	
-StructuredBuffer<float2> AllTexCoord					: register(u2);	
-StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u3);	
+RWTexture2D<float4> output								: register(u3);
+StructuredBuffer<float4> AllVertex						: register(u0);	
+StructuredBuffer<float2> AllTexCoord					: register(u1);	
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u2);
+
 
 Ray createRay(int x, int y)
 {
@@ -102,6 +103,7 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 	Point0 = AllTriangleDesc[DescriptionIndex].Point0;	// Get indexvalues
 	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
 	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
+
 		 
 	//Find vectors for two edges sharing V0
 	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;	// Use indexvalues to get vectors
@@ -496,8 +498,26 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	
 	l_finalColor /= a;
 
-	if(AllVertex[0].w == 1.0f)
-		l_finalColor = ORANGE4;
+//	if(countVariable.y == 5)
+//		l_finalColor = ORANGE4;
+	/*
+	if(AllVertex[0].x == 0.0f)
+	{
+		l_finalColor = RED4;
+		if(AllVertex[0].y == 0.0f)
+		{
+			l_finalColor = GREEN4;
+
+			if(AllVertex[0].z == 0.0f)
+			{
+				l_finalColor = BLUE4;
+				if(AllVertex[0].w == 0.0f)
+				{
+					l_finalColor = ORANGE4;
+				}
+			}
+		}
+	}*/
 
 	output[threadID.xy] = l_finalColor;
 }

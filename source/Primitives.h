@@ -27,8 +27,8 @@ namespace CustomPrimitiveStruct
 		float shininess;		
 		float reflectiveFactor;
 		float refractiveFactor;
-		int isReflective;
-		int isRefractive;
+		float isReflective;
+		float isRefractive;
 	};
 
 	struct SphereStruct
@@ -52,14 +52,14 @@ namespace CustomPrimitiveStruct
 	
 	struct TriangleDescription // Used for loadedobjects triangles
 	{
-		int	Point1;
-		int	Point2;
-		int	Point3;
+		float Point1;
+		float Point2;
+		float Point3;
 		float TexCoord1;
 		float TexCoord2;
 		float TexCoord3;
-	//	int a;
-	//	int b;
+	//	float padding1;
+	//	float padding2;
 		Material Material;
 	};
 
@@ -67,10 +67,10 @@ namespace CustomPrimitiveStruct
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
 	//	TriangleStruct		Triangle[TRIANGLE_COUNT];
-		int SphereCount;
-		int TriangleCount;
+		float SphereCount;
+		float TriangleCount;
 		float TriangleCountFromObject;
-		float padding2;
+		float padding1;
 	};
 }
 
