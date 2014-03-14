@@ -180,8 +180,7 @@ HRESULT Init()
 	hr = CreateLightBuffer();
 	if(FAILED(hr))	
 		return hr;
-
-	FillLightBuffer();
+	 FillLightBuffer();
 
 	hr = LoadObjectData();
 	if(FAILED(hr))	
@@ -452,12 +451,12 @@ void FillLightBuffer()
 	CustomLightStruct::LightBuffer l_light;
 
 	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight			= XMFLOAT3(1.0f, 1.0f, 1.0f);
+	l_light.ambientLight			= XMFLOAT3(0.0f, 0.0f, 0.0f);
 	
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color		= XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -528,13 +527,14 @@ HRESULT CreateObjectBuffer()
 
 	D3D11_SUBRESOURCE_DATA l_data;
 	
-	
-	XMFLOAT4* a = new XMFLOAT4[g_allTrianglesVertex->size()];
-	a = g_allTrianglesVertex->data();
-	
 
+	XMFLOAT4* a = new XMFLOAT4[8];
+	for(int i = 0; i < 8; i++)
+		a[i] = XMFLOAT4(1.0, 1.0, 1.0, 1.0);
+	
 	// RAW VERTEX SAVING
-	l_data.pSysMem = a;//g_allTrianglesVertex->data();	
+	l_data.pSysMem = a;
+		//g_allTrianglesVertex->data();
 	D3D11_BUFFER_DESC RawVertex;
 	RawVertex.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
@@ -673,9 +673,9 @@ HRESULT Render(float deltaTime)
 
 
 	g_ComputeShader->Set();
-	g_Timer->Start();
+//	g_Timer->Start();
 	g_DeviceContext->Dispatch( 25, 25, 1 );
-	g_Timer->Stop();
+//	g_Timer->Stop();
 	g_ComputeShader->Unset();
 
 	if(FAILED(g_SwapChain->Present(0, 0)))

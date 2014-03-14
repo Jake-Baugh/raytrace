@@ -24,11 +24,11 @@ struct TriangleDescription // For meshes
 	int	Point0;
 	int Point1;
 	int	Point2;
+	float padding1;
 	float TexCoord0;
 	float TexCoord1;
 	float TexCoord2;
-//	float padding1;
-//	float padding2;
+	float padding2;
 	Material material;
 };
 
@@ -334,7 +334,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		
 		// Out variables		
 		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
-		p_out_material			= AllTriangleDesc[l_triangleindex].material;
+		p_out_material			= Sphere[l_sphereindex].material; //AllTriangleDesc[l_triangleindex].material;
 		p_out_primitiveIndex	= l_triangleindex;
 		p_out_primitiveType		= TRIANGLE;
 
@@ -345,10 +345,10 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	else // This is a debug place, should never happen.
 	{
 		// Out variables		
-		p_out_collideNormal = float4(-1.0f, -1.0f,-1.0f,-1.0f);
-		p_out_material		= Sphere[l_sphereindex].material;
-		p_out_primitiveIndex = -1;
-		p_out_primitiveType = PRIMITIVE_NOTHING;
+		p_out_collideNormal		= float4(-1.0f, -1.0f,-1.0f,-1.0f);
+		p_out_material			= Sphere[l_sphereindex].material;
+		p_out_primitiveIndex	= -1;
+		p_out_primitiveType		= PRIMITIVE_NOTHING;
 	}
 
 	return l_ray;
@@ -487,29 +487,28 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	
 	l_finalColor /= a;
 
-//	if(countVariable.y == 5)
-//		l_finalColor = ORANGE4;
-	/*
-	if(AllVertex[0].x == 0.0f)
-	{
-		l_finalColor = RED4;
-		if(AllVertex[0].y == 0.0f)
-		{
-			l_finalColor = GREEN4;
 
-			if(AllVertex[0].z == 0.0f)
-			{
-				l_finalColor = BLUE4;
-				if(AllVertex[0].w == 0.0f)
-				{
-					l_finalColor = ORANGE4;
-				}
-			}
+	for(int i = 0; i < 8; i++)
+	{
+		if(AllVertex[i].x != 0.0f)
+		{
+			l_finalColor = RED4;
+			break;
 		}
-	}*/
+		else if(AllVertex[i].y != 0.0f)
+		{
+			l_finalColor = BLUE4;
+			break;
+		}
+	}
 
 	output[threadID.xy] = l_finalColor;
 }
+
+	/*
+	StructuredBuffer<float4> AllVertex			
+StructuredBuffer<float2> AllTexCoord	
+StructuredBuffer<TriangleDescription> AllTriangleDesc	*/
 
 /*
 	Fixa så att ljuset rör sig.

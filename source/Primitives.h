@@ -55,9 +55,11 @@ namespace CustomPrimitiveStruct
 		float Point1;
 		float Point2;
 		float Point3;
+		float PADDING1;
 		float TexCoord1;
 		float TexCoord2;
 		float TexCoord3;
+		float PADDING2;
 	//	float padding1;
 	//	float padding2;
 		Material Material;
