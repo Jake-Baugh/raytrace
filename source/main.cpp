@@ -373,7 +373,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Sphere[2].Radius				= 200.0f;
 	l_primitive.Sphere[2].Color					= XMFLOAT3(1.0f, 0.55f, 0.0f);
 
-	for(int i = 0; i < l_primitive.SphereCount; i++)
+	for(UINT i = 0; i < l_primitive.SphereCount; i++)
 	{
 		l_primitive.Sphere[i].Material.ambient = 0.5f;
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
@@ -383,7 +383,6 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
 		l_primitive.Sphere[i].Material.isReflective = 1;
 		l_primitive.Sphere[i].Material.isRefractive = -1;
-
 	}
 
 	/*
@@ -456,7 +455,7 @@ void FillLightBuffer()
 	l_light.lightCount = LIGHT_COUNT;
 	l_light.ambientLight			= XMFLOAT3(1.0f, 1.0f, 1.0f);
 	
-	for(int i = 0; i < LIGHT_COUNT; i++)
+	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
 		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -487,26 +486,29 @@ HRESULT LoadMesh(char* p_path)
 	int allTrianglesIndexSize = g_allTrianglesIndex->size();
 
 	// Move raw vertices
-	for(int i = 0; i < l_rawVertex->size(); i++)
+	for(UINT i = 0; i < l_rawVertex->size(); i++)
 		g_allTrianglesVertex->push_back(l_rawVertex->at(i));
 
 	// Move raw triangle coords
-	for(int i = 0; i < l_rawTexCoord->size(); i++)
+	for(UINT i = 0; i < l_rawTexCoord->size(); i++)
 		g_allTrianglesTexCoord->push_back(l_rawTexCoord->at(i));
 	
 	// Move Triangle descriptions
-	for(int i = 0; i < l_triangleDescription->size(); i++)
+	for(UINT i = 0; i < l_triangleDescription->size(); i++)
 		g_allTrianglesIndex->push_back(l_triangleDescription->at(i));
 	
 	// Update triangle descriptions indexes
-	for(int i = allTrianglesIndexSize; i < g_allTrianglesIndex->size(); i++)
+	if(allVertexSize != 0) // No idea to increase everything with 0
 	{
-		g_allTrianglesIndex->at(i).Point1 += allVertexSize;
-		g_allTrianglesIndex->at(i).Point2 += allVertexSize;
-		g_allTrianglesIndex->at(i).Point3 += allVertexSize;
-		g_allTrianglesIndex->at(i).TexCoord1 += allTexCoordSize;
-		g_allTrianglesIndex->at(i).TexCoord2 += allTexCoordSize;
-		g_allTrianglesIndex->at(i).TexCoord3 += allTexCoordSize;
+		for(UINT i = allTrianglesIndexSize; i < g_allTrianglesIndex->size(); i++)
+		{
+			g_allTrianglesIndex->at(i).Point1 += allVertexSize;
+			g_allTrianglesIndex->at(i).Point2 += allVertexSize;
+			g_allTrianglesIndex->at(i).Point3 += allVertexSize;
+			g_allTrianglesIndex->at(i).TexCoord1 += allTexCoordSize;
+			g_allTrianglesIndex->at(i).TexCoord2 += allTexCoordSize;
+			g_allTrianglesIndex->at(i).TexCoord3 += allTexCoordSize;
+		}
 	}
 
 	return hr;
@@ -529,10 +531,10 @@ HRESULT CreateObjectBuffer()
 
 	D3D11_SUBRESOURCE_DATA l_data;
 	
-	/*
+	
 	XMFLOAT4* a = new XMFLOAT4[g_allTrianglesVertex->size()];
 	a = g_allTrianglesVertex->data();
-	*/
+	
 
 	// RAW VERTEX SAVING
 	l_data.pSysMem = g_allTrianglesVertex->data();	
@@ -543,7 +545,7 @@ HRESULT CreateObjectBuffer()
 	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	RawVertex.ByteWidth			=	g_allTrianglesVertex->size() * sizeof(XMFLOAT4);
 	RawVertex.StructureByteStride = sizeof(XMFLOAT4);
-	hr = g_Device->CreateBuffer(&RawVertex, NULL, &g_vertexBuffer);
+	hr = g_Device->CreateBuffer(&RawVertex, &l_data, &g_vertexBuffer);
 	if(FAILED(hr))
 		return hr;
 

@@ -55,9 +55,11 @@ namespace CustomPrimitiveStruct
 		int	Point1;
 		int	Point2;
 		int	Point3;
-		int TexCoord1;
-		int TexCoord2;
-		int TexCoord3;
+		float TexCoord1;
+		float TexCoord2;
+		float TexCoord3;
+	//	int a;
+	//	int b;
 		Material Material;
 	};
 
@@ -65,8 +67,8 @@ namespace CustomPrimitiveStruct
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
 	//	TriangleStruct		Triangle[TRIANGLE_COUNT];
-		float SphereCount;
-		float TriangleCount;
+		int SphereCount;
+		int TriangleCount;
 		float TriangleCountFromObject;
 		float padding2;
 	};

@@ -38,6 +38,8 @@ struct TriangleDescription // For meshes
 	int TexCoord0;
 	int TexCoord1;
 	int TexCoord2;
+//	int a;
+//	int b;
 	Material material;
 };
 
@@ -53,7 +55,7 @@ cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[SPHERE_COUNT];
 //	TriangleStruct	Triangle[TRIANGLE_COUNT];
-	float4			countVariable;
+	int4			countVariable;
 }
 
 cbuffer LightBuffer : register(c2) 
@@ -95,14 +97,14 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 {
 	float3 e1, e2;  //Edge1, Edge2
  
-	int Point0, Point1, Point2;
+	int Point0, Point1, Point2; // Indes places in vertex array
 
-	Point0 = AllTriangleDesc[DescriptionIndex].Point0;
+	Point0 = AllTriangleDesc[DescriptionIndex].Point0;	// Get indexvalues
 	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
 	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
 		 
 	//Find vectors for two edges sharing V0
-	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;
+	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;	// Use indexvalues to get vectors
 	e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;
 	
 	float3 normal = cross(e1, e2);
@@ -257,7 +259,7 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 			{
 				if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is the closest
 				{
-					return true; // Render is lit
+					return true; // Triangle is lit
 				}
 			}
 		}
@@ -387,7 +389,7 @@ float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
 	if(p_primitiveType == SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
 	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return BLUE4; // All triangles are hardcoded red.
+		return RED4; // All triangles are hardcoded red.
 		//return Triangle[p_primitiveIndex].color;	
 	return BLACK4;
 }
@@ -493,6 +495,9 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	a = max(a, 1.0f);
 	
 	l_finalColor /= a;
+
+	if(AllVertex[0].w == 1.0f)
+		l_finalColor = ORANGE4;
 
 	output[threadID.xy] = l_finalColor;
 }

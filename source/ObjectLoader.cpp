@@ -49,7 +49,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 	ifstream lStream;
 	//try
 	//{
-		lStream.open("CUBE2.obj");
+	lStream.open("CUBE2.obj");
 	/*}
 	catch(exception e)
 	{
