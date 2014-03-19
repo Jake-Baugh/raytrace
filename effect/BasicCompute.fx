@@ -10,47 +10,47 @@
 #pragma pack_matrix(row_major)
 
 
-struct SphereStruct
+struct SphereStruct	// 16
 {
-	float4	midPos;
-	float3	color;
-	float	radius;
-	Material material;
+	float4	midPos;		// 4
+	float3	color;		// 3
+	float	radius;		// 1
+	Material material;	// 8
 };
 
 
-struct TriangleDescription // For meshes
+struct TriangleDescription // 16
 {
-	int	Point0;
-	int Point1;
-	int	Point2;
-	float padding1;
-	float TexCoord0;
-	float TexCoord1;
-	float TexCoord2;
-	float padding2;
-	Material material;
+	float Point0;		// 1
+	float Point1;		// 1
+	float Point2;		// 1
+	float padding1;		// 1
+	float TexCoord0;	// 1
+	float TexCoord1;	// 1
+	float TexCoord2;	// 1
+	float padding2;		// 1
+	Material material;	// 8
 };
 
-cbuffer EveryFrameBuffer : register(c0) 
+cbuffer EveryFrameBuffer : register(c0) // 40
 {
-	float4	 cameraPosition;
-	float4x4 inverseProjection;
-	float4x4 inverseView;
-	float4 screenVariable;
+	float4	 cameraPosition;		// 4
+	float4x4 inverseProjection;		// 16
+	float4x4 inverseView;			// 16
+//	float4 screenVariable;
 }
 
-cbuffer PrimitiveBuffer: register(c1)
+cbuffer PrimitiveBuffer: register(c1)	// 48 floats, 192 bytes
 {
-	SphereStruct	Sphere[SPHERE_COUNT];
-	float4			countVariable;
+	SphereStruct	Sphere[SPHERE_COUNT];	// 16*3 = 48
+//	float4			countVariable;			// 4
 }
 
-cbuffer LightBuffer : register(c2) 
+cbuffer LightBuffer : register(c2)			// 28 floats, 112 bytes
 {
-	float light_count;
-	float3 ambientLight;
-	PointLightData PointLight[LIGHT_COUNT];
+	float light_count;						// 1
+	float3 ambientLight;					// 3
+	PointLightData PointLight[LIGHT_COUNT];	// 8*3 = 24
 }
 
 cbuffer AllTrianglesCBuffer : register(c3)
@@ -59,8 +59,8 @@ cbuffer AllTrianglesCBuffer : register(c3)
 }
 
 RWTexture2D<float4> output								: register(u0);
-StructuredBuffer<float4> AllVertex						: register(u1);	
-StructuredBuffer<float2> AllTexCoord					: register(u2);	
+StructuredBuffer<float4> AllVertex						: register(u1);
+StructuredBuffer<float2> AllTexCoord					: register(u2);
 StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u3);
 
 
@@ -69,8 +69,8 @@ Ray createRay(int x, int y)
 	Ray l_ray;
 	l_ray.origin = cameraPosition;
  
-	double normalized_x = ((x / screenVariable.x) - 0.5) * 2;
-	double normalized_y = (1 - (y / screenVariable.y) - 0.5) * 2;
+	double normalized_x = ((x / 800.0) - 0.5) * 2;					// HARDCODED SCREENSIZE
+	double normalized_y = (1 - (y / 800.0) - 0.5) * 2;	// HARDCODED SCREENSIZE
 
 	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1, 1), inverseProjection);
 	imagePoint /= imagePoint.w;
@@ -87,13 +87,12 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 {
 	float3 e1, e2;  //Edge1, Edge2
  
-	int Point0, Point1, Point2; // Indes places in vertex array
+	float Point0, Point1, Point2; // Indes places in vertex array
 
 	Point0 = AllTriangleDesc[DescriptionIndex].Point0;	// Get indexvalues
 	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
 	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
 
-		 
 	//Find vectors for two edges sharing V0
 	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;	// Use indexvalues to get vectors
 	e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;
@@ -139,7 +138,6 @@ class TriangleIntersect : IntersectInterface
 {
 	float Intersect(Ray p_ray, int index)                         
 	{
-		//return 0.0f;
 		float3 e1, e2;  //Edge1, Edge2
 		float det, inv_det, u, v;
 		float t;
@@ -149,6 +147,11 @@ class TriangleIntersect : IntersectInterface
 		Point0 = AllTriangleDesc[index].Point0;
 		Point1 = AllTriangleDesc[index].Point1;
 		Point2 = AllTriangleDesc[index].Point2;
+
+		// Hardcoded values test
+		Point0 = 1;
+		Point1 = 2;
+		Point2 = 3;
  
 		//Find vectors for two edges sharing V0
 		e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;
@@ -239,7 +242,7 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 	int l_sphereHit;
 	int l_TriangleHit;
 		
-	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, countVariable.x, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
+	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, 3, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);	// HARDCODED AMOUNT OF SPHERES AND TRIANGLES
 	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, 12, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
@@ -300,7 +303,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	
 	int l_sphereHit, l_triangleHit;
 
-	GetClosestPrimitive(p_ray, sphereIntersect, countVariable.x, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
+	GetClosestPrimitive(p_ray, sphereIntersect, 3, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
 	GetClosestPrimitive(p_ray, triangleIntersect, 12, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
 	
 	// Checks to se if any triangle or sphere was hit at all
@@ -395,12 +398,12 @@ float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 	return 0;
 }
 
-int GetReflective(in int p_primitiveIndex, in int p_primitiveType)
+float GetReflective(in int p_primitiveIndex, in int p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return 1;
+		return 1.0;
 		//return Triangle[p_primitiveIndex].material.isReflective;
 	return 0;
 }
@@ -429,7 +432,7 @@ bool CloseToZero(float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 5
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -486,21 +489,6 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	a = max(a, 1.0f);
 	
 	l_finalColor /= a;
-
-
-	for(int i = 0; i < 8; i++)
-	{
-		if(AllVertex[i].x != 0.0f)
-		{
-			l_finalColor = RED4;
-			break;
-		}
-		else if(AllVertex[i].y != 0.0f)
-		{
-			l_finalColor = BLUE4;
-			break;
-		}
-	}
 
 	output[threadID.xy] = l_finalColor;
 }

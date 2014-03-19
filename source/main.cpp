@@ -30,9 +30,9 @@ ID3D11Buffer*				g_objectBuffer			= nullptr;
 
 
 // Triangle mesh variables
-std::vector<XMFLOAT4>* g_allTrianglesVertex = nullptr;
-std::vector<XMFLOAT2>* g_allTrianglesTexCoord = nullptr;
-std::vector<CustomPrimitiveStruct::TriangleDescription>* g_allTrianglesIndex = nullptr;
+std::vector<XMFLOAT4> g_allTrianglesVertex;// = nullptr;
+std::vector<XMFLOAT2> g_allTrianglesTexCoord;// = nullptr;
+std::vector<CustomPrimitiveStruct::TriangleDescription> g_allTrianglesIndex;
 
 ID3D11UnorderedAccessView* g_VertexUAccessView;
 ID3D11UnorderedAccessView* g_TexCoordUAccessView;
@@ -165,9 +165,9 @@ HRESULT Init()
 	
 	
 	// My things
-	g_allTrianglesVertex	= new std::vector<XMFLOAT4>;
-	g_allTrianglesTexCoord	= new std::vector<XMFLOAT2>;
-	g_allTrianglesIndex		= new std::vector<CustomPrimitiveStruct::TriangleDescription>;
+	g_allTrianglesVertex	= std::vector<XMFLOAT4>();
+	g_allTrianglesTexCoord	= std::vector<XMFLOAT2>();
+	g_allTrianglesIndex		= std::vector<CustomPrimitiveStruct::TriangleDescription>();
 	
 	hr = CreateCameraBuffer();
 	if(FAILED(hr))	
@@ -291,12 +291,15 @@ HRESULT CreateCameraBuffer()
 {
 	HRESULT hr = S_OK;
 
+	int ByteWidth;
+
 	D3D11_BUFFER_DESC CameraData;
 	CameraData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
 	CameraData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	CameraData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
 	CameraData.MiscFlags			=	0;
-	CameraData.ByteWidth			=	sizeof(CustomPrimitiveStruct::EachFrameDataStructure);
+	ByteWidth						=	sizeof(CustomPrimitiveStruct::EachFrameDataStructure);	// 144 byte
+	CameraData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer( &CameraData, NULL, &g_EveryFrameBuffer);
 
 	return hr;
@@ -325,10 +328,10 @@ void FillCameraBuffer()
 	l_eachFrameData.inverseProjection	= l_inverseProjection;
 	l_eachFrameData.inverseView			= l_inverseView;
 
-	l_eachFrameData.screenWidth			= 800.0f;
-	l_eachFrameData.screenHeight		= 800.0f;
-	l_eachFrameData.padding1			= 0;
-	l_eachFrameData.padding2			= 0;
+//	l_eachFrameData.screenWidth			= 800.0f;
+//	l_eachFrameData.screenHeight		= 800.0f;
+//	l_eachFrameData.padding1			= 0;
+//	l_eachFrameData.padding2			= 0;
 	*(CustomPrimitiveStruct::EachFrameDataStructure*)mappedResource.pData = l_eachFrameData;
 	g_DeviceContext->Unmap(g_EveryFrameBuffer, 0);
 }
@@ -337,13 +340,16 @@ HRESULT CreatePrimitiveBuffer()
 {
 	HRESULT hr = S_OK;
 
+	int ByteWidth;
+
 	D3D11_BUFFER_DESC PrimitiveData;
 	PrimitiveData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER;
 	PrimitiveData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	PrimitiveData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	PrimitiveData.MiscFlags			=	0;
-	PrimitiveData.ByteWidth			=	sizeof(CustomPrimitiveStruct::Primitive);
-	hr = g_Device->CreateBuffer( &PrimitiveData, NULL, &g_PrimitivesBuffer);
+	ByteWidth						=	sizeof(CustomPrimitiveStruct::Primitive); // 192
+	PrimitiveData.ByteWidth			=	ByteWidth;
+	hr = g_Device->CreateBuffer(&PrimitiveData, NULL, &g_PrimitivesBuffer);
 
 	return hr;
 }
@@ -354,10 +360,10 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
 	CustomPrimitiveStruct::Primitive l_primitive;
 		
-	l_primitive.SphereCount = SPHERE_COUNT;
-	l_primitive.TriangleCount = TRIANGLE_COUNT;
-	l_primitive.TriangleCountFromObject = -1;
-	l_primitive.padding1 = -1;
+//	l_primitive.SphereCount = SPHERE_COUNT;
+//	l_primitive.TriangleCount = TRIANGLE_COUNT;
+//	l_primitive.TriangleCountFromObject = -1;
+//	l_primitive.padding1 = -1;
 
 	
 	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 0.0f, 700.0f, 1.0f);
@@ -372,7 +378,7 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Sphere[2].Radius				= 200.0f;
 	l_primitive.Sphere[2].Color					= XMFLOAT3(1.0f, 0.55f, 0.0f);
 
-	for(UINT i = 0; i < l_primitive.SphereCount; i++)
+	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
 		l_primitive.Sphere[i].Material.ambient = 0.5f;
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
@@ -432,12 +438,15 @@ HRESULT CreateLightBuffer()
 {
 	HRESULT hr = S_OK;
 
+	int ByteWidth;
+
 	D3D11_BUFFER_DESC LightData;
 	LightData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
-	LightData.ByteWidth			=	sizeof(CustomLightStruct::LightBuffer);
+	ByteWidth					=	sizeof(CustomLightStruct::LightBuffer); // 112 byte
+	LightData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
 	return hr;
@@ -478,33 +487,33 @@ HRESULT LoadMesh(char* p_path)
 		return hr;
 
 	// Take sizes before updating
-	int allVertexSize = g_allTrianglesVertex->size();
-	int allTexCoordSize = g_allTrianglesTexCoord->size();
-	int allTrianglesIndexSize = g_allTrianglesIndex->size();
+	int allVertexSize			= g_allTrianglesVertex		.size();
+	int allTexCoordSize			= g_allTrianglesTexCoord	.size();
+	int allTrianglesIndexSize	= g_allTrianglesIndex		.size();
 
 	// Move raw vertices
 	for(UINT i = 0; i < l_rawVertex->size(); i++)
-		g_allTrianglesVertex->push_back(l_rawVertex->at(i));
+		g_allTrianglesVertex.push_back(l_rawVertex->at(i));
 
 	// Move raw triangle coords
 	for(UINT i = 0; i < l_rawTexCoord->size(); i++)
-		g_allTrianglesTexCoord->push_back(l_rawTexCoord->at(i));
+		g_allTrianglesTexCoord.push_back(l_rawTexCoord->at(i));
 	
 	// Move Triangle descriptions
 	for(UINT i = 0; i < l_triangleDescription->size(); i++)
-		g_allTrianglesIndex->push_back(l_triangleDescription->at(i));
+		g_allTrianglesIndex.push_back(l_triangleDescription->at(i));
 	
 	// Update triangle descriptions indexes
 	if(allVertexSize != 0) // No idea to increase everything with 0
 	{
-		for(UINT i = allTrianglesIndexSize; i < g_allTrianglesIndex->size(); i++)
+		for(UINT i = allTrianglesIndexSize; i < g_allTrianglesIndex.size(); i++)
 		{
-			g_allTrianglesIndex->at(i).Point1 += allVertexSize;
-			g_allTrianglesIndex->at(i).Point2 += allVertexSize;
-			g_allTrianglesIndex->at(i).Point3 += allVertexSize;
-			g_allTrianglesIndex->at(i).TexCoord1 += allTexCoordSize;
-			g_allTrianglesIndex->at(i).TexCoord2 += allTexCoordSize;
-			g_allTrianglesIndex->at(i).TexCoord3 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).Point1 += allVertexSize;
+			g_allTrianglesIndex.at(i).Point2 += allVertexSize;
+			g_allTrianglesIndex.at(i).Point3 += allVertexSize;
+			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
 		}
 	}
 
@@ -527,20 +536,21 @@ HRESULT CreateObjectBuffer()
 
 	D3D11_SUBRESOURCE_DATA l_data;
 	
+	int ByteWidth;
 
 	XMFLOAT4* a = new XMFLOAT4[8];
 	for(int i = 0; i < 8; i++)
-		a[i] = XMFLOAT4(1.0, 1.0, 1.0, 1.0);
+		a[i] = XMFLOAT4(1.0, 2.0, 3.0, 1.0);
 	
 	// RAW VERTEX SAVING
-	l_data.pSysMem = a;
-		//g_allTrianglesVertex->data();
+	l_data.pSysMem = g_allTrianglesVertex.data();
 	D3D11_BUFFER_DESC RawVertex;
-	RawVertex.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
+	RawVertex.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
 	RawVertex.CPUAccessFlags	=	0;
 	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	RawVertex.ByteWidth			=	g_allTrianglesVertex->size() * sizeof(XMFLOAT4);
+	ByteWidth					=	g_allTrianglesVertex.size() * sizeof(XMFLOAT4);
+	RawVertex.ByteWidth			=	ByteWidth;
 	RawVertex.StructureByteStride = sizeof(XMFLOAT4);
 	hr = g_Device->CreateBuffer(&RawVertex, &l_data, &g_vertexBuffer);
 	if(FAILED(hr))
@@ -549,7 +559,7 @@ HRESULT CreateObjectBuffer()
 	D3D11_UNORDERED_ACCESS_VIEW_DESC AllVertex_AccessView_Desc;
 	AllVertex_AccessView_Desc.Buffer.FirstElement	=	0;
 	AllVertex_AccessView_Desc.Buffer.Flags			=	0;
-	AllVertex_AccessView_Desc.Buffer.NumElements	=	g_allTrianglesVertex->size();
+	AllVertex_AccessView_Desc.Buffer.NumElements	=	g_allTrianglesVertex.size();
 	AllVertex_AccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
 	AllVertex_AccessView_Desc.ViewDimension			=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_vertexBuffer, &AllVertex_AccessView_Desc, &g_VertexUAccessView);
@@ -558,13 +568,14 @@ HRESULT CreateObjectBuffer()
 
 	
 	// RAW TEXCOORD
-	l_data.pSysMem = g_allTrianglesTexCoord->data();
+	l_data.pSysMem = g_allTrianglesTexCoord.data();
 	D3D11_BUFFER_DESC RawTexCoord;
 	RawTexCoord.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
 	RawTexCoord.Usage				=	D3D11_USAGE_DEFAULT; 
 	RawTexCoord.CPUAccessFlags		=	0;
 	RawTexCoord.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	RawTexCoord.ByteWidth			=	g_allTrianglesTexCoord->size() * sizeof(XMFLOAT2);
+	ByteWidth						=	g_allTrianglesTexCoord.size() * sizeof(XMFLOAT2); 
+	RawTexCoord.ByteWidth			=	ByteWidth;
 	RawTexCoord.StructureByteStride =	sizeof(XMFLOAT2);
 	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
 	if(FAILED(hr))
@@ -572,7 +583,7 @@ HRESULT CreateObjectBuffer()
 	D3D11_UNORDERED_ACCESS_VIEW_DESC AllTexCoord_AccessView_Desc;
 	AllTexCoord_AccessView_Desc.Buffer.FirstElement		=	0;
 	AllTexCoord_AccessView_Desc.Buffer.Flags			=	0;
-	AllTexCoord_AccessView_Desc.Buffer.NumElements		=	g_allTrianglesTexCoord->size();
+	AllTexCoord_AccessView_Desc.Buffer.NumElements		=	g_allTrianglesTexCoord.size();
 	AllTexCoord_AccessView_Desc.Format					=	DXGI_FORMAT_UNKNOWN;
 	AllTexCoord_AccessView_Desc.ViewDimension			=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_TexCoordBuffer, &AllTexCoord_AccessView_Desc, &g_TexCoordUAccessView);
@@ -580,13 +591,14 @@ HRESULT CreateObjectBuffer()
 		return hr;
 
 	
-	l_data.pSysMem = g_allTrianglesIndex->data();
+	l_data.pSysMem = g_allTrianglesIndex.data();
 	D3D11_BUFFER_DESC ObjectBufferDescription;
 	ObjectBufferDescription.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
 	ObjectBufferDescription.Usage				=	D3D11_USAGE_DEFAULT; 
 	ObjectBufferDescription.CPUAccessFlags		=	0;
 	ObjectBufferDescription.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	ObjectBufferDescription.ByteWidth			=	g_allTrianglesIndex->size() * sizeof(CustomPrimitiveStruct::TriangleDescription);
+	ByteWidth									=	g_allTrianglesIndex.size() * sizeof(CustomPrimitiveStruct::TriangleDescription);
+	ObjectBufferDescription.ByteWidth			=	ByteWidth;
 	ObjectBufferDescription.StructureByteStride =	sizeof(CustomPrimitiveStruct::TriangleDescription);
 	hr = g_Device->CreateBuffer( &ObjectBufferDescription, &l_data, &g_objectBuffer);
 	if(FAILED(hr))
@@ -594,7 +606,7 @@ HRESULT CreateObjectBuffer()
 	D3D11_UNORDERED_ACCESS_VIEW_DESC TrinagleIndex_UAccessView_Desc;
 	TrinagleIndex_UAccessView_Desc.Buffer.FirstElement	=	0;
 	TrinagleIndex_UAccessView_Desc.Buffer.Flags			=	0;
-	TrinagleIndex_UAccessView_Desc.Buffer.NumElements	=	g_allTrianglesIndex->size();
+	TrinagleIndex_UAccessView_Desc.Buffer.NumElements	=	g_allTrianglesIndex.size();
 	TrinagleIndex_UAccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
 	TrinagleIndex_UAccessView_Desc.ViewDimension		=	D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_objectBuffer, &TrinagleIndex_UAccessView_Desc, &g_TriangleIndexUAccessView);
@@ -668,7 +680,7 @@ HRESULT Render(float deltaTime)
 	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV, g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
 
-	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, NULL);
+	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, 0);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
 
 

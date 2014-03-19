@@ -138,8 +138,8 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Material.refractiveFactor = 0.0f;
 			l_triangleDesc.Material.isReflective = 1;
 			l_triangleDesc.Material.isRefractive = -1;
-			l_triangleDesc.PADDING1 = 0.1f;
-			l_triangleDesc.PADDING2 = 0.1f;
+			l_triangleDesc.PADDING1 = 1.0f;
+			l_triangleDesc.PADDING2 = 1.0f;
 
 
 			// TODO remove hardcoded

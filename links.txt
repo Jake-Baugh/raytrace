@@ -1,0 +1,11 @@
+	// http://stackoverflow.com/questions/11139078/debugging-shaders-on-visual-studio-2012-cant-find-the-symbols
+
+	/*
+	You need to compile your shaders with debug information. And in order to reliably debug, you likely will want to disable optimizations as well. Depending on how you compile your shaders, this will be one of two ways:
+
+	D3DCompile / D3DCompileFromFile: Pass the D3DCOMPILE_DEBUG and D3DCOMPILE_SKIP_OPTIMIZATION flags to D3DCompile. Note that depending on D3D version and whether you are using D3DX, these flags might have different prefixes.
+
+	fxc.exe: The compile flags have switch equivalents. For D3DCOMPILE_DEBUG, pass /Zi to fxc. For D3DCOMPILE_SKIP_OPTIMIZATION, pass /Od.
+
+	Visual Studio 2012 is fairly smart about finding the source for your shaders based on the embedded debug information, but should it fail to do this, it will prompt you to point to the appropriate file.
+	*/

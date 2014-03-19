@@ -8,8 +8,8 @@ struct Material
 	float shininess;
 	float reflective;
 	float refractive;
-	int isReflective;
-	int isRefractive;
+	float isReflective;
+	float isRefractive;
 };
 
 struct PointLightData

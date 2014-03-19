@@ -8,15 +8,15 @@ namespace CustomPrimitiveStruct
 {
 	using namespace DirectX;
 
-	struct EachFrameDataStructure	// This struct should be moved out of here. // TODO : Fix
+	struct EachFrameDataStructure
 	{
 		XMFLOAT4	cameraPosition;
 		XMMATRIX	inverseProjection;
 		XMMATRIX	inverseView;	
-		float screenWidth;
-		float screenHeight;
-		float padding1;
-		float padding2;
+	//	float screenWidth;
+	//	float screenHeight;
+	//	float padding1;
+	//	float padding2;
 	};
 
 	struct Material
@@ -69,10 +69,11 @@ namespace CustomPrimitiveStruct
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
 	//	TriangleStruct		Triangle[TRIANGLE_COUNT];
-		float SphereCount;
+/*		float SphereCount;
 		float TriangleCount;
 		float TriangleCountFromObject;
 		float padding1;
+*/
 	};
 }
 

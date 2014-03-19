@@ -25,7 +25,7 @@ bool ComputeShader::Init(LPCWSTR shaderFile, char* blobFileAppendix, char* pFunc
 	ID3DBlob* pCompiledShader = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
 	
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
 	/*
 	#if defined(DEBUG) || defined(_DEBUG)
