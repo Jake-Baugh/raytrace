@@ -126,9 +126,9 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Point1 = point_index1-1;
 			l_triangleDesc.Point2 = point_index2-1;
 			l_triangleDesc.Point3 = point_index3-1;
-			l_triangleDesc.TexCoord1 = texCoord_index1-1;
-			l_triangleDesc.TexCoord2 = texCoord_index2-1;
-			l_triangleDesc.TexCoord3 = texCoord_index3-1;
+			l_triangleDesc.TexCoord1 = 1.0;//texCoord_index1-1;
+			l_triangleDesc.TexCoord2 = 1.0;//texCoord_index2-1;
+			l_triangleDesc.TexCoord3 = 1.0;//texCoord_index3-1;
 			
 			l_triangleDesc.Material.ambient = 0.5f;
 			l_triangleDesc.Material.diffuse = 0.8f;

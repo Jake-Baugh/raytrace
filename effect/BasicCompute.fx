@@ -93,9 +93,14 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
 	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
 
+	float temp = 2.0;
+	temp = temp * (AllTriangleDesc[DescriptionIndex].padding1 * AllTriangleDesc[DescriptionIndex].TexCoord0 * AllTriangleDesc[DescriptionIndex].TexCoord1 * AllTriangleDesc[DescriptionIndex].TexCoord2 * AllTriangleDesc[DescriptionIndex].padding2);
+	Point1 = Point1 * temp;
+
+	Point1 = Point1 / temp;
 	//Find vectors for two edges sharing V0
-	e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;	// Use indexvalues to get vectors
-	e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;
+	e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;	// Use indexvalues to get vectors
+	e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
 	
 	float3 normal = cross(e1, e2);
 	return normalize(normal);	
@@ -136,13 +141,13 @@ class SphereIntersect : IntersectInterface
 
 class TriangleIntersect : IntersectInterface
 {
-	float Intersect(Ray p_ray, int index)                         
+	float Intersect(in Ray p_ray, in int index)                         
 	{
-		float3 e1, e2;  //Edge1, Edge2
+		float3 e1, e2;
 		float det, inv_det, u, v;
 		float t;
 
-		int Point0, Point1, Point2;
+		float Point0, Point1, Point2;
 
 		Point0 = AllTriangleDesc[index].Point0;
 		Point1 = AllTriangleDesc[index].Point1;
@@ -153,9 +158,20 @@ class TriangleIntersect : IntersectInterface
 		Point1 = 2;
 		Point2 = 3;
  
+		float3 q0, q1, q2;
+		q0 = AllVertex[(int)Point0].xyz;
+		q1 = AllVertex[(int)Point1].xyz;
+		q2 = AllVertex[(int)Point2].xyz;
+
 		//Find vectors for two edges sharing V0
-		e1 = AllVertex[Point1].xyz - AllVertex[Point0].xyz;
-		e2 = AllVertex[Point2].xyz - AllVertex[Point0].xyz;	
+		e1 = q1 - q0;
+		e2 = q2 - q0;
+
+		/*
+				//Find vectors for two edges sharing V0
+		e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;
+		e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
+		*/
 	
 		//Begin calculating determinant - also used to calculate u parameter
 		float3 P = cross(p_ray.direction.xyz, e2);
