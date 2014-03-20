@@ -32,7 +32,7 @@ struct TriangleDescription // 16
 	Material material;	// 8
 };
 
-cbuffer EveryFrameBuffer : register(b0) // 40
+cbuffer EveryFrameBuffer : register(c0) // 40
 {
 	float4	 cameraPosition;		// 4
 	float4x4 inverseProjection;		// 16
@@ -40,31 +40,31 @@ cbuffer EveryFrameBuffer : register(b0) // 40
 //	float4 screenVariable;
 }
 
-cbuffer PrimitiveBuffer: register(b1)	// 48 floats, 192 bytes
+cbuffer PrimitiveBuffer: register(c1)	// 48 floats, 192 bytes
 {
 	SphereStruct	Sphere[SPHERE_COUNT];	// 16*3 = 48
 //	float4			countVariable;			// 4
 }
 
-cbuffer LightBuffer : register(b2)			// 28 floats, 112 bytes
+cbuffer LightBuffer : register(c2)			// 28 floats, 112 bytes
 {
 	float light_count;						// 1
 	float3 ambientLight;					// 3
 	PointLightData PointLight[LIGHT_COUNT];	// 8*3 = 24
 }
-
-cbuffer AllTrianglesCBuffer : register(b3)
+/*
+cbuffer AllTrianglesCBuffer : register(c3)
 {
-	int amountOfTriangles;
+	uint amountOfTriangles;
 }
+*/
+RWTexture2D<float4> output								: register(u0);
+StructuredBuffer<float4> AllVertex						: register(t0);
+StructuredBuffer<float2> AllTexCoord					: register(t1);
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t2);
 
-RWTexture2D<float4> output								: register(cs_5_0, u0);
-RWStructuredBuffer<float4> AllVertex					: register(cs_5_0, t0);
-StructuredBuffer<float2> AllTexCoord					: register(cs_5_0, t1);
-StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(cs_5_0, t2);
 
-
-Ray createRay(int x, int y)
+Ray createRay(uint x, uint y)
 {
 	Ray l_ray;
 	l_ray.origin = cameraPosition;
@@ -83,7 +83,7 @@ Ray createRay(int x, int y)
 	return l_ray;
 }
 
-float3 TriangleNormalCounterClockwise(int DescriptionIndex)
+float3 TriangleNormalCounterClockwise(uint DescriptionIndex)
 {
 	float3 e1, e2;  //Edge1, Edge2
  
@@ -95,8 +95,8 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 
 
 	//Find vectors for two edges sharing V0
-	e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;	// Use indexvalues to get vectors
-	e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
+	e1 = AllVertex[(uint)Point1].xyz - AllVertex[(uint)Point0].xyz;	// Use indexvalues to get vectors
+	e2 = AllVertex[(uint)Point2].xyz - AllVertex[(uint)Point0].xyz;
 	
 	float3 normal = cross(e1, e2);
 	return normalize(normal);	
@@ -104,12 +104,12 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 
 interface IntersectInterface
 {
-	float Intersect(in Ray p_ray, in int p_index);
+	float Intersect(in Ray p_ray, in uint p_index);
 };
 
 class SphereIntersect : IntersectInterface
 {
-	float Intersect(in Ray p_ray, in int index)
+	float Intersect(in Ray p_ray, in uint index)
 	{		
 		//return 0.0f; //Skip spheres
 		float4 l_distance = p_ray.origin - Sphere[index].midPos;
@@ -137,7 +137,7 @@ class SphereIntersect : IntersectInterface
 
 class TriangleIntersect : IntersectInterface
 {
-	float Intersect(in Ray p_ray, in int index)                         
+	float Intersect(in Ray p_ray, in uint index)                         
 	{
 		float3 e1, e2;
 		float det, inv_det, u, v;
@@ -148,32 +148,10 @@ class TriangleIntersect : IntersectInterface
 		Point0 = AllTriangleDesc[index].Point0;
 		Point1 = AllTriangleDesc[index].Point1;
 		Point2 = AllTriangleDesc[index].Point2;
-
-		// Hardcoded values test
-		Point0 += 1;
-		Point1 += 2;
-		Point2 += 3;
-		/*
-		float3 q0, q1, q2;
-		q0 = AllVertex[(int)Point0].xyz;
-		q1 = AllVertex[(int)Point1].xyz;
-		q2 = AllVertex[(int)Point2].xyz;
-
-		//Find vectors for two edges sharing V0
-		e1 = q1 - q0;
-		e2 = q2 - q0;
-		*/
-
-		float temp = 2.0;
-		temp = temp * (AllTriangleDesc[index].padding1 * AllTriangleDesc[index].TexCoord0 * AllTriangleDesc[index].TexCoord1 * AllTriangleDesc[index].TexCoord2 * AllTriangleDesc[index].padding2);
-		Point1 = Point1 * temp;
-
-		Point1 = Point1 / temp;
-
 		
-				//Find vectors for two edges sharing V0
-		e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;
-		e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
+		//Find vectors for two edges sharing V0
+		e1 = AllVertex[(uint)Point1].xyz - AllVertex[(uint)Point0].xyz;
+		e2 = AllVertex[(uint)Point2].xyz - AllVertex[(uint)Point0].xyz;
 		
 	
 		//Begin calculating determinant - also used to calculate u parameter
@@ -218,16 +196,16 @@ class TriangleIntersect : IntersectInterface
 	}
 };
 
-void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int p_amount, out int p_hitPrimitive, out int p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
 {	
 	p_hitPrimitive = -1;
 	
-	int l_primitiveIndex = 0;
+	uint l_primitiveIndex = 0;
 	
 	float temp = 0.0f;
 	float lowest = 0.0f;
 
-	for(int i = 0; i < p_amount; i++)				// Go through all primitives
+	for(uint i = 0; i < p_amount; i++)				// Go through all primitives
 	{
 		temp = p_intersect.Intersect(p_ray, i);				// Get distance to current primitive, return 0.0 if it does not intersect anything
 		if(temp != 0.0f && temp > 0.0f)						// if temp has his something and it's bigger than 0 (removing distances that reports negative values)
@@ -245,7 +223,7 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in int
 }
 
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
-bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in int p_lightIndex)
+bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in uint p_lightIndex)
 {
 	float4 l_tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	SphereIntersect sphereIntersect;
@@ -256,10 +234,10 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 	l_lightSourceRay.origin = PointLight[p_lightIndex].position;
 	l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
 	
-	int l_closestSphereIndex, l_closestTriangleIndex;
+	uint l_closestSphereIndex, l_closestTriangleIndex;
 	float l_distanceToClosestSphere, l_distanceToClosestTriangle = 0.0f;
-	int l_sphereHit;
-	int l_TriangleHit;
+	uint l_sphereHit;
+	uint l_TriangleHit;
 		
 	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, 3, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);	// HARDCODED AMOUNT OF SPHERES AND TRIANGLES
 	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, 12, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
@@ -304,15 +282,15 @@ bool IsLitByLight(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType,
 	return false;
 }
 
-Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out int p_out_primitiveIndex, out int p_out_primitiveType) 
+Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
 {	
 	Ray l_ray = p_ray;
 
 	// Variables used by all intersections
 	float4 l_collidePos;
 		
-	int l_sphereindex = 0;	
-	int l_triangleindex = 0;
+	uint l_sphereindex = 0;	
+	uint l_triangleindex = 0;
 	float l_distanceToClosestSphere	= 0.0f;
 	float l_distanceToClosestTriangle = 0.0f;
 
@@ -320,7 +298,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 	SphereIntersect sphereIntersect;
 	TriangleIntersect triangleIntersect;
 	
-	int l_sphereHit, l_triangleHit;
+	uint l_sphereHit, l_triangleHit;
 
 	GetClosestPrimitive(p_ray, sphereIntersect, 3, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
 	GetClosestPrimitive(p_ray, triangleIntersect, 12, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
@@ -397,7 +375,7 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 }
 
 
-float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
+float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
@@ -407,7 +385,7 @@ float4 GetPrimitiveColor(in int p_primitiveIndex, in int p_primitiveType)
 	return BLACK4;
 }
 
-float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
+float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
@@ -417,7 +395,7 @@ float GetReflectiveFactor(in int p_primitiveIndex, in int p_primitiveType)
 	return 0;
 }
 
-float GetReflective(in int p_primitiveIndex, in int p_primitiveType)
+float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
@@ -428,13 +406,13 @@ float GetReflective(in int p_primitiveIndex, in int p_primitiveType)
 }
 
 
-float4 Shade(in Ray p_ray, in int p_primitiveIndex, in int p_primitiveType, in float4 p_collideNormal, in Material p_material)
+float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material)
 {
 	float4 p_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	
 	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
 
-	for(int i = 0; i < LIGHT_COUNT; i++) // for each light
+	for(uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
@@ -459,9 +437,9 @@ float4 Trace(in Ray p_ray)
 
 	float4 l_collideNormal;
 	Material l_material;
-	int l_primitiveIndex;
-	int l_primitiveType;
-	int l_isReflective;
+	uint l_primitiveIndex;
+	uint l_primitiveType;
+	uint l_isReflective;
 	float l_reflectiveFactor = 1.0f;
 
 	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
@@ -471,7 +449,7 @@ float4 Trace(in Ray p_ray)
 		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Get shade 
 	}
 	
-	for(int i = 0; i < max_number_of_bounces-1; i++) // Iterate through all jump
+	for(uint i = 0; i < max_number_of_bounces-1; i++) // Iterate through all jump
 	{
 		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);		// Get if the material is reflective (Used to check if next jump should be executed)					
 		if(l_isReflective == 1) // Is is reflective
@@ -500,7 +478,6 @@ void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
-
 	l_finalColor = Trace(l_ray);
 	
 	float a;
@@ -512,11 +489,6 @@ void main( uint3 threadID : SV_DispatchThreadID)
 
 	output[threadID.xy] = l_finalColor;
 }
-
-	/*
-	StructuredBuffer<float4> AllVertex			
-StructuredBuffer<float2> AllTexCoord	
-StructuredBuffer<TriangleDescription> AllTriangleDesc	*/
 
 /*
 	Fixa så att ljuset rör sig.

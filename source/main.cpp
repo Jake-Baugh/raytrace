@@ -34,9 +34,9 @@ std::vector<XMFLOAT4> g_allTrianglesVertex;// = nullptr;
 std::vector<XMFLOAT2> g_allTrianglesTexCoord;// = nullptr;
 std::vector<CustomPrimitiveStruct::TriangleDescription> g_allTrianglesIndex;
 
-ID3D11UnorderedAccessView* g_VertexUAccessView;
-ID3D11UnorderedAccessView* g_TexCoordUAccessView;
-ID3D11UnorderedAccessView* g_TriangleIndexUAccessView;
+ID3D11ShaderResourceView* g_Vertex_SRV;
+ID3D11ShaderResourceView* g_TexCoord_SRV;
+ID3D11ShaderResourceView* g_TriangleDesc_SRV;
 
 ComputeShader*				g_ComputeShader			= nullptr;
 
@@ -535,17 +535,12 @@ HRESULT CreateObjectBuffer()
 	HRESULT hr = S_OK;
 
 	D3D11_SUBRESOURCE_DATA l_data;
-	
 	int ByteWidth;
-
-	XMFLOAT4* a = new XMFLOAT4[8];
-	for(int i = 0; i < 8; i++)
-		a[i] = XMFLOAT4(1.0, 2.0, 3.0, 1.0);
 	
 	// RAW VERTEX SAVING
 	l_data.pSysMem = g_allTrianglesVertex.data();
 	D3D11_BUFFER_DESC RawVertex;
-	RawVertex.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	RawVertex.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
 	RawVertex.CPUAccessFlags	=	0;
 	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -555,23 +550,23 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateBuffer(&RawVertex, &l_data, &g_vertexBuffer);
 	if(FAILED(hr))
 		return hr;
+	D3D11_SHADER_RESOURCE_VIEW_DESC Vertex_SRV_Desc;
+	ZeroMemory(&Vertex_SRV_Desc, sizeof(Vertex_SRV_Desc));
+	Vertex_SRV_Desc.Buffer.ElementOffset = 0;
+//	Vertex_SRV_Desc.Buffer.ElementWidth = 0;
+	Vertex_SRV_Desc.Buffer.FirstElement = 0;
+	Vertex_SRV_Desc.Buffer.NumElements = g_allTrianglesVertex.size();
+	Vertex_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
+	Vertex_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	hr = g_Device->CreateShaderResourceView(g_vertexBuffer, &Vertex_SRV_Desc, &g_Vertex_SRV);
 
-	D3D11_UNORDERED_ACCESS_VIEW_DESC AllVertex_AccessView_Desc;
-	ZeroMemory(&AllVertex_AccessView_Desc, sizeof(AllVertex_AccessView_Desc));
-	AllVertex_AccessView_Desc.Buffer.FirstElement = 0;
-	AllVertex_AccessView_Desc.Buffer.Flags			=	0;
-	AllVertex_AccessView_Desc.Buffer.NumElements	=	g_allTrianglesVertex.size();
-	AllVertex_AccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
-	AllVertex_AccessView_Desc.ViewDimension			=	D3D11_UAV_DIMENSION_BUFFER;
-	hr = g_Device->CreateUnorderedAccessView(g_vertexBuffer, &AllVertex_AccessView_Desc, &g_VertexUAccessView);
-	if(FAILED(hr))
+	if (FAILED(hr))
 		return hr;
-
 	
 	// RAW TEXCOORD
 	l_data.pSysMem = g_allTrianglesTexCoord.data();
 	D3D11_BUFFER_DESC RawTexCoord;
-	RawTexCoord.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
+	RawTexCoord.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;
 	RawTexCoord.Usage				=	D3D11_USAGE_DEFAULT; 
 	RawTexCoord.CPUAccessFlags		=	0;
 	RawTexCoord.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -581,22 +576,20 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
 	if(FAILED(hr))
 		return hr;	
-
-	D3D11_UNORDERED_ACCESS_VIEW_DESC AllTexCoord_AccessView_Desc;
-	ZeroMemory(&AllTexCoord_AccessView_Desc, sizeof(AllTexCoord_AccessView_Desc));
-	AllTexCoord_AccessView_Desc.Buffer.FirstElement = 0;
-	AllTexCoord_AccessView_Desc.Buffer.Flags			=	0;
-	AllTexCoord_AccessView_Desc.Buffer.NumElements		=	g_allTrianglesTexCoord.size();
-	AllTexCoord_AccessView_Desc.Format					=	DXGI_FORMAT_UNKNOWN;
-	AllTexCoord_AccessView_Desc.ViewDimension			=	D3D11_UAV_DIMENSION_BUFFER;
-	hr = g_Device->CreateUnorderedAccessView(g_TexCoordBuffer, &AllTexCoord_AccessView_Desc, &g_TexCoordUAccessView);
-	if(FAILED(hr))
-		return hr;
+	D3D11_SHADER_RESOURCE_VIEW_DESC TexCoord_SRV_Desc;
+	ZeroMemory(&TexCoord_SRV_Desc, sizeof(TexCoord_SRV_Desc));
+	TexCoord_SRV_Desc.Buffer.ElementOffset = 0;
+//	TexCoord_SRV_Desc.Buffer.ElementWidth = 0;
+	TexCoord_SRV_Desc.Buffer.FirstElement = 0;
+	TexCoord_SRV_Desc.Buffer.NumElements = g_allTrianglesTexCoord.size();
+	TexCoord_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
+	TexCoord_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
 
 	
 	l_data.pSysMem = g_allTrianglesIndex.data();
 	D3D11_BUFFER_DESC ObjectBufferDescription;
-	ObjectBufferDescription.BindFlags			=	D3D11_BIND_UNORDERED_ACCESS  | D3D11_BIND_SHADER_RESOURCE;
+	ObjectBufferDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;
 	ObjectBufferDescription.Usage				=	D3D11_USAGE_DEFAULT; 
 	ObjectBufferDescription.CPUAccessFlags		=	0;
 	ObjectBufferDescription.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -606,15 +599,15 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateBuffer( &ObjectBufferDescription, &l_data, &g_objectBuffer);
 	if(FAILED(hr))
 		return hr;
-//	D3D11_UNORDERED_ACCESS_VIEW_DESC TrinagleIndex_UAccessView_Desc;
-	D3D11_UNORDERED_ACCESS_VIEW_DESC TrinagleIndex_UAccessView_Desc;
-	ZeroMemory(&TrinagleIndex_UAccessView_Desc, sizeof(TrinagleIndex_UAccessView_Desc));
-	TrinagleIndex_UAccessView_Desc.Buffer.FirstElement	=	0;
-	TrinagleIndex_UAccessView_Desc.Buffer.Flags			=	0;
-	TrinagleIndex_UAccessView_Desc.Buffer.NumElements	=	g_allTrianglesIndex.size();
-	TrinagleIndex_UAccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
-	TrinagleIndex_UAccessView_Desc.ViewDimension		=	D3D11_UAV_DIMENSION_BUFFER;
-	hr = g_Device->CreateUnorderedAccessView(g_objectBuffer, &TrinagleIndex_UAccessView_Desc, &g_TriangleIndexUAccessView);
+	D3D11_SHADER_RESOURCE_VIEW_DESC TrinagleIndex_SRV_Desc;
+	ZeroMemory(&TrinagleIndex_SRV_Desc, sizeof(TrinagleIndex_SRV_Desc));
+	TrinagleIndex_SRV_Desc.Buffer.ElementOffset = 0;
+//	TrinagleIndex_SRV_Desc.Buffer.ElementWidth = 0;
+	TrinagleIndex_SRV_Desc.Buffer.FirstElement = 0;
+	TrinagleIndex_SRV_Desc.Buffer.NumElements = g_allTrianglesIndex.size();
+	TrinagleIndex_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
+	TrinagleIndex_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	hr = g_Device->CreateShaderResourceView(g_objectBuffer, &TrinagleIndex_SRV_Desc, &g_TriangleDesc_SRV);
 	if(FAILED(hr))
 		return hr;
 
@@ -682,13 +675,13 @@ HRESULT Update(float deltaTime)
 
 HRESULT Render(float deltaTime)
 {
-	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV, g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer };
-	ID3D11ShaderResourceView* srv = { };
+	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV};
+	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
+	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TexCoord_SRV, g_TriangleDesc_SRV};
 
-	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, 0);
+	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, 0);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
-	g_DeviceContext->CSGetShaderResources(0, 0, &srv);
+	g_DeviceContext->CSSetShaderResources(0, 3, srv);
 
 
 	g_ComputeShader->Set();
