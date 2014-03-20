@@ -557,7 +557,8 @@ HRESULT CreateObjectBuffer()
 		return hr;
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC AllVertex_AccessView_Desc;
-	AllVertex_AccessView_Desc.Buffer.FirstElement	=	0;
+	ZeroMemory(&AllVertex_AccessView_Desc, sizeof(AllVertex_AccessView_Desc));
+	AllVertex_AccessView_Desc.Buffer.FirstElement = 0;
 	AllVertex_AccessView_Desc.Buffer.Flags			=	0;
 	AllVertex_AccessView_Desc.Buffer.NumElements	=	g_allTrianglesVertex.size();
 	AllVertex_AccessView_Desc.Format				=	DXGI_FORMAT_UNKNOWN;
@@ -580,8 +581,10 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
 	if(FAILED(hr))
 		return hr;	
+
 	D3D11_UNORDERED_ACCESS_VIEW_DESC AllTexCoord_AccessView_Desc;
-	AllTexCoord_AccessView_Desc.Buffer.FirstElement		=	0;
+	ZeroMemory(&AllTexCoord_AccessView_Desc, sizeof(AllTexCoord_AccessView_Desc));
+	AllTexCoord_AccessView_Desc.Buffer.FirstElement = 0;
 	AllTexCoord_AccessView_Desc.Buffer.Flags			=	0;
 	AllTexCoord_AccessView_Desc.Buffer.NumElements		=	g_allTrianglesTexCoord.size();
 	AllTexCoord_AccessView_Desc.Format					=	DXGI_FORMAT_UNKNOWN;
@@ -603,7 +606,9 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateBuffer( &ObjectBufferDescription, &l_data, &g_objectBuffer);
 	if(FAILED(hr))
 		return hr;
+//	D3D11_UNORDERED_ACCESS_VIEW_DESC TrinagleIndex_UAccessView_Desc;
 	D3D11_UNORDERED_ACCESS_VIEW_DESC TrinagleIndex_UAccessView_Desc;
+	ZeroMemory(&TrinagleIndex_UAccessView_Desc, sizeof(TrinagleIndex_UAccessView_Desc));
 	TrinagleIndex_UAccessView_Desc.Buffer.FirstElement	=	0;
 	TrinagleIndex_UAccessView_Desc.Buffer.Flags			=	0;
 	TrinagleIndex_UAccessView_Desc.Buffer.NumElements	=	g_allTrianglesIndex.size();
@@ -678,10 +683,12 @@ HRESULT Update(float deltaTime)
 HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV, g_VertexUAccessView, g_TexCoordUAccessView, g_TriangleIndexUAccessView};
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, };
+	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer };
+	ID3D11ShaderResourceView* srv = { };
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 4, uav, 0);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
+	g_DeviceContext->CSGetShaderResources(0, 0, &srv);
 
 
 	g_ComputeShader->Set();
@@ -689,6 +696,7 @@ HRESULT Render(float deltaTime)
 	g_DeviceContext->Dispatch( 25, 25, 1 );
 //	g_Timer->Stop();
 	g_ComputeShader->Unset();
+
 
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;

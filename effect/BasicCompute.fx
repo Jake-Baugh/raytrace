@@ -32,7 +32,7 @@ struct TriangleDescription // 16
 	Material material;	// 8
 };
 
-cbuffer EveryFrameBuffer : register(c0) // 40
+cbuffer EveryFrameBuffer : register(b0) // 40
 {
 	float4	 cameraPosition;		// 4
 	float4x4 inverseProjection;		// 16
@@ -40,28 +40,28 @@ cbuffer EveryFrameBuffer : register(c0) // 40
 //	float4 screenVariable;
 }
 
-cbuffer PrimitiveBuffer: register(c1)	// 48 floats, 192 bytes
+cbuffer PrimitiveBuffer: register(b1)	// 48 floats, 192 bytes
 {
 	SphereStruct	Sphere[SPHERE_COUNT];	// 16*3 = 48
 //	float4			countVariable;			// 4
 }
 
-cbuffer LightBuffer : register(c2)			// 28 floats, 112 bytes
+cbuffer LightBuffer : register(b2)			// 28 floats, 112 bytes
 {
 	float light_count;						// 1
 	float3 ambientLight;					// 3
 	PointLightData PointLight[LIGHT_COUNT];	// 8*3 = 24
 }
 
-cbuffer AllTrianglesCBuffer : register(c3)
+cbuffer AllTrianglesCBuffer : register(b3)
 {
 	int amountOfTriangles;
 }
 
-RWTexture2D<float4> output								: register(u0);
-StructuredBuffer<float4> AllVertex						: register(u1);
-StructuredBuffer<float2> AllTexCoord					: register(u2);
-StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(u3);
+RWTexture2D<float4> output								: register(cs_5_0, u0);
+RWStructuredBuffer<float4> AllVertex					: register(cs_5_0, t0);
+StructuredBuffer<float2> AllTexCoord					: register(cs_5_0, t1);
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(cs_5_0, t2);
 
 
 Ray createRay(int x, int y)
@@ -93,11 +93,7 @@ float3 TriangleNormalCounterClockwise(int DescriptionIndex)
 	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
 	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
 
-	float temp = 2.0;
-	temp = temp * (AllTriangleDesc[DescriptionIndex].padding1 * AllTriangleDesc[DescriptionIndex].TexCoord0 * AllTriangleDesc[DescriptionIndex].TexCoord1 * AllTriangleDesc[DescriptionIndex].TexCoord2 * AllTriangleDesc[DescriptionIndex].padding2);
-	Point1 = Point1 * temp;
 
-	Point1 = Point1 / temp;
 	//Find vectors for two edges sharing V0
 	e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;	// Use indexvalues to get vectors
 	e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
@@ -154,10 +150,10 @@ class TriangleIntersect : IntersectInterface
 		Point2 = AllTriangleDesc[index].Point2;
 
 		// Hardcoded values test
-		Point0 = 1;
-		Point1 = 2;
-		Point2 = 3;
- 
+		Point0 += 1;
+		Point1 += 2;
+		Point2 += 3;
+		/*
 		float3 q0, q1, q2;
 		q0 = AllVertex[(int)Point0].xyz;
 		q1 = AllVertex[(int)Point1].xyz;
@@ -166,12 +162,19 @@ class TriangleIntersect : IntersectInterface
 		//Find vectors for two edges sharing V0
 		e1 = q1 - q0;
 		e2 = q2 - q0;
+		*/
 
-		/*
+		float temp = 2.0;
+		temp = temp * (AllTriangleDesc[index].padding1 * AllTriangleDesc[index].TexCoord0 * AllTriangleDesc[index].TexCoord1 * AllTriangleDesc[index].TexCoord2 * AllTriangleDesc[index].padding2);
+		Point1 = Point1 * temp;
+
+		Point1 = Point1 / temp;
+
+		
 				//Find vectors for two edges sharing V0
 		e1 = AllVertex[(int)Point1].xyz - AllVertex[(int)Point0].xyz;
 		e2 = AllVertex[(int)Point2].xyz - AllVertex[(int)Point0].xyz;
-		*/
+		
 	
 		//Begin calculating determinant - also used to calculate u parameter
 		float3 P = cross(p_ray.direction.xyz, e2);
@@ -497,8 +500,9 @@ void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
-	l_finalColor = Trace(l_ray);
 
+	l_finalColor = Trace(l_ray);
+	
 	float a;
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
