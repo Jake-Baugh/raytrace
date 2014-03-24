@@ -24,4 +24,5 @@
 #define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
 #define ORANGE4  float4(1.0f, 0.55f, 0.0f, 1.0f)
 #define TEAL4  float4(0.0f, 1.0f, 1.0f, 1.0f)
+#define GREY4 float4(0.2f, 0.2f, 0.2f, 0.2f);
 // END OF COLORS

@@ -8,7 +8,7 @@
 #include "ObjectLoader.h"
 
 #define MOUSE_SENSE 0.0087266f
-#define MOVE_SPEED  150.0f
+#define MOVE_SPEED  450.0f
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -169,7 +169,7 @@ HRESULT Init()
 	g_allTrianglesTexCoord	= std::vector<XMFLOAT2>();
 	g_allTrianglesIndex		= std::vector<CustomPrimitiveStruct::TriangleDescription>();
 	
-	hr = CreateCameraBuffer();
+ 	hr = CreateCameraBuffer();
 	if(FAILED(hr))	
 		return hr;
 
@@ -364,23 +364,22 @@ void FillPrimitiveBuffer(float l_deltaTime)
 //	l_primitive.TriangleCount = TRIANGLE_COUNT;
 //	l_primitive.TriangleCountFromObject = -1;
 //	l_primitive.padding1 = -1;
-
 	
-	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 500.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
 	l_primitive.Sphere[0].Color					= XMFLOAT3(1.0f, 0.0f, 0.0f);
 	
-	l_primitive.Sphere[1].MidPosition			= XMFLOAT4 (-900.0f, 0.0f, 700.0f, 1.0f);
+	l_primitive.Sphere[1].MidPosition			= XMFLOAT4 (-900.0f, 500.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[1].Radius				= 200.0f;
 	l_primitive.Sphere[1].Color					= XMFLOAT3(0.0f, 0.0f, 1.0f);
 
-	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(0.0f, 500, 0.0f, 0.0f);
+	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(0.0f, 1000, 0.0f, 0.0f);
 	l_primitive.Sphere[2].Radius				= 200.0f;
 	l_primitive.Sphere[2].Color					= XMFLOAT3(1.0f, 0.55f, 0.0f);
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		l_primitive.Sphere[i].Material.ambient = 0.5f;
+		l_primitive.Sphere[i].Material.ambient = 0.0f;
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
 		l_primitive.Sphere[i].Material.specular = 0.8f;
 		l_primitive.Sphere[i].Material.shininess = 30.0f;
@@ -635,7 +634,7 @@ HRESULT Update(float deltaTime)
 	if(GetAsyncKeyState('2') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->pitch(	cameraspeed * deltaTime);
 	
-	float upndownspeed = 6.0f;
+	float upndownspeed = 18.0f;
 	if(GetAsyncKeyState(VK_SPACE) & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->MoveY(	MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)

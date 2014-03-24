@@ -31,13 +31,13 @@ float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, Po
     return l_ambient + (l_diffuse + l_specular) * l_pointLight.color;
 }
 
-float4 CalcLight (Ray p_ray, PointLightData light, float4 hitPos, float3 hitNormal, Material M, float4 p_ambient)
+float4 CalcLight (Ray p_ray, PointLightData light, float3 hitPos, float3 hitNormal, Material M, float4 p_ambient)
 {
-	float3 lightDir = normalize(hitPos - light.position);
+	float3 lightDir = normalize(hitPos - light.position.xyz);
 	float4 lightAttenuation = 1 / (length(lightDir) * length(lightDir));
 
 	float3 NormalizedHitNormal = normalize( hitNormal );
-	float3 V = normalize( p_ray.origin - hitPos );
+	float3 V = normalize( p_ray.origin.xyz - hitPos );
 	float3 R = reflect( lightDir, NormalizedHitNormal );
 
 	return lightAttenuation * calcPhongLighting( M, NormalizedHitNormal, lightDir, V, R, light, p_ambient);
