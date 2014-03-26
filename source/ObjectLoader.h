@@ -11,7 +11,11 @@ class ObjectLoader
 public:
 	static ObjectLoader* GetObjectLoader();
 
-	HRESULT LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, std::vector<XMFLOAT4>** p_out_vertices, std::vector<XMFLOAT2>** p_out_texCoords, std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices);
+	HRESULT LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, 
+		std::vector<XMFLOAT4>** p_out_vertices, 
+		std::vector<XMFLOAT2>** p_out_texCoords, 
+		std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices, 
+		std::vector<XMFLOAT3>** p_out_normals);
 
 
 

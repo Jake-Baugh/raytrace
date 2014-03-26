@@ -60,8 +60,8 @@ namespace CustomPrimitiveStruct
 		float TexCoord2;
 		float TexCoord3;
 		float PADDING2;
-	//	float padding1;
-	//	float padding2;
+		XMFLOAT3 Normal;
+		float PADDING3;
 		Material Material;
 	};
 

@@ -33,8 +33,8 @@ float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, Po
 
 float4 CalcLight (Ray p_ray, PointLightData light, float3 hitPos, float3 hitNormal, Material M, float4 p_ambient)
 {
-	float3 lightDir = normalize(hitPos - light.position.xyz);
-	float4 lightAttenuation = 1 / (length(lightDir) * length(lightDir));
+	float3 lightDir = normalize(hitPos - light.position.xyz);				// From lightsource to hitposition
+	float lightAttenuation = 1 / (length(lightDir) * length(lightDir));	// 1 / 
 
 	float3 NormalizedHitNormal = normalize( hitNormal );
 	float3 V = normalize( p_ray.origin.xyz - hitPos );

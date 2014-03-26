@@ -15,10 +15,13 @@ ObjectLoader* ObjectLoader::GetObjectLoader()
 	return m_objectLoader;
 }
 
-HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath, std::vector<XMFLOAT4>** p_out_vertices, std::vector<XMFLOAT2>** p_out_texCoords, std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices)
-
+HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_objPath,
+	std::vector<XMFLOAT4>** p_out_vertices, 
+	std::vector<XMFLOAT2>** p_out_texCoords, 
+	std::vector<CustomPrimitiveStruct::TriangleDescription>** p_out_indices, 
+	std::vector<XMFLOAT3>** p_out_normals)
 {
-	HRESULT hr = S_OK; // THIS VALUE IS ALWAYS S_OK
+	HRESULT hr = S_OK; // THIS VALUE IS ALWAYS S_OK		// TODO
 
 	using namespace std;	
 
@@ -28,8 +31,8 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 	float lX, lY, lZ;
 
 	// Vertex normal variables
-	vector<XMFLOAT3> lVertexNormal;
-	lVertexNormal = vector<XMFLOAT3>();
+	vector<XMFLOAT3>* lVertexNormal;
+	lVertexNormal = new vector<XMFLOAT3>;
 	float lNormalX, lNormalY, lNormalZ;
 
 	// Vertex texture variables
@@ -47,15 +50,8 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			texCoord_index1, texCoord_index2, texCoord_index3;
 
 	ifstream lStream;
-	//try
-	//{
-	lStream.open("BOX3.obj");
-	/*}
-	catch(exception e)
-	{
-		hr = S_FALSE;
-		return hr;
-	}*/
+
+	lStream.open("ROOM.obj");
 
 	char lBuffer[1024];
 
@@ -98,7 +94,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			lVector.x = lNormalX;
 			lVector.y = lNormalY;
 			lVector.z = lNormalZ;
-			lVertexNormal.push_back(lVector);
+			lVertexNormal->push_back(lVector);
 		}
 
 		// Texture Coordinates
@@ -126,20 +122,23 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Point1 = point_index1-1;
 			l_triangleDesc.Point2 = point_index2-1;
 			l_triangleDesc.Point3 = point_index3-1;
-			l_triangleDesc.TexCoord1 = 1.0;//texCoord_index1-1;
-			l_triangleDesc.TexCoord2 = 1.0;//texCoord_index2-1;
-			l_triangleDesc.TexCoord3 = 1.0;//texCoord_index3-1;
-			
-			l_triangleDesc.Material.ambient = 0.5f;
-			l_triangleDesc.Material.diffuse = 0.8f;
-			l_triangleDesc.Material.specular = 0.8f;
-			l_triangleDesc.Material.shininess = 30.0f;
-			l_triangleDesc.Material.reflectiveFactor = 1.0f;
+			l_triangleDesc.TexCoord1 = texCoord_index1-1;
+			l_triangleDesc.TexCoord2 = texCoord_index2-1;
+			l_triangleDesc.TexCoord3 = texCoord_index3-1;
+			l_triangleDesc.Normal.x = normal_index1 - 1;
+			l_triangleDesc.Normal.y = normal_index2 - 1;
+			l_triangleDesc.Normal.z = normal_index3 - 1;			
+			l_triangleDesc.Material.ambient = 0.1f;
+			l_triangleDesc.Material.diffuse = 0.5f;
+			l_triangleDesc.Material.specular = 0.5f;
+			l_triangleDesc.Material.shininess = 1.0f;
+			l_triangleDesc.Material.reflectiveFactor = 0.5f;
 			l_triangleDesc.Material.refractiveFactor = 0.0f;
-			l_triangleDesc.Material.isReflective = 1;
+			l_triangleDesc.Material.isReflective = 1.0f;
 			l_triangleDesc.Material.isRefractive = -1;
 			l_triangleDesc.PADDING1 = 1.0f;
 			l_triangleDesc.PADDING2 = 1.0f;
+			l_triangleDesc.PADDING3 = 1.0f;
 
 
 			// TODO remove hardcoded
@@ -152,6 +151,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 	*p_out_vertices = lVertexPosition;
 	*p_out_texCoords = lTextureCoord;
 	*p_out_indices = l_meshDescription;
+	*p_out_normals = lVertexNormal;
 
 
 	return hr;

@@ -27,16 +27,19 @@ ID3D11Buffer*				g_LightBuffer			= NULL;
 ID3D11Buffer*				g_vertexBuffer			= nullptr;
 ID3D11Buffer*				g_TexCoordBuffer		= nullptr;
 ID3D11Buffer*				g_objectBuffer			= nullptr;
+ID3D11Buffer*				g_normalBuffer			= nullptr;
 
 
 // Triangle mesh variables
 std::vector<XMFLOAT4> g_allTrianglesVertex;// = nullptr;
 std::vector<XMFLOAT2> g_allTrianglesTexCoord;// = nullptr;
 std::vector<CustomPrimitiveStruct::TriangleDescription> g_allTrianglesIndex;
+std::vector<XMFLOAT3> g_allTriangleNormal;
 
 ID3D11ShaderResourceView* g_Vertex_SRV;
 ID3D11ShaderResourceView* g_TexCoord_SRV;
 ID3D11ShaderResourceView* g_TriangleDesc_SRV;
+ID3D11ShaderResourceView* g_Normal_SRV;
 
 ComputeShader*				g_ComputeShader			= nullptr;
 
@@ -379,10 +382,10 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		l_primitive.Sphere[i].Material.ambient = 0.0f;
+		l_primitive.Sphere[i].Material.ambient = 0.0000f;
 		l_primitive.Sphere[i].Material.diffuse = 0.8f;
 		l_primitive.Sphere[i].Material.specular = 0.8f;
-		l_primitive.Sphere[i].Material.shininess = 30.0f;
+		l_primitive.Sphere[i].Material.shininess = 1.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
 		l_primitive.Sphere[i].Material.isReflective = 1.0f;
@@ -480,8 +483,9 @@ HRESULT LoadMesh(char* p_path)
 	vector<XMFLOAT4>* l_rawVertex	= nullptr;
 	vector<XMFLOAT2>* l_rawTexCoord = nullptr;
 	vector<CustomPrimitiveStruct::TriangleDescription>* l_triangleDescription = nullptr;
+	vector<XMFLOAT3>* l_rawNormal = nullptr;
 
-	hr = ObjectLoader::GetObjectLoader()->LoadObject(g_DeviceContext, p_path, &l_rawVertex, &l_rawTexCoord, &l_triangleDescription);
+	hr = ObjectLoader::GetObjectLoader()->LoadObject(g_DeviceContext, p_path, &l_rawVertex, &l_rawTexCoord, &l_triangleDescription, &l_rawNormal);
 	if(FAILED(hr))
 		return hr;
 
@@ -489,6 +493,7 @@ HRESULT LoadMesh(char* p_path)
 	int allVertexSize			= g_allTrianglesVertex		.size();
 	int allTexCoordSize			= g_allTrianglesTexCoord	.size();
 	int allTrianglesIndexSize	= g_allTrianglesIndex		.size();
+	int allTrianglesNormalSize	= g_allTriangleNormal		.size();
 
 	// Move raw vertices
 	for(UINT i = 0; i < l_rawVertex->size(); i++)
@@ -513,8 +518,15 @@ HRESULT LoadMesh(char* p_path)
 			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
 			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
 			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).Normal.x += allTrianglesNormalSize;
+			g_allTrianglesIndex.at(i).Normal.y += allTrianglesNormalSize;
+			g_allTrianglesIndex.at(i).Normal.z += allTrianglesNormalSize;
 		}
 	}
+
+	// Move Normal descriptions
+	for (UINT i = 0; i < l_rawNormal->size(); i++)
+		g_allTriangleNormal.push_back(l_rawNormal->at(i));
 
 	return hr;
 }
@@ -535,7 +547,7 @@ HRESULT CreateObjectBuffer()
 
 	D3D11_SUBRESOURCE_DATA l_data;
 	int ByteWidth;
-	
+	////////
 	// RAW VERTEX SAVING
 	l_data.pSysMem = g_allTrianglesVertex.data();
 	D3D11_BUFFER_DESC RawVertex;
@@ -552,16 +564,15 @@ HRESULT CreateObjectBuffer()
 	D3D11_SHADER_RESOURCE_VIEW_DESC Vertex_SRV_Desc;
 	ZeroMemory(&Vertex_SRV_Desc, sizeof(Vertex_SRV_Desc));
 	Vertex_SRV_Desc.Buffer.ElementOffset = 0;
-//	Vertex_SRV_Desc.Buffer.ElementWidth = 0;
 	Vertex_SRV_Desc.Buffer.FirstElement = 0;
 	Vertex_SRV_Desc.Buffer.NumElements = g_allTrianglesVertex.size();
 	Vertex_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
 	Vertex_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 	hr = g_Device->CreateShaderResourceView(g_vertexBuffer, &Vertex_SRV_Desc, &g_Vertex_SRV);
-
 	if (FAILED(hr))
 		return hr;
-	
+
+	////////
 	// RAW TEXCOORD
 	l_data.pSysMem = g_allTrianglesTexCoord.data();
 	D3D11_BUFFER_DESC RawTexCoord;
@@ -578,14 +589,16 @@ HRESULT CreateObjectBuffer()
 	D3D11_SHADER_RESOURCE_VIEW_DESC TexCoord_SRV_Desc;
 	ZeroMemory(&TexCoord_SRV_Desc, sizeof(TexCoord_SRV_Desc));
 	TexCoord_SRV_Desc.Buffer.ElementOffset = 0;
-//	TexCoord_SRV_Desc.Buffer.ElementWidth = 0;
 	TexCoord_SRV_Desc.Buffer.FirstElement = 0;
 	TexCoord_SRV_Desc.Buffer.NumElements = g_allTrianglesTexCoord.size();
 	TexCoord_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
 	TexCoord_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
+	if (FAILED(hr))
+		return hr;
 
-	
+	////////
+	// TriangleDescription
 	l_data.pSysMem = g_allTrianglesIndex.data();
 	D3D11_BUFFER_DESC ObjectBufferDescription;
 	ObjectBufferDescription.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;
@@ -601,7 +614,6 @@ HRESULT CreateObjectBuffer()
 	D3D11_SHADER_RESOURCE_VIEW_DESC TrinagleIndex_SRV_Desc;
 	ZeroMemory(&TrinagleIndex_SRV_Desc, sizeof(TrinagleIndex_SRV_Desc));
 	TrinagleIndex_SRV_Desc.Buffer.ElementOffset = 0;
-//	TrinagleIndex_SRV_Desc.Buffer.ElementWidth = 0;
 	TrinagleIndex_SRV_Desc.Buffer.FirstElement = 0;
 	TrinagleIndex_SRV_Desc.Buffer.NumElements = g_allTrianglesIndex.size();
 	TrinagleIndex_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
@@ -609,6 +621,32 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateShaderResourceView(g_objectBuffer, &TrinagleIndex_SRV_Desc, &g_TriangleDesc_SRV);
 	if(FAILED(hr))
 		return hr;
+
+	////////
+	// Raw normal desc
+	l_data.pSysMem = g_allTriangleNormal.data();
+	D3D11_BUFFER_DESC NormalBufferDescription;
+	NormalBufferDescription.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
+	NormalBufferDescription.Usage				= D3D11_USAGE_DEFAULT;
+	NormalBufferDescription.CPUAccessFlags		= 0;
+	NormalBufferDescription.MiscFlags			= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	ByteWidth									= g_allTriangleNormal.size() * sizeof(XMFLOAT3);
+	NormalBufferDescription.ByteWidth			= ByteWidth;
+	NormalBufferDescription.StructureByteStride = sizeof(XMFLOAT3);
+	hr = g_Device->CreateBuffer(&NormalBufferDescription, &l_data, &g_normalBuffer);
+	if (FAILED(hr))
+		return hr;
+	D3D11_SHADER_RESOURCE_VIEW_DESC Normal_SRV_Desc;
+	ZeroMemory(&Normal_SRV_Desc, sizeof(Normal_SRV_Desc));
+	Normal_SRV_Desc.Buffer.ElementOffset	= 0;
+	Normal_SRV_Desc.Buffer.FirstElement		= 0;
+	Normal_SRV_Desc.Buffer.NumElements		= g_allTriangleNormal.size();
+	Normal_SRV_Desc.Format					= DXGI_FORMAT_UNKNOWN;
+	Normal_SRV_Desc.ViewDimension			= D3D11_SRV_DIMENSION_BUFFEREX;
+	hr = g_Device->CreateShaderResourceView(g_normalBuffer, &Normal_SRV_Desc, &g_Normal_SRV);
+	if (FAILED(hr))
+		return hr;
+
 
 	return hr;
 }
@@ -676,11 +714,11 @@ HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
-	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TexCoord_SRV, g_TriangleDesc_SRV};
+	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TexCoord_SRV, g_TriangleDesc_SRV, g_Normal_SRV};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, 0);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
-	g_DeviceContext->CSSetShaderResources(0, 3, srv);
+	g_DeviceContext->CSSetShaderResources(0, 4, srv);
 
 
 	g_ComputeShader->Set();

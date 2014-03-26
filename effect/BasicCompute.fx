@@ -19,7 +19,7 @@ struct SphereStruct	// 16
 };
 
 
-struct TriangleDescription // 16
+struct TriangleDescription // 20
 {
 	float Point0;		// 1
 	float Point1;		// 1
@@ -29,6 +29,8 @@ struct TriangleDescription // 16
 	float TexCoord1;	// 1
 	float TexCoord2;	// 1
 	float padding2;		// 1
+	float3 normal;		// 3
+	float padding3;		// 1
 	Material material;	// 8
 };
 
@@ -57,6 +59,7 @@ RWTexture2D<float4> output								: register(u0);
 StructuredBuffer<float4> AllVertex						: register(t0);
 StructuredBuffer<float2> AllTexCoord					: register(t1);
 StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t2);
+StructuredBuffer<float3> AllNormal						: register(t3);
 
 
 Ray createRay(uint x, uint y)
@@ -80,6 +83,8 @@ Ray createRay(uint x, uint y)
 
 float3 TriangleNormalCounterClockwise(uint DescriptionIndex)
 {
+	return normalize(AllNormal[AllTriangleDesc[DescriptionIndex].normal.x]);
+	/*
 	float3 e1, e2;  //Edge1, Edge2
  
 	float Point0, Point1, Point2; // Indes places in vertex array
@@ -95,7 +100,8 @@ float3 TriangleNormalCounterClockwise(uint DescriptionIndex)
 	
 	e1 = cross(e1, e2);
 	return normalize(e1);
-}
+	*/
+	}
 
 interface IntersectInterface
 {
@@ -317,8 +323,8 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		l_collidePos = p_ray.origin + (l_distanceToClosestTriangle - VERY_SMALL_NUMBER) * p_ray.direction;
 		
 		// Out variables		
-		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
-		p_out_material			= Sphere[l_sphereindex].material; //AllTriangleDesc[l_triangleindex].material;
+		p_out_collideNormal		= -float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		p_out_material			= AllTriangleDesc[l_triangleindex].material;
 		p_out_primitiveIndex	= l_triangleindex;
 		p_out_primitiveType		= TRIANGLE;
 
@@ -363,8 +369,12 @@ float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
-	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return GREY4; // All triangles are hardcoded 
+	else if (p_primitiveType == TRIANGLE)		// Triangle
+	{
+		if (p_primitiveIndex < 2)
+			return GREY4; // All triangles are hardcoded 
+		return BLACK4;
+	}
 		//return Triangle[p_primitiveIndex].color;	
 	return BLACK4;
 }
@@ -373,8 +383,8 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
-	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return 0.1f; // All triangles are 1.0 reflective. HARDCODED
+	else if (p_primitiveType == TRIANGLE)		// Triangle
+		return 0.0f; // All triangles are 1.0 reflective. HARDCODED
 		//return Triangle[p_primitiveIndex].material.reflective;
 	return 0;
 }
@@ -389,18 +399,23 @@ float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 	return 0;
 }
 
-float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material)
+float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material, out bool is_lit)
 {
 	float4 p_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	
+
 	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
+
+	is_lit = false;
 
 	for(uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
-		if(l_isLitByLight == true) // Thus is lit
+		if (l_isLitByLight == true) // Thus is lit
+		{
 			p_color += l_primitiveColor * CalcLight(p_ray, PointLight[i], p_ray.origin.xyz, p_collideNormal.xyz, p_material, float4(ambientLight, 1.0f));
+			is_lit = true;
+		}
 	}
 	return p_color;
 }
@@ -412,7 +427,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 4
+#define max_number_of_bounces 3
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -421,17 +436,20 @@ float4 Trace(in Ray p_ray)
 	float4 l_collideNormal;
 	Material l_material;
 	uint l_primitiveIndex;
-	uint l_primitiveType;	
+	uint l_primitiveType;
+	bool is_lit = false;
 
-	l_nextRay =	Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
+	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
 
 	if(l_primitiveType != PRIMITIVE_NOTHING) // As long as it is SOMETHING 
 	{
-		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Get shade 
+		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material, is_lit); // Get shade 
 	}
 	
 	uint l_isReflective;
 	float l_reflectiveFactor = 1.0f;
+//	if (is_lit == false)
+//		return colorIllumination;
 	for(uint i = 0; i < max_number_of_bounces-1; i++) // Iterate through all jump
 	{
 		l_isReflective = GetReflective(l_primitiveIndex, l_primitiveType);		// Get if the material is reflective (Used to check if next jump should be executed)					
@@ -444,7 +462,7 @@ float4 Trace(in Ray p_ray)
 			
 			if(l_primitiveType != PRIMITIVE_NOTHING)	// See if the ray hit anything
 			{
-				colorIllumination += l_reflectiveFactor * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Illuminate with new object with multiplied with last objects reflectiveFactor
+				colorIllumination += l_reflectiveFactor * Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material, is_lit); // Illuminate with new object with multiplied with last objects reflectiveFactor
 			}
 			else if(l_primitiveType == PRIMITIVE_NOTHING)	// If the ray hit NOTHING.
 				break;										// Quit
@@ -463,12 +481,13 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	Ray l_ray = createRay(threadID.x, threadID.y);
 	l_finalColor = Trace(l_ray);
 
+	float a;
 	// Normalizing after highest value	
-	l_finalColor.w = max(l_finalColor.x, l_finalColor.y);
-	l_finalColor.w = max(l_finalColor.w, l_finalColor.z);
-	l_finalColor.w = max(l_finalColor.w, 1.0f);
+	a = max(l_finalColor.x, l_finalColor.y);
+	a = max(a, l_finalColor.z);
+	a = max(a, 1.0f);
 	
-	l_finalColor /= l_finalColor.w;
+	l_finalColor /= a;
 
 	output[threadID.xy] = l_finalColor;
 }
