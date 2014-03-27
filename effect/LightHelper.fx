@@ -28,7 +28,7 @@ float4 CalcLight(Material M, float3 HitPosition, float3 LightPosition, float3 Ca
 	float3 L = normalize(LightPosition - HitPosition); // vectorTowardsLightFromHit
 	float3 N = normalize(SurfaceNormal);
 
-	float3 R = normalize(2 * saturate(dot(L, N)) * N - L);
+	float3 R = normalize(2 * saturate(dot(N, L)) * N - L);
 	float3 V = normalize(CameraPosition - HitPosition); // vectorTowardsCameraFromLight
 
 	float3 returnVector = calcPhongLighting(M, L, N, R, V);

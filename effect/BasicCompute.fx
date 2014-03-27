@@ -327,7 +327,7 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 	if(p_primitiveType == SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflective;
 	else if (p_primitiveType == TRIANGLE)		// Triangle
-		return 0.0f; // All triangles are 1.0 reflective. HARDCODED
+		return 1.0f; // All triangles are 1.0 reflective. HARDCODED
 		//return Triangle[p_primitiveIndex].material.reflective;
 	return 0;
 }
@@ -368,7 +368,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 2
+#define max_number_of_bounces 3
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
