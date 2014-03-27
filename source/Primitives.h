@@ -21,14 +21,12 @@ namespace CustomPrimitiveStruct
 
 	struct Material
 	{
-		float ambient;
-		float specular;
-		float diffuse;
-		float shininess;		
-		float reflectiveFactor;
-		float refractiveFactor;
+		XMFLOAT3 ambient;
+		float shininess;
+		XMFLOAT3 diffuse;
 		float isReflective;
-		float isRefractive;
+		XMFLOAT3 specular;
+		float reflectiveFactor;
 	};
 
 	struct SphereStruct

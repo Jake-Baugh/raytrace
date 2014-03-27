@@ -382,14 +382,16 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		l_primitive.Sphere[i].Material.ambient = 0.0000f;
-		l_primitive.Sphere[i].Material.diffuse = 0.8f;
-		l_primitive.Sphere[i].Material.specular = 0.8f;
+		float ambient = 0.8f;
+		float diffuse = 0.8f;
+		float specular = 0.8f;
+		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
+		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
+		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
 		l_primitive.Sphere[i].Material.shininess = 1.0f;
-		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
-		l_primitive.Sphere[i].Material.refractiveFactor = 0.0f;
 		l_primitive.Sphere[i].Material.isReflective = 1.0f;
-		l_primitive.Sphere[i].Material.isRefractive = -1.0f;
+		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
+
 	}
 
 	/*
@@ -462,8 +464,13 @@ void FillLightBuffer()
 	CustomLightStruct::LightBuffer l_light;
 
 	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight			= XMFLOAT3(0.0f, 0.0f, 0.0f);
-	
+	l_light.ambientLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	l_light.diffuseLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	l_light.specularLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	l_light.PADDING1 = -1.0f;
+	l_light.PADDING2 = -1.0f;
+
+
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();

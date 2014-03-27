@@ -15,8 +15,12 @@ namespace CustomLightStruct
 
 	struct LightBuffer
 	{
-		float lightCount;
 		XMFLOAT3 ambientLight;
+		float lightCount;
+		XMFLOAT3 diffuseLight;
+		float PADDING1;
+		XMFLOAT3 specularLight;
+		float PADDING2;
 		PointLightData pointLight[LIGHT_COUNT];
 	};
 }

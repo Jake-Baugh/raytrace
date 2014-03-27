@@ -1,45 +1,38 @@
 #include "RayStruct.fx"
-
-struct Material
-{
-	float ambient;
-	float specular;
-	float diffuse;
-	float shininess;
-	float reflective;
-	float refractive;
-	float isReflective;
-	float isRefractive;
-};
-
-struct PointLightData
-{
-	float4 position;
-	float4 color;
-};
+#include "Utilities.fx"
 
 
 //--------------------------------------------------------------------------------------
 // Phong Lighting Reflection Model
 //--------------------------------------------------------------------------------------
-float4 calcPhongLighting( Material M, float3 N, float3 L, float3 V, float3 R, PointLightData l_pointLight, float4 p_ambient)
+/*
+L, which is the direction vector from the point on the surface toward each light source (m specifies the light source),
+N, which is the normal at this point on the surface,
+R, which is the direction that a perfectly reflected ray of light would take from this point on the surface,
+V, which is the direction pointing towards the viewer (such as a virtual camera)
+
+// Source
+http://en.wikipedia.org/wiki/Phong_reflection_model#Description
+*/
+
+float3 calcPhongLighting(Material M, float3 L, float3 N, float3 R, float3 V)
 {
-    float4 l_ambient = M.ambient * p_ambient;
-    float4 l_diffuse = M.diffuse * saturate( dot(N,L) );
-    float4 l_specular = M.specular * pow( saturate(dot(R,V)), M.shininess );
+	float3 l_diffuse	= M.diffuse * saturate(dot(L, N)) * diffuseLight;
+	float3 l_specular	= M.specular * pow(saturate(dot(R, V)), M.shininess) * specularLight;
  
-    return l_ambient + (l_diffuse + l_specular) * l_pointLight.color;
+    return l_diffuse + l_specular;
 }
 
-float4 CalcLight (Ray p_ray, PointLightData light, float3 hitPos, float3 hitNormal, Material M, float4 p_ambient)
+float4 CalcLight(Material M, float3 HitPosition, float3 LightPosition, float3 CameraPosition, float3 SurfaceNormal)
 {
-	float3 lightDir = normalize(hitPos - light.position.xyz);				// From lightsource to hitposition
-	float lightAttenuation = 1 / (length(lightDir) * length(lightDir));	// 1 / 
+	float3 L = normalize(LightPosition - HitPosition); // vectorTowardsLightFromHit
+	float3 N = normalize(SurfaceNormal);
 
-	float3 NormalizedHitNormal = normalize( hitNormal );
-	float3 V = normalize( p_ray.origin.xyz - hitPos );
-	float3 R = reflect( lightDir, NormalizedHitNormal );
+	float3 R = normalize(2 * saturate(dot(L, N)) * N - L);
+	float3 V = normalize(CameraPosition - HitPosition); // vectorTowardsCameraFromLight
 
-	return lightAttenuation * calcPhongLighting( M, NormalizedHitNormal, lightDir, V, R, light, p_ambient);
+	float3 returnVector = calcPhongLighting(M, L, N, R, V);
+
+	return float4(returnVector, 1.0f);
 }
 
