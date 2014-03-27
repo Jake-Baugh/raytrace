@@ -311,17 +311,17 @@ HRESULT CreateCameraBuffer()
 void FillCameraBuffer()
 {
 	using namespace DirectX;
-
-	XMMATRIX l_projection, l_view, l_inverseProjection, l_inverseView;
+	
+	XMFLOAT4X4 l_projection, l_view, l_inverseProjection, l_inverseView;
 	float l_determinant;
 	l_view		 = Camera::GetCamera(g_cameraIndex)->GetProj();
 	l_projection = Camera::GetCamera(g_cameraIndex)->GetView();
 
-	XMStoreFloat(&l_determinant, XMMatrixDeterminant(l_projection));
-	l_inverseProjection = XMMatrixInverse(&XMLoadFloat(&l_determinant), l_projection);
+	XMStoreFloat(&l_determinant, XMMatrixDeterminant(XMLoadFloat4x4(&l_projection)));
+	XMStoreFloat4x4(&l_inverseProjection, XMMatrixInverse(&XMLoadFloat(&l_determinant), XMLoadFloat4x4(&l_projection)));
 
-	XMStoreFloat(&l_determinant, XMMatrixDeterminant(l_view));
-	l_inverseView = XMMatrixInverse(&XMLoadFloat(&l_determinant), l_view);
+	XMStoreFloat(&l_determinant, XMMatrixDeterminant(XMLoadFloat4x4(&l_view)));
+	XMStoreFloat4x4(&l_inverseView, XMMatrixInverse(&XMLoadFloat(&l_determinant), XMLoadFloat4x4(&l_view)));
 	 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -330,6 +330,7 @@ void FillCameraBuffer()
 	l_eachFrameData.cameraPosition		= Camera::GetCamera(g_cameraIndex)->GetPosition();
 	l_eachFrameData.inverseProjection	= l_inverseProjection;
 	l_eachFrameData.inverseView			= l_inverseView;
+	
 
 //	l_eachFrameData.screenWidth			= 800.0f;
 //	l_eachFrameData.screenHeight		= 800.0f;

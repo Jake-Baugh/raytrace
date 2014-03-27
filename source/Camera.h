@@ -10,7 +10,7 @@ public:
 	static Camera* GetCamera(int index);
 
 	void setLens(float fovY, float aspect, float zn, float zf);
-	void SetPosition(XMFLOAT3 lPos);
+	void SetPosition(XMFLOAT4 lPos);
 
 	void strafe(float d);
 	void walk(float d);
@@ -26,8 +26,11 @@ public:
 	XMFLOAT4 GetUp()			const { return XMFLOAT4(mUp.x, mUp.y, mUp.z, 1);};
 	XMFLOAT4 GetRight()			const { return XMFLOAT4(mRight.x, mRight.y, mRight.z, 1);};
 
-	XMMATRIX GetView()		const{ return mView; }
-	XMMATRIX GetProj()		const{ return mProj;}
+//	XMMATRIX GetView()		const{ return mView; }
+//	XMMATRIX GetProj()		const{ return mProj;}
+
+	XMFLOAT4X4 GetView()		const{ return m_view; }
+	XMFLOAT4X4 GetProj()		const{ return m_proj; }
 
 private:
 	static std::vector<Camera*>* m_camera;
@@ -35,13 +38,14 @@ private:
 	Camera();
 	~Camera();
 
-	XMFLOAT3 mPosition;
-	XMFLOAT3 mRight;
-	XMFLOAT3 mUp;
-	XMFLOAT3 mLook;
+	XMFLOAT4 mPosition;
+	XMFLOAT4 mRight;
+	XMFLOAT4 mUp;
+	XMFLOAT4 mLook;
 
-	XMMATRIX mView;
-	XMMATRIX mProj;	
+	XMFLOAT4X4 m_view;
+	XMFLOAT4X4 m_proj;
+
 };
 
 #endif

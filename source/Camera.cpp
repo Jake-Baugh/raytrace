@@ -2,63 +2,63 @@
 
 
 
-XMFLOAT3 operator*(XMFLOAT3 l, XMFLOAT3 r) 
+XMFLOAT4 operator*(XMFLOAT4 l, XMFLOAT4 r) 
 {
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
+    XMVECTOR lvec(XMLoadFloat4(&l));
+    XMVECTOR rvec(XMLoadFloat4(&r));
 
 	lvec *= rvec;
 
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
+	XMFLOAT4 a;
+	XMStoreFloat4(&a, lvec);
 	
 	return a;
 }
 
-XMFLOAT3 operator*(XMFLOAT3 l, float r) {
+XMFLOAT4 operator*(XMFLOAT4 l, float r) {
     
-	XMVECTOR lvec(XMLoadFloat3(&l));
+	XMVECTOR lvec(XMLoadFloat4(&l));
 	
 	lvec *= r;
 
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
+	XMFLOAT4 a;
+	XMStoreFloat4(&a, lvec);
 	return a;
 }
 
-XMFLOAT3 operator*(float l, XMFLOAT3 r) 
+XMFLOAT4 operator*(float l, XMFLOAT4 r) 
 {
-	XMVECTOR lvec(XMLoadFloat3(&r));
+	XMVECTOR lvec(XMLoadFloat4(&r));
 	
 	lvec *= l;
 
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);
+	XMFLOAT4 a;
+	XMStoreFloat4(&a, lvec);
 	return a;
 }
 
 
-XMFLOAT3 operator+(XMFLOAT3 l, XMFLOAT3 r) 
+XMFLOAT4 operator+(XMFLOAT4 l, XMFLOAT4 r) 
 {
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
+    XMVECTOR lvec(XMLoadFloat4(&l));
+    XMVECTOR rvec(XMLoadFloat4(&r));
 
 	lvec += rvec;
 
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);	
+	XMFLOAT4 a;
+	XMStoreFloat4(&a, lvec);
 	return a;
 }
 
-XMFLOAT3 operator+=(XMFLOAT3 l, XMFLOAT3 r) 
+XMFLOAT4 operator+=(XMFLOAT4 l, XMFLOAT4 r) 
 {
-    XMVECTOR lvec(XMLoadFloat3(&l));
-    XMVECTOR rvec(XMLoadFloat3(&r));
+    XMVECTOR lvec(XMLoadFloat4(&l));
+    XMVECTOR rvec(XMLoadFloat4(&r));
 
 	lvec += rvec;
 
-	XMFLOAT3 a;
-	XMStoreFloat3(&a, lvec);	
+	XMFLOAT4 a;
+	XMStoreFloat4(&a, lvec);
 	return a;
 }
 
@@ -74,20 +74,20 @@ Camera* Camera::GetCamera(int index)
 
 Camera::Camera()
 {
-	mPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	mRight    = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	mUp       = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	mLook     = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	mPosition = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	mRight    = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
+	mUp       = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
+	mLook     = XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f);
 
-	mView = XMMatrixIdentity();
-	mProj = XMMatrixIdentity();
+	XMStoreFloat4x4(&m_view, XMMatrixIdentity());
+	XMStoreFloat4x4(&m_proj, XMMatrixIdentity());
 }
 
 Camera::~Camera()
 {
 }
 
-void Camera::SetPosition(XMFLOAT3 lPos)
+void Camera::SetPosition(XMFLOAT4 lPos)
 {
 	mPosition = lPos;
 }
@@ -99,7 +99,8 @@ void Camera::setYPosition(float y)
 
 void Camera::setLens(float fovY, float aspect, float zn, float zf)
 {
-	mProj = XMMatrixPerspectiveFovLH(fovY, aspect, zn, zf);
+	XMMATRIX temp = XMMatrixPerspectiveFovLH(fovY, aspect, zn, zf);
+	XMStoreFloat4x4(&m_view, temp);
 }
 
 void Camera::strafe(float d)
@@ -118,8 +119,8 @@ void Camera::pitch(float angle)
 	
 	R = XMMatrixRotationX(angle);
 
-	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
-	XMStoreFloat3(&mLook, XMVector3TransformNormal( XMLoadFloat3(&mLook), R));
+	XMStoreFloat4(&mUp, XMVector2Transform( XMLoadFloat4(&mUp), R));
+	XMStoreFloat4(&mLook, XMVector2Transform(XMLoadFloat4(&mLook), R));
 }
 
 void Camera::rotateY(float angle)
@@ -127,9 +128,9 @@ void Camera::rotateY(float angle)
 	XMMATRIX R;
 	R = XMMatrixRotationY(angle);
 
-	XMStoreFloat3(&mRight, XMVector3TransformNormal( XMLoadFloat3(&mRight), R));
-	XMStoreFloat3(&mUp, XMVector3TransformNormal( XMLoadFloat3(&mUp), R));
-	XMStoreFloat3(&mLook, XMVector3TransformNormal( XMLoadFloat3(&mLook), R));
+	XMStoreFloat4(&mRight, XMVector2Transform(XMLoadFloat4(&mRight), R));
+	XMStoreFloat4(&mUp, XMVector2Transform(XMLoadFloat4(&mUp), R));
+	XMStoreFloat4(&mLook, XMVector2Transform(XMLoadFloat4(&mLook), R));
 }
 
 void Camera::rebuildView()
@@ -143,8 +144,8 @@ void Camera::rebuildView()
 	// XMMatrixLookToLH method
 	// Builds a view matrix for a left-handed coordinate system using a camera position, an up direction, and a camera direction. 	
 	*/
-
-	mView = XMMatrixLookToLH(XMLoadFloat3(&mPosition), XMLoadFloat3(&mLook), XMLoadFloat3(&mUp));
+	XMMATRIX temp = XMMatrixLookToLH(XMLoadFloat4(&mPosition), XMLoadFloat4(&mLook), XMLoadFloat4(&mUp));
+	XMStoreFloat4x4(&m_view, temp); 
 }
 
 void Camera::MoveY(float p_step)

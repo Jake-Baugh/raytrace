@@ -11,8 +11,8 @@ namespace CustomPrimitiveStruct
 	struct EachFrameDataStructure
 	{
 		XMFLOAT4	cameraPosition;
-		XMMATRIX	inverseProjection;
-		XMMATRIX	inverseView;	
+		XMFLOAT4X4	inverseProjection;
+		XMFLOAT4X4	inverseView;
 	//	float screenWidth;
 	//	float screenHeight;
 	//	float padding1;
