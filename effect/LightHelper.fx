@@ -15,24 +15,25 @@ V, which is the direction pointing towards the viewer (such as a virtual camera)
 http://en.wikipedia.org/wiki/Phong_reflection_model#Description
 */
 
-float3 calcPhongLighting(Material M, float3 L, float3 N, float3 R, float3 V)
+float4 calcPhongLighting(Material M, float4 L, float4 N, float4 R, float4 V)
 {
-	float3 l_diffuse	= M.diffuse * saturate(dot(L, N)) * diffuseLight;
-	float3 l_specular	= M.specular * pow(saturate(dot(R, V)), M.shininess) * specularLight;
+	float4 l_diffuse	= float4(M.diffuse, 1.0f) * saturate(dot(N, L)) * diffuseLight;
+	float4 l_specular	= float4(M.specular, 1.0f) * pow(saturate(dot(R, V)), M.shininess) * specularLight;
  
     return l_diffuse + l_specular;
 }
 
-float4 CalcLight(Material M, float3 HitPosition, float3 LightPosition, float3 CameraPosition, float3 SurfaceNormal)
-{
-	float3 L = normalize(LightPosition - HitPosition); // vectorTowardsLightFromHit
-	float3 N = normalize(SurfaceNormal);
+float4 CalcLight(Material M, float4 HitPosition, float4 LightPosition, float4 CameraPosition, float4 SurfaceNormal)
+{	
+	float4 L = normalize(LightPosition - HitPosition); // vectorTowardsLightFromHit
+	float4 N = normalize(SurfaceNormal);
 
-	float3 R = normalize(2 * saturate(dot(N, L)) * N - L);
-	float3 V = normalize(CameraPosition - HitPosition); // vectorTowardsCameraFromHit
+	//	float3 R = normalize(reflect(L, N));
+	float4 R = normalize(2 * saturate(dot(L, N)) * N - L);
+	float4 V = normalize(CameraPosition - HitPosition); // vectorTowardsCameraFromHit
 
-	float3 returnVector = calcPhongLighting(M, L, N, R, V);
+	float4 returnVector = calcPhongLighting(M, L, N, R, V);
 
-	return float4(returnVector, 1.0f);
+	return returnVector;
 }
 

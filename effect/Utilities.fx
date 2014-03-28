@@ -2,14 +2,13 @@
 // HARDCODED VARIABLES
 #define EPSILON 0.000001
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 5
 #define LIGHT_COUNT 3
 // END OF HARDCODED VARIABLES
 
 // Primitive numbers
 #define PRIMITIVE_NOTHING 0
-#define SPHERE 1
-#define TRIANGLE 2
+#define PRIMITIVE_SPHERE 1
+#define PRIMITIVE_TRIANGLE 2
 
 // COLORS
 #define WHITE3 float3(1.0f, 1.0f, 1.0f)
@@ -27,51 +26,54 @@
 #define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
 #define ORANGE4  float4(1.0f, 0.55f, 0.0f, 1.0f)
 #define TEAL4  float4(0.0f, 1.0f, 1.0f, 1.0f)
-#define GREY4 float4(0.2f, 0.2f, 0.2f, 0.2f)
+#define GREY4 float4(0.2f, 0.2f, 0.2f, 1.0f)
 // END OF COLORS
 
-struct Material
+struct Material // 12
 {
 	float3 ambient;
-	float shininess;
+	float shininess;		// 4
 	float3 diffuse;
-	float isReflective;
+	float isReflective;		// 4
 	float3 specular;
-	float reflective;
+	float reflectivefactor;		// 4
 	//	float refractive;
 //	float isRefractive;
 };
 
 // Shininess is larger for surfaces that are smoother and more mirror-like. When this constant is large the specular highlight is small.
 
-struct PointLightData
+struct PointLightData	// 4
 {
-	float4 position;
-	float4 color;
+	float4 position;	// 4
+	//float4 color;
 };
 
-struct SphereStruct	// 16
+struct SphereStruct	// 20
 {
 	float4	midPos;		// 4
 	float3	color;		// 3
 	float	radius;		// 1
-	Material material;	// 8
+	Material material;	// 12
 };
 
 
-struct TriangleDescription // 20
-{
+struct TriangleDescription // 16
+{	
 	float Point0;		// 1
 	float Point1;		// 1
 	float Point2;		// 1
-	float padding1;		// 1
+	float normalIndex;	// 1
+	
+	/*
 	float TexCoord0;	// 1
 	float TexCoord1;	// 1
 	float TexCoord2;	// 1
 	float padding2;		// 1
-	float3 normal;		// 3
-	float padding3;		// 1
-	Material material;	// 8
+	*/
+
+//	float padding3;		// 1
+	Material material;	// 12
 };
 
 cbuffer EveryFrameBuffer : register(c0) // 40
@@ -84,19 +86,19 @@ cbuffer EveryFrameBuffer : register(c0) // 40
 
 cbuffer PrimitiveBuffer: register(c1)	// 48 floats, 192 bytes
 {
-	SphereStruct	Sphere[SPHERE_COUNT];	// 16*3 = 48
+	SphereStruct	Sphere[SPHERE_COUNT];	// 20*3 = 60
 	//	float4			countVariable;			// 4
 }
 
 cbuffer LightBuffer : register(c2)			// 
 {
-	float3 ambientLight;					// 3
-	float light_count;						// 1
-	float3 diffuseLight;
-	float PADDING1;
-	float3 specularLight;
-	float PADDING2;
-	PointLightData PointLight[LIGHT_COUNT];	// 
+	float4 ambientLight;					// 4
+//	float light_count;						//
+	float4 diffuseLight;					// 4
+//	float PADDING1;
+	float4 specularLight;					// 4
+//	float PADDING2;
+	PointLightData PointLight[LIGHT_COUNT];	// 20 * 3
 }
 
 RWTexture2D<float4> output								: register(u0);

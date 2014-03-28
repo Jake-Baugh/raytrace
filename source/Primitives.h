@@ -1,6 +1,8 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
+#include "stdafx.h"
+
 #define SPHERE_COUNT 3
 #define TRIANGLE_COUNT 5
 
@@ -53,13 +55,12 @@ namespace CustomPrimitiveStruct
 		float Point1;
 		float Point2;
 		float Point3;
-		float PADDING1;
-		float TexCoord1;
+		float NormalIndex;
+		/*float TexCoord1;
 		float TexCoord2;
 		float TexCoord3;
-		float PADDING2;
-		XMFLOAT3 Normal;
-		float PADDING3;
+		float PADDING2;*/
+
 		Material Material;
 	};
 

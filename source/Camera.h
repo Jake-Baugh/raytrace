@@ -10,7 +10,7 @@ public:
 	static Camera* GetCamera(int index);
 
 	void setLens(float fovY, float aspect, float zn, float zf);
-	void SetPosition(XMFLOAT4 lPos);
+	void SetPosition(DirectX::XMFLOAT4 lPos);
 
 	void strafe(float d);
 	void walk(float d);
@@ -21,16 +21,16 @@ public:
 
 	void MoveY(float p_step);
 
-	XMFLOAT4 GetPosition()		const { return XMFLOAT4(mPosition.x, mPosition.y, mPosition.z, 1);};
-	XMFLOAT4 GetLookAt()		const { return XMFLOAT4(mLook.x, mLook.y, mLook.z, 1);};
-	XMFLOAT4 GetUp()			const { return XMFLOAT4(mUp.x, mUp.y, mUp.z, 1);};
-	XMFLOAT4 GetRight()			const { return XMFLOAT4(mRight.x, mRight.y, mRight.z, 1);};
+	DirectX::XMFLOAT4 GetPosition()		const { return DirectX::XMFLOAT4(mPosition.x, mPosition.y, mPosition.z, 1); };
+	DirectX::XMFLOAT4 GetLookAt()		const { return DirectX::XMFLOAT4(mLook.x, mLook.y, mLook.z, 1); };
+	DirectX::XMFLOAT4 GetUp()			const { return DirectX::XMFLOAT4(mUp.x, mUp.y, mUp.z, 1); };
+	DirectX::XMFLOAT4 GetRight()		const { return DirectX::XMFLOAT4(mRight.x, mRight.y, mRight.z, 1); };
 
 //	XMMATRIX GetView()		const{ return mView; }
 //	XMMATRIX GetProj()		const{ return mProj;}
 
-	XMFLOAT4X4 GetView()		const{ return m_view; }
-	XMFLOAT4X4 GetProj()		const{ return m_proj; }
+	DirectX::XMFLOAT4X4 GetView()		const{ return m_view; }
+	DirectX::XMFLOAT4X4 GetProj()		const{ return m_proj; }
 
 private:
 	static std::vector<Camera*>* m_camera;
@@ -38,13 +38,13 @@ private:
 	Camera();
 	~Camera();
 
-	XMFLOAT4 mPosition;
-	XMFLOAT4 mRight;
-	XMFLOAT4 mUp;
-	XMFLOAT4 mLook;
+	DirectX::XMFLOAT4 mPosition;
+	DirectX::XMFLOAT4 mRight;
+	DirectX::XMFLOAT4 mUp;
+	DirectX::XMFLOAT4 mLook;
 
-	XMFLOAT4X4 m_view;
-	XMFLOAT4X4 m_proj;
+	DirectX::XMFLOAT4X4 m_view;
+	DirectX::XMFLOAT4X4 m_proj;
 
 };
 

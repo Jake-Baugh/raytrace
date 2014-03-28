@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-
+using namespace std;
 
 XMFLOAT4 operator*(XMFLOAT4 l, XMFLOAT4 r) 
 {
@@ -75,12 +75,13 @@ Camera* Camera::GetCamera(int index)
 Camera::Camera()
 {
 	mPosition = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	mRight    = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
-	mUp       = XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
-	mLook     = XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f);
+	mRight    = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	mUp       = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	mLook     = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	XMStoreFloat4x4(&m_view, XMMatrixIdentity());
 	XMStoreFloat4x4(&m_proj, XMMatrixIdentity());
+//	setLens(3.1415f/4.0f, 1.0f, 1.0f, 1000.0f );
 }
 
 Camera::~Camera()
@@ -105,7 +106,7 @@ void Camera::setLens(float fovY, float aspect, float zn, float zf)
 
 void Camera::strafe(float d)
 {
-	mPosition = mPosition+ d * mRight;
+	mPosition = mPosition + d * mRight;
 }
 
 void Camera::walk(float d)
@@ -119,8 +120,8 @@ void Camera::pitch(float angle)
 	
 	R = XMMatrixRotationX(angle);
 
-	XMStoreFloat4(&mUp, XMVector2Transform( XMLoadFloat4(&mUp), R));
-	XMStoreFloat4(&mLook, XMVector2Transform(XMLoadFloat4(&mLook), R));
+	XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
+	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mLook), R));
 }
 
 void Camera::rotateY(float angle)
@@ -128,9 +129,9 @@ void Camera::rotateY(float angle)
 	XMMATRIX R;
 	R = XMMatrixRotationY(angle);
 
-	XMStoreFloat4(&mRight, XMVector2Transform(XMLoadFloat4(&mRight), R));
-	XMStoreFloat4(&mUp, XMVector2Transform(XMLoadFloat4(&mUp), R));
-	XMStoreFloat4(&mLook, XMVector2Transform(XMLoadFloat4(&mLook), R));
+	XMStoreFloat4(&mRight, XMVector4Transform(XMLoadFloat4(&mRight), R));
+	XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
+	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mLook), R));
 }
 
 void Camera::rebuildView()
@@ -144,7 +145,7 @@ void Camera::rebuildView()
 	// XMMatrixLookToLH method
 	// Builds a view matrix for a left-handed coordinate system using a camera position, an up direction, and a camera direction. 	
 	*/
-	XMMATRIX temp = XMMatrixLookToLH(XMLoadFloat4(&mPosition), XMLoadFloat4(&mLook), XMLoadFloat4(&mUp));
+	XMMATRIX temp = XMMatrixLookAtLH(XMLoadFloat4(&mPosition), XMLoadFloat4(&mLook), XMLoadFloat4(&mUp));
 	XMStoreFloat4x4(&m_view, temp); 
 }
 

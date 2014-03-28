@@ -15,7 +15,7 @@
 #define SAFE_DELETE_ARRAY(x) if( x ) { delete[](x); (x) = NULL; }
 #define PI (3.14159265358979323846f)
 
-#pragma comment(lib, "d3d11.lib")
+//#pragma comment(lib, "d3d11.lib")
 using namespace DirectX;
 
 //////////////////////////////////////////////////////////////////////////

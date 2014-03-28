@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include <vector>
 #include "ComputeHelp.h"
 #include "D3D11Timer.h"
@@ -313,15 +313,11 @@ void FillCameraBuffer()
 	using namespace DirectX;
 	
 	XMFLOAT4X4 l_projection, l_view, l_inverseProjection, l_inverseView;
-	float l_determinant;
 	l_view		 = Camera::GetCamera(g_cameraIndex)->GetProj();
 	l_projection = Camera::GetCamera(g_cameraIndex)->GetView();
 
-	XMStoreFloat(&l_determinant, XMMatrixDeterminant(XMLoadFloat4x4(&l_projection)));
-	XMStoreFloat4x4(&l_inverseProjection, XMMatrixInverse(&XMLoadFloat(&l_determinant), XMLoadFloat4x4(&l_projection)));
-
-	XMStoreFloat(&l_determinant, XMMatrixDeterminant(XMLoadFloat4x4(&l_view)));
-	XMStoreFloat4x4(&l_inverseView, XMMatrixInverse(&XMLoadFloat(&l_determinant), XMLoadFloat4x4(&l_view)));
+	XMStoreFloat4x4(&l_inverseProjection,	XMMatrixInverse(nullptr, XMLoadFloat4x4(&l_projection)));
+	XMStoreFloat4x4(&l_inverseView,			XMMatrixInverse(nullptr, XMLoadFloat4x4(&l_view)));
 	 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -450,7 +446,7 @@ HRESULT CreateLightBuffer()
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
-	ByteWidth					=	sizeof(CustomLightStruct::LightBuffer); // 112 byte
+	ByteWidth					=	sizeof(CustomLightStruct::LightBuffer); // 144 byte
 	LightData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
@@ -464,18 +460,18 @@ void FillLightBuffer()
 
 	CustomLightStruct::LightBuffer l_light;
 
-	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	l_light.diffuseLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	l_light.specularLight = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	l_light.PADDING1 = -1.0f;
-	l_light.PADDING2 = -1.0f;
+//	l_light.lightCount = LIGHT_COUNT;
+	l_light.ambientLight =	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.diffuseLight =  XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.specularLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//	l_light.PADDING1 = -1.0f;
+//	l_light.PADDING2 = -1.0f;
 
 
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -523,12 +519,10 @@ HRESULT LoadMesh(char* p_path)
 			g_allTrianglesIndex.at(i).Point1 += allVertexSize;
 			g_allTrianglesIndex.at(i).Point2 += allVertexSize;
 			g_allTrianglesIndex.at(i).Point3 += allVertexSize;
-			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
-			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
-			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
-			g_allTrianglesIndex.at(i).Normal.x += allTrianglesNormalSize;
-			g_allTrianglesIndex.at(i).Normal.y += allTrianglesNormalSize;
-			g_allTrianglesIndex.at(i).Normal.z += allTrianglesNormalSize;
+//			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
+//			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
+//			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).NormalIndex += allTrianglesNormalSize;
 		}
 	}
 
@@ -563,7 +557,7 @@ HRESULT CreateObjectBuffer()
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
 	RawVertex.CPUAccessFlags	=	0;
 	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	ByteWidth					=	g_allTrianglesVertex.size() * sizeof(XMFLOAT4);
+	ByteWidth					=	g_allTrianglesVertex.size() * sizeof(XMFLOAT4);	// 128
 	RawVertex.ByteWidth			=	ByteWidth;
 	RawVertex.StructureByteStride = sizeof(XMFLOAT4);
 	hr = g_Device->CreateBuffer(&RawVertex, &l_data, &g_vertexBuffer);

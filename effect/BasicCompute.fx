@@ -12,12 +12,12 @@
 Ray createRay(uint x, uint y)
 {
 	Ray l_ray;
-	l_ray.origin = cameraPosition;
+	l_ray.origin = cameraPosition;// +float4(1.0f, 1.0f, 1.0f, 1.0f);
  
-	double normalized_x = ((x / 800.0) - 0.5) * 2;					// HARDCODED SCREENSIZE
-	double normalized_y = (1 - (y / 800.0) - 0.5) * 2;				// HARDCODED SCREENSIZE
+	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
+	double normalized_y = (1.0 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
 
-	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1, 1), inverseProjection);
+	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), inverseProjection);
 	imagePoint /= imagePoint.w;
  
 	imagePoint = mul(imagePoint, inverseView);
@@ -30,7 +30,8 @@ Ray createRay(uint x, uint y)
 
 float3 TriangleNormalCounterClockwise(uint DescriptionIndex)
 {
-	return normalize(AllNormal[AllTriangleDesc[DescriptionIndex].normal.x]);
+	return normalize(AllNormal[(uint)AllTriangleDesc[DescriptionIndex].normalIndex]);
+	//return float3(0.0f, 1.0f, 0.0f);// 
 	/*
 	float3 e1, e2;  //Edge1, Edge2
  
@@ -185,7 +186,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
-		if(p_primitiveType == TRIANGLE) // Bouncing of a triangle
+		if (p_primitiveType == PRIMITIVE_TRIANGLE) // Bouncing of a triangle
 		{
 			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 			{
@@ -195,7 +196,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 				}
 			}
 		}
-		else if(p_primitiveType == SPHERE) // Input primitive is NOT triangle. Thus sphere
+		else if (p_primitiveType == PRIMITIVE_SPHERE) // Input primitive is NOT triangle. Thus sphere
 		{
 			if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 			{
@@ -257,7 +258,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		p_out_collideNormal		= normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
 		p_out_material			= Sphere[l_sphereindex].material;
 		p_out_primitiveIndex	= l_sphereindex;
-		p_out_primitiveType		= SPHERE;
+		p_out_primitiveType		= PRIMITIVE_SPHERE;
 
 		// New variables for next ray
 		p_ray.origin = l_collidePos;
@@ -272,7 +273,7 @@ Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_materi
 		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
 		p_out_material			= AllTriangleDesc[l_triangleindex].material;
 		p_out_primitiveIndex	= l_triangleindex;
-		p_out_primitiveType		= TRIANGLE;
+		p_out_primitiveType		= PRIMITIVE_TRIANGLE;
 
 		// New variables for next ray
 		p_ray.origin = l_collidePos;
@@ -311,54 +312,52 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 }
 
 
-float3 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
+float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
-	if(p_primitiveType == SPHERE)			// Sphere
-		return Sphere[p_primitiveIndex].color;
-	else if (p_primitiveType == TRIANGLE)		// Triangle
+	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
+		return float4(Sphere[p_primitiveIndex].color, 1.0f);
+	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
-		return GREY3; // All triangles are hardcoded 
+		return GREY4; // All triangles are hardcoded atm
 	}
-	return BLACK3;
+	return BLACK4;
 }
 
 float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
-	if(p_primitiveType == SPHERE)			// Sphere
-		return Sphere[p_primitiveIndex].material.reflective;
-	else if (p_primitiveType == TRIANGLE)		// Triangle
-		return 1.0f; // All triangles are 1.0 reflective. HARDCODED
-		//return Triangle[p_primitiveIndex].material.reflective;
+	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
+		return Sphere[p_primitiveIndex].material.reflectivefactor;
+	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
+		return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
 	return 0;
 }
 
 float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 {
-	if(p_primitiveType == SPHERE)			// Sphere
+	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
-	else if(p_primitiveType == TRIANGLE)		// Triangle
-		return 1.0f;
-		//return Triangle[p_primitiveIndex].material.isReflective;
+	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
+		return AllTriangleDesc[p_primitiveIndex].material.isReflective;
 	return 0;
 }
 
-float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material/*, out bool is_lit*/)
+float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material)
 {
-	float3 l_color = float3(0.0f, 0.0f, 0.0f);
+	float4 l_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	for(uint i = 0; i < LIGHT_COUNT; i++) // for each light
+	for (uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
 		if (l_isLitByLight == true) // Thus is lit
 		{
-			l_color += CalcLight(p_material, p_ray.origin, PointLight[i].position.xyz, cameraPosition.xyz, p_collideNormal.xyz);
+			l_color += CalcLight(p_material, p_ray.origin, PointLight[i].position, cameraPosition, p_collideNormal);
 		}
 	}
 
-	l_color += p_material.ambient * ambientLight; // Add ambient
+	l_color += float4(p_material.ambient, 1.0f) *  ambientLight; // Add ambient
 	l_color *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
-	return float4(l_color, 1.0f);
+	return l_color;
 }
 
 bool CloseToZero(in float p_float)
@@ -368,7 +367,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -415,7 +414,7 @@ float4 Trace(in Ray p_ray)
 [numthreads(32, 32, 1)]
 void main( uint3 threadID : SV_DispatchThreadID)
 {
-	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	Ray l_ray = createRay(threadID.x, threadID.y);
 	l_finalColor = Trace(l_ray);
 	
@@ -424,7 +423,9 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
 	a = max(a, 1.0f);
-	
+//	a = max(a, PADDING1);
+//	a = max(a, PADDING2);
+
 	l_finalColor /= a;
 
 	output[threadID.xy] = l_finalColor;
