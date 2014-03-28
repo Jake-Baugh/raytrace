@@ -101,7 +101,7 @@ void Camera::setYPosition(float y)
 void Camera::setLens(float fovY, float aspect, float zn, float zf)
 {
 	XMMATRIX temp = XMMatrixPerspectiveFovLH(fovY, aspect, zn, zf);
-	XMStoreFloat4x4(&m_view, temp);
+	XMStoreFloat4x4(&m_proj, temp);
 }
 
 void Camera::strafe(float d)
@@ -145,7 +145,7 @@ void Camera::rebuildView()
 	// XMMatrixLookToLH method
 	// Builds a view matrix for a left-handed coordinate system using a camera position, an up direction, and a camera direction. 	
 	*/
-	XMMATRIX temp = XMMatrixLookAtLH(XMLoadFloat4(&mPosition), XMLoadFloat4(&mLook), XMLoadFloat4(&mUp));
+	XMMATRIX temp = XMMatrixLookToLH(XMLoadFloat4(&mPosition), XMLoadFloat4(&mLook), XMLoadFloat4(&mUp));
 	XMStoreFloat4x4(&m_view, temp); 
 }
 

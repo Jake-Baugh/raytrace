@@ -29,6 +29,7 @@
 #define GREY4 float4(0.2f, 0.2f, 0.2f, 1.0f)
 // END OF COLORS
 
+#pragma pack_matrix(row_major)
 struct Material // 12
 {
 	float3 ambient;
@@ -103,7 +104,7 @@ cbuffer LightBuffer : register(c2)			//
 
 RWTexture2D<float4> output								: register(u0);
 StructuredBuffer<float4> AllVertex						: register(t0);
-StructuredBuffer<float2> AllTexCoord					: register(t1);
-StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t2);
-StructuredBuffer<float3> AllNormal						: register(t3);
+//StructuredBuffer<float2> AllTexCoord					: register(t1);
+StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t1);
+StructuredBuffer<float3> AllNormal						: register(t2);
 // END OF INPARAMETERS

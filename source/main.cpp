@@ -313,12 +313,12 @@ void FillCameraBuffer()
 	using namespace DirectX;
 	
 	XMFLOAT4X4 l_projection, l_view, l_inverseProjection, l_inverseView;
-	l_view		 = Camera::GetCamera(g_cameraIndex)->GetProj();
-	l_projection = Camera::GetCamera(g_cameraIndex)->GetView();
+	l_projection	= Camera::GetCamera(g_cameraIndex)->GetProj();
+	l_view			= Camera::GetCamera(g_cameraIndex)->GetView();
 
 	XMStoreFloat4x4(&l_inverseProjection,	XMMatrixInverse(nullptr, XMLoadFloat4x4(&l_projection)));
 	XMStoreFloat4x4(&l_inverseView,			XMMatrixInverse(nullptr, XMLoadFloat4x4(&l_view)));
-	 
+
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	g_DeviceContext->Map(g_EveryFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
@@ -585,7 +585,7 @@ HRESULT CreateObjectBuffer()
 	ByteWidth						=	g_allTrianglesTexCoord.size() * sizeof(XMFLOAT2); 
 	RawTexCoord.ByteWidth			=	ByteWidth;
 	RawTexCoord.StructureByteStride =	sizeof(XMFLOAT2);
-	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
+//	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
 	if(FAILED(hr))
 		return hr;	
 	D3D11_SHADER_RESOURCE_VIEW_DESC TexCoord_SRV_Desc;
@@ -595,7 +595,7 @@ HRESULT CreateObjectBuffer()
 	TexCoord_SRV_Desc.Buffer.NumElements = g_allTrianglesTexCoord.size();
 	TexCoord_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
 	TexCoord_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
+//	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
 	if (FAILED(hr))
 		return hr;
 
@@ -716,11 +716,11 @@ HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV};
 	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
-	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TexCoord_SRV, g_TriangleDesc_SRV, g_Normal_SRV};
+	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, 0);
 	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
-	g_DeviceContext->CSSetShaderResources(0, 4, srv);
+	g_DeviceContext->CSSetShaderResources(0, 3, srv);
 
 
 	g_ComputeShader->Set();

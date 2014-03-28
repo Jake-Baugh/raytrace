@@ -6,7 +6,7 @@
 
 #include "LightHelper.fx"
 
-#pragma pack_matrix(row_major)
+//#pragma pack_matrix(row_major)
 
 
 Ray createRay(uint x, uint y)
@@ -14,13 +14,16 @@ Ray createRay(uint x, uint y)
 	Ray l_ray;
 	l_ray.origin = cameraPosition;// +float4(1.0f, 1.0f, 1.0f, 1.0f);
  
-	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
-	double normalized_y = (1.0 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
+	float4x4 invproj = inverseProjection;
+	float4x4 invView = inverseView;
 
-	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), inverseProjection);
+	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
+	double normalized_y = (1 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
+
+	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), invproj);
 	imagePoint /= imagePoint.w;
  
-	imagePoint = mul(imagePoint, inverseView);
+	imagePoint = mul(imagePoint, invView);
  
 	l_ray.direction = imagePoint - l_ray.origin;
 	l_ray.direction = normalize(l_ray.direction);
@@ -31,25 +34,7 @@ Ray createRay(uint x, uint y)
 float3 TriangleNormalCounterClockwise(uint DescriptionIndex)
 {
 	return normalize(AllNormal[(uint)AllTriangleDesc[DescriptionIndex].normalIndex]);
-	//return float3(0.0f, 1.0f, 0.0f);// 
-	/*
-	float3 e1, e2;  //Edge1, Edge2
- 
-	float Point0, Point1, Point2; // Indes places in vertex array
-
-	Point0 = AllTriangleDesc[DescriptionIndex].Point0;	// Get indexvalues
-	Point1 = AllTriangleDesc[DescriptionIndex].Point1;
-	Point2 = AllTriangleDesc[DescriptionIndex].Point2;
-
-
-	//Find vectors for two edges sharing V0
-	e1 = AllVertex[(uint)Point1].xyz - AllVertex[(uint)Point0].xyz;	// Use indexvalues to get vectors
-	e2 = AllVertex[(uint)Point2].xyz - AllVertex[(uint)Point0].xyz;
-	
-	e1 = cross(e1, e2);
-	return normalize(e1);
-	*/
-	}
+}
 
 interface IntersectInterface
 {
@@ -92,9 +77,11 @@ class TriangleIntersect : IntersectInterface
 
 		float Point0, Point1, Point2;
 
-		Point0 = AllTriangleDesc[index].Point0;
-		Point1 = AllTriangleDesc[index].Point1;
-		Point2 = AllTriangleDesc[index].Point2;
+		uint tempindex = index;
+
+		Point0 = AllTriangleDesc[tempindex].Point0;
+		Point1 = AllTriangleDesc[tempindex].Point1;
+		Point2 = AllTriangleDesc[tempindex].Point2;
 		
 		//Find vectors for two edges sharing V0
 		e1 = AllVertex[(uint)Point1].xyz - AllVertex[(uint)Point0].xyz;
@@ -225,7 +212,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 }
 
 #define VERY_SMALL_NUMBER 0.001f
-Ray Jump(in Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
+Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
 {	
 	// Variables used by all intersections
 	float4 l_collidePos;
@@ -315,7 +302,7 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
-		return float4(Sphere[p_primitiveIndex].color, 1.0f);
+		return float4(Sphere[p_primitiveIndex].color, 0.0f);
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
 		return GREY4; // All triangles are hardcoded atm
@@ -328,7 +315,8 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflectivefactor;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
+		return 1.0f;
+		//return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
 	return 0;
 }
 
@@ -337,7 +325,8 @@ float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		return AllTriangleDesc[p_primitiveIndex].material.isReflective;
+		return 1.0f;
+		//return AllTriangleDesc[p_primitiveIndex].material.isReflective;
 	return 0;
 }
 
@@ -345,18 +334,20 @@ float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in
 {
 	float4 l_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
+
 	for (uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
 		if (l_isLitByLight == true) // Thus is lit
 		{
-			l_color += CalcLight(p_material, p_ray.origin, PointLight[i].position, cameraPosition, p_collideNormal);
+			l_color += l_primitiveColor * CalcLight(p_material, p_ray.origin, PointLight[i].position, cameraPosition, p_collideNormal);
 		}
 	}
 
-	l_color += float4(p_material.ambient, 1.0f) *  ambientLight; // Add ambient
-	l_color *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
+//	l_color += float4(p_material.ambient, 1.0f) *  ambientLight; // Add ambient
+//	l_color *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
 	return l_color;
 }
 
@@ -367,7 +358,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 2
+#define max_number_of_bounces 4
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -380,10 +371,12 @@ float4 Trace(in Ray p_ray)
 
 	l_nextRay = Jump(l_nextRay, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
 
-	if(l_primitiveType != PRIMITIVE_NOTHING) // As long as it is SOMETHING 
+	if (l_primitiveType != PRIMITIVE_NOTHING) // As long as it is SOMETHING 
 	{
 		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Get shade 
 	}
+//	else
+//		return colorIllumination;
 	
 	uint l_isReflective;
 	float l_reflectiveFactor = 1.0f;
@@ -423,8 +416,7 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
 	a = max(a, 1.0f);
-//	a = max(a, PADDING1);
-//	a = max(a, PADDING2);
+
 
 	l_finalColor /= a;
 
