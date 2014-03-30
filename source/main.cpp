@@ -461,17 +461,16 @@ void FillLightBuffer()
 	CustomLightStruct::LightBuffer l_light;
 
 //	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight =	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.diffuseLight =  XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	l_light.specularLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_light.ambientLight =	XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+//	l_light.diffuseLight =  XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//	l_light.specularLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 //	l_light.PADDING1 = -1.0f;
 //	l_light.PADDING2 = -1.0f;
-
 
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-//		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -664,7 +663,7 @@ HRESULT Update(float deltaTime)
 	if(GetAsyncKeyState('D') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->strafe(MOVE_SPEED *deltaTime);
 	
-	float cameraspeed = 7.0;
+	float cameraspeed = 3.0;
 	if(GetAsyncKeyState('Q') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->rotateY(-cameraspeed * deltaTime);
 	if(GetAsyncKeyState('E') & 0x8000)

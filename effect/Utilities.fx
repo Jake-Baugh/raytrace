@@ -1,3 +1,4 @@
+
 // ALL IN PARAMETERS AND OBJECTS
 // HARDCODED VARIABLES
 #define EPSILON 0.000001
@@ -47,7 +48,7 @@ struct Material // 12
 struct PointLightData	// 4
 {
 	float4 position;	// 4
-	//float4 color;
+	float4 color;
 };
 
 struct SphereStruct	// 20
@@ -95,9 +96,9 @@ cbuffer LightBuffer : register(c2)			//
 {
 	float4 ambientLight;					// 4
 //	float light_count;						//
-	float4 diffuseLight;					// 4
+//	float4 diffuseLight;					// 4
 //	float PADDING1;
-	float4 specularLight;					// 4
+//	float4 specularLight;					// 4
 //	float PADDING2;
 	PointLightData PointLight[LIGHT_COUNT];	// 20 * 3
 }

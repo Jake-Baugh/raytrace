@@ -6,9 +6,6 @@
 
 #include "LightHelper.fx"
 
-//#pragma pack_matrix(row_major)
-
-
 Ray createRay(uint x, uint y)
 {
 	Ray l_ray;
@@ -214,6 +211,8 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 #define VERY_SMALL_NUMBER 0.001f
 Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
 {	
+
+
 	// Variables used by all intersections
 	float4 l_collidePos;
 		
@@ -240,6 +239,7 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	{			
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_distanceToClosestSphere - VERY_SMALL_NUMBER) * p_ray.direction;
+//		p_ray.distance += length(l_collidePos - p_ray.origin);
 
 		// Out variables
 		p_out_collideNormal		= normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
@@ -249,29 +249,30 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 
 		// New variables for next ray
 		p_ray.origin = l_collidePos;
-		p_ray.direction = reflect(p_ray.direction, p_out_collideNormal); // new direction for next jump
+		p_ray.direction = float4(reflect(p_ray.direction.xyz, p_out_collideNormal.xyz), 0.0f); // new direction for next jump
 	}
 	else if((l_sphereHit != -1 && l_triangleHit != -1 && l_distanceToClosestTriangle < l_distanceToClosestSphere) || l_sphereHit == -1 && l_triangleHit != -1)
 	{	
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_distanceToClosestTriangle - VERY_SMALL_NUMBER) * p_ray.direction;
+//		p_ray.distance += length(l_collidePos - p_ray.origin);
 		
 		// Out variables		
-		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f);
+		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f); // Do not normalize this. Already normalized
 		p_out_material			= AllTriangleDesc[l_triangleindex].material;
 		p_out_primitiveIndex	= l_triangleindex;
 		p_out_primitiveType		= PRIMITIVE_TRIANGLE;
 
 		// New variables for next ray
-		p_ray.origin = l_collidePos;
-		p_ray.direction = reflect(p_ray.direction, p_out_collideNormal);
+		p_ray.origin			= l_collidePos;
+		p_ray.direction			= float4(reflect(p_ray.direction.xyz, -p_out_collideNormal.xyz), 0.0f);
 	}	
 	else // This is a debug place, should never happen.
 	{
 		// Out variables		
-		p_out_collideNormal		= float4(-1.0f, -1.0f,-1.0f,-1.0f);
-		p_out_material			= Sphere[l_sphereindex].material;
-		p_out_primitiveIndex	= -1;
+//		p_out_collideNormal		= float4(-1.0f, -1.0f,-1.0f,-1.0f);
+//		p_out_material			= Sphere[0].material;
+//		p_out_primitiveIndex	= -1;
 		p_out_primitiveType		= PRIMITIVE_NOTHING;
 	}
 
@@ -315,8 +316,8 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflectivefactor;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		return 1.0f;
-		//return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
+		//return 1.0f;
+		return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
 	return 0;
 }
 
@@ -325,16 +326,16 @@ float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		return 1.0f;
-		//return AllTriangleDesc[p_primitiveIndex].material.isReflective;
+		//return 1.0f;
+		return AllTriangleDesc[p_primitiveIndex].material.isReflective;
 	return 0;
 }
 
 float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material)
 {
-	float4 l_color = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 l_illumination = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
+//	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
 
 	for (uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
@@ -342,13 +343,13 @@ float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
 		if (l_isLitByLight == true) // Thus is lit
 		{
-			l_color += l_primitiveColor * CalcLight(p_material, p_ray.origin, PointLight[i].position, cameraPosition, p_collideNormal);
+			l_illumination += CalcLight(p_material, p_ray.origin, cameraPosition, p_collideNormal, PointLight[i]);
 		}
 	}
 
 //	l_color += float4(p_material.ambient, 1.0f) *  ambientLight; // Add ambient
-//	l_color *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
-	return l_color;
+	l_illumination *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
+	return l_illumination;
 }
 
 bool CloseToZero(in float p_float)
@@ -358,7 +359,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 4
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;

@@ -129,16 +129,16 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			*/
 			l_triangleDesc.NormalIndex = normal_index1 - 1;
 
-			float ambient = 0.8f;
+			float ambient = 0.0f;
 			float diffuse = 0.8f;
 			float specular = 0.8f;
 
 			l_triangleDesc.Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 			l_triangleDesc.Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 			l_triangleDesc.Material.specular = XMFLOAT3(specular, specular, specular);
-			l_triangleDesc.Material.shininess = 1.0f;
+			l_triangleDesc.Material.shininess = 30.0f;
 			l_triangleDesc.Material.isReflective = 1.0f;
-			l_triangleDesc.Material.reflectiveFactor = 1.0f;
+			l_triangleDesc.Material.reflectiveFactor = 0.4f;
 //			l_triangleDesc.Material.refractiveFactor = 0.0f;
 //			l_triangleDesc.Material.isRefractive = -1;
 //			l_triangleDesc.PADDING1 = 1.0f;

@@ -81,7 +81,7 @@ Camera::Camera()
 
 	XMStoreFloat4x4(&m_view, XMMatrixIdentity());
 	XMStoreFloat4x4(&m_proj, XMMatrixIdentity());
-//	setLens(3.1415f/4.0f, 1.0f, 1.0f, 1000.0f );
+	setLens(3.1415f/4.0f, 1.0f, 1.0f, 1000.0f );
 }
 
 Camera::~Camera()
