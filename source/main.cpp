@@ -379,13 +379,13 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		float ambient = 0.8f;
-		float diffuse = 0.8f;
+		float ambient = 1.0f;
+		float diffuse = 0.2f;
 		float specular = 0.8f;
 		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
-		l_primitive.Sphere[i].Material.shininess = 1.0f;
+		l_primitive.Sphere[i].Material.shininess = 30.0f;
 		l_primitive.Sphere[i].Material.isReflective = 1.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 

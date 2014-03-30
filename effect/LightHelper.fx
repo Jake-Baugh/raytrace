@@ -17,12 +17,9 @@ http://en.wikipedia.org/wiki/Phong_reflection_model#Description
 
 float4 calcPhongLighting(Material M, float4 L, float4 N, float4 R, float4 V, PointLightData l_lightData)
 {
-//	float4 l_ambient	= M.ambient * p_ambient; Something like this
-// From this solution
-// https://github.com/Meraz/raytrace/commit/c39b73e7470dcd49a66a4c7a3d075861148232f1 // I AM HERE
 	float4 l_ambient = float4(M.ambient, 1.0f) * ambientLight;
 		float4 l_diffuse = float4(M.diffuse, 1.0f) * saturate(dot(L, N));
-		//float4 l_specular	= 0.2f* float4(M.specular, 1.0f) * pow(max(dot(R, V), 0.0f), M.shininess);
+		//	float4 l_specular = float4(M.specular, 1.0f) * pow(max(dot(R, V), 0.0f), M.shininess);
 
 		return l_ambient + l_diffuse;// +l_specular; //* l_lightData.color;
 }

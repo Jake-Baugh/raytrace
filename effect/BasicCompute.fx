@@ -11,16 +11,16 @@ Ray createRay(uint x, uint y)
 	Ray l_ray;
 	l_ray.origin = cameraPosition;// +float4(1.0f, 1.0f, 1.0f, 1.0f);
  
-	float4x4 invproj = inverseProjection;
-	float4x4 invView = inverseView;
+//	float4x4 invproj = inverseProjection;
+//	float4x4 invView = inverseView;
 
 	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
 	double normalized_y = (1 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
 
-	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), invproj);
+	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), inverseProjection);
 	imagePoint /= imagePoint.w;
  
-	imagePoint = mul(imagePoint, invView);
+	imagePoint = mul(imagePoint, inverseView);
  
 	l_ray.direction = imagePoint - l_ray.origin;
 	l_ray.direction = normalize(l_ray.direction);
@@ -164,8 +164,11 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	l_lightSourceRay.origin = PointLight[p_lightIndex].position;
 	l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
 
-	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, 3, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);	// HARDCODED AMOUNT OF SPHERES AND TRIANGLES
-	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, 12, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
+	uint triangle_amount;
+	AllTriangleDesc.GetDimensions(triangle_amount, l_closestSphereIndex); // Needed to send something as second paramter!! (?)!
+
+	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
+	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 	
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
@@ -211,8 +214,6 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 #define VERY_SMALL_NUMBER 0.001f
 Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
 {	
-
-
 	// Variables used by all intersections
 	float4 l_collidePos;
 		
@@ -223,8 +224,11 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	
 	uint l_sphereHit, l_triangleHit;
 
-	GetClosestPrimitive(p_ray, sphereIntersect, 3, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
-	GetClosestPrimitive(p_ray, triangleIntersect, 12, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
+	uint triangle_amount;
+	AllTriangleDesc.GetDimensions(triangle_amount, l_sphereindex); // Needed to send something as second paramter!! (?)!
+
+	GetClosestPrimitive(p_ray, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
+	GetClosestPrimitive(p_ray, triangleIntersect, triangle_amount, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
 	
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
@@ -425,19 +429,14 @@ void main( uint3 threadID : SV_DispatchThreadID)
 }
 
 /*
-	Fixa så att ljuset rör sig.
-	Fixa till så att det ser bra ut.
-	Väldigt skrikiga färger
-	Fixa flimmret som är
-	Dela upp saker i funktioner
-	Dynamiska buffrar
-	Ladda in objekt
-	Material
-	Kolla över blinnphong och normaler med reverse normaler beräkningar blebb
+
 
 	Tankar
 		Octatree
+		Supersampling
+			http://paulbourke.net/miscellaneous/aliasing/
 		Hashtable som använder pekare som nyckel
 		Boundingbox för varje objekt för snabbare koll.
-		Skapa egna ComputeShaders
+
+
 */
