@@ -48,9 +48,10 @@ struct PointLightData	// 4
 {
 	float4 position;	// 4
 	float4 color;		// 4
-	float4 ambient;		// 3
-	float4 diffuse;		// 3
-	float4 specular;	// 3
+	float4 ambient;		// 4
+	float4 diffuse;		// 4
+	float3 specular;	// 3
+	float  lightRadius; // 1
 };
 
 struct SphereStruct	// 20
@@ -92,16 +93,6 @@ cbuffer PrimitiveBuffer: register(c1)
 	SphereStruct	Sphere[SPHERE_COUNT];
 }
 
-/*
-cbuffer OnePerDispatch: register(c3)
-{
-	int x_dispatch_count;
-	int y_dispatch_count;
-	float client_width;
-
-}
-*/
-
 
 cbuffer LightBuffer : register(c2)
 {
@@ -109,7 +100,17 @@ cbuffer LightBuffer : register(c2)
 	PointLightData PointLight[LIGHT_COUNT];	// 8 * 3
 }
 
+cbuffer OnePerDispatch: register(c3)
+{
+	int x_dispatch_count;
+	int y_dispatch_count;
+	float client_width;
+	float client_height;
+}
+
+
 RWTexture2D<float4> output								: register(u0);
+RWTexture2D<float4> temp								: register(u1);
 StructuredBuffer<float4> AllVertex						: register(t0);
 //StructuredBuffer<float2> AllTexCoord					: register(t1);
 StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t1);

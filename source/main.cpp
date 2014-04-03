@@ -10,6 +10,15 @@
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
 
+struct OnePerDispatch
+{
+	int x_dispatch_count;
+	int y_dispatch_count;
+	float client_width;
+	float client_height;
+};
+
+
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
@@ -28,6 +37,8 @@ ID3D11Buffer*				g_vertexBuffer			= nullptr;
 ID3D11Buffer*				g_TexCoordBuffer		= nullptr;
 ID3D11Buffer*				g_objectBuffer			= nullptr;
 ID3D11Buffer*				g_normalBuffer			= nullptr;
+ID3D11Buffer*				g_dispatchBuffer		= nullptr;
+
 
 
 // Triangle mesh variables
@@ -41,7 +52,8 @@ ID3D11ShaderResourceView* g_TexCoord_SRV;
 ID3D11ShaderResourceView* g_TriangleDesc_SRV;
 ID3D11ShaderResourceView* g_Normal_SRV;
 
-ComputeShader*				g_ComputeShader			= nullptr;
+ComputeShader*				g_ComputeShader = nullptr;
+ComputeShader*				g_ComputeShader2 = nullptr;
 
 D3D11Timer*					g_Timer					= NULL;
 
@@ -49,6 +61,7 @@ int							g_Width, g_Height;
 int							g_cameraIndex = 0;
 
 POINT						m_oldMousePos;
+OnePerDispatch				g_OnePerDispatch;
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -65,6 +78,8 @@ HRESULT				LoadObjectData();
 HRESULT				CreateObjectBuffer();
 HRESULT				CreateCameraBuffer();
 void				FillCameraBuffer();
+HRESULT				CreateDispatchBuffer();
+void				UpdateDispatchBuffer(int l_x, int l_y);
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -139,7 +154,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	// Create window
 	g_hInst = hInstance; 
-	RECT rc = { 0, 0, 800, 800};
+	RECT rc = { 0, 0, 1600, 1600 };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	
 	if(!(g_hWnd = CreateWindow("BTH_D3D_Template", "BTH - Direct3D 11.0 Template",
@@ -191,6 +206,10 @@ HRESULT Init()
 
 	hr = CreateObjectBuffer();
 	if(FAILED(hr))	
+		return hr;
+
+	hr = CreateDispatchBuffer();
+	if (FAILED(hr))
 		return hr;
 
 	return S_OK;
@@ -285,6 +304,9 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	g_ComputeShader = new ComputeShader();
 	g_ComputeShader->Init(L"effect\\BasicCompute.fx", NULL, "main", NULL, g_Device, g_DeviceContext);
 
+	g_ComputeShader2 = new ComputeShader();
+	g_ComputeShader->Init(L"effect\\BasicCompute.fx", NULL, "main2", NULL, g_Device, g_DeviceContext);
+
 
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
 	return S_OK;
@@ -349,6 +371,41 @@ HRESULT CreatePrimitiveBuffer()
 	return hr;
 }
 
+HRESULT	CreateDispatchBuffer()
+{
+	HRESULT hr = S_OK;
+
+	int ByteWidth;
+
+	D3D11_BUFFER_DESC dispatch_buffer_desc;
+	dispatch_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dispatch_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	dispatch_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	dispatch_buffer_desc.MiscFlags = 0;
+	ByteWidth = sizeof(OnePerDispatch);
+	dispatch_buffer_desc.ByteWidth = ByteWidth;
+	hr = g_Device->CreateBuffer(&dispatch_buffer_desc, NULL, &g_dispatchBuffer);
+
+	UpdateDispatchBuffer(0,0);
+
+	return hr;
+}
+
+void UpdateDispatchBuffer(int l_x, int l_y)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	g_DeviceContext->Map(g_dispatchBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	OnePerDispatch g_OnePerDispatch;
+	g_OnePerDispatch.client_width = 1600.0f;
+	g_OnePerDispatch.client_height = 1600.0f;
+	g_OnePerDispatch.x_dispatch_count = l_x;
+	g_OnePerDispatch.y_dispatch_count = l_y;
+
+	*(OnePerDispatch*)mappedResource.pData = g_OnePerDispatch;
+	g_DeviceContext->Unmap(g_dispatchBuffer, 0);
+}
+
 void FillPrimitiveBuffer(float l_deltaTime)
 {
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
@@ -369,9 +426,9 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		float ambient = 0.0f;
-		float diffuse = 0.0f;
-		float specular = 0.1f;
+		float ambient = 0.001f;
+		float diffuse = 0.7f;
+		float specular = 0.01f;
 		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
@@ -415,7 +472,8 @@ void FillLightBuffer()
 		l_light.pointLight[i].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_light.pointLight[i].specularLight = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
+		l_light.pointLight[i].lightRadius	= 5000.0f;
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -659,19 +717,51 @@ HRESULT Update(float deltaTime)
 HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV};
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer};
+	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer};
 	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, 0);
-	g_DeviceContext->CSSetConstantBuffers(0, 3, ppCB);
+//	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
 	g_DeviceContext->CSSetShaderResources(0, 3, srv);
-
 
 	g_ComputeShader->Set();
 //	g_Timer->Start();
-	g_DeviceContext->Dispatch( 25, 25, 1 );
-//	g_Timer->Stop();
+
+	
+
+	UpdateDispatchBuffer(0, 0);
+	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_DeviceContext->Dispatch(25, 25, 1); // Top left
 	g_ComputeShader->Unset();
+
+	
+	// 
+	UpdateDispatchBuffer(1, 0);
+	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_ComputeShader->Set();
+	g_DeviceContext->Dispatch( 25, 25, 1 );
+	g_ComputeShader->Unset();
+
+	// 
+	UpdateDispatchBuffer(0, 1);
+	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_ComputeShader->Set();
+	g_DeviceContext->Dispatch(25, 25, 1);
+	g_ComputeShader->Unset();
+
+	// 
+	UpdateDispatchBuffer(1, 1);
+	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_ComputeShader->Set();
+	g_DeviceContext->Dispatch(25, 25, 1);
+	g_ComputeShader->Unset();
+	
+//	g_ComputeShader2->Set();
+//	g_DeviceContext->Dispatch(25, 25, 1);
+//	g_ComputeShader2->Unset();
+
+//	g_Timer->Stop();
+//	/g_ComputeShader->Unset();
 
 
 	if(FAILED(g_SwapChain->Present(0, 0)))

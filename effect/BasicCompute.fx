@@ -262,7 +262,7 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 //		p_ray.distance += length(l_collidePos - p_ray.origin);
 		
 		// Out variables		
-		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 1.0f); // Do not normalize this. Already normalized
+		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 0.0f); // Do not normalize this. Already normalized
 		p_out_material			= AllTriangleDesc[l_triangleindex].material;
 		p_out_primitiveIndex	= l_triangleindex;
 		p_out_primitiveType		= PRIMITIVE_TRIANGLE;
@@ -363,7 +363,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 2
+#define max_number_of_bounces 1
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -413,7 +413,7 @@ float4 Trace(in Ray p_ray)
 void main( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	Ray l_ray = createRay(threadID.x, threadID.y);
+	Ray l_ray = createRay(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
 	l_finalColor = Trace(l_ray);
 	
 	/*
@@ -426,9 +426,27 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	normalize(l_finalColor);
 
 //	l_finalColor /= a;
-
-	output[threadID.xy] = l_finalColor;
+	int2 a = int2(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
+	output[a] = l_finalColor;
 }
+
+[numthreads(32, 32, 1)]
+void main2(uint3 threadID : SV_DispatchThreadID)
+{
+	uint2 counter;
+	for (counter.y = threadID.y * 32; counter.y < threadID.y * 32 + 32; counter.y++)
+	{
+		for (counter.x = threadID.x * 32; counter.x < threadID.x * 32 + 32; counter.x++)
+		{
+			output[counter.xy] =	normalize(temp[counter.xy * 2]); // + top right + bot left + bot right
+		}
+	}
+
+//	//	l_finalColor /= a;
+//	int2 a = int2(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
+//		output[a] = l_finalColor;
+}
+
 
 /*
 
