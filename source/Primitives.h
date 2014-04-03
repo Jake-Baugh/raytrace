@@ -15,10 +15,6 @@ namespace CustomPrimitiveStruct
 		XMFLOAT4	cameraPosition;
 		XMFLOAT4X4	inverseProjection;
 		XMFLOAT4X4	inverseView;
-	//	float screenWidth;
-	//	float screenHeight;
-	//	float padding1;
-	//	float padding2;
 	};
 
 	struct Material

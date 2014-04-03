@@ -33,7 +33,7 @@ public:
 	DirectX::XMFLOAT4X4 GetProj()		const{ return m_proj; }
 
 private:
-	static std::vector<Camera*>* m_camera;
+	static std::vector<Camera*> m_camera;
 
 	Camera();
 	~Camera();

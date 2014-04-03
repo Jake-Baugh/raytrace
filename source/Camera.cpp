@@ -63,13 +63,13 @@ XMFLOAT4 operator+=(XMFLOAT4 l, XMFLOAT4 r)
 }
 
 
-std::vector<Camera*>* Camera::m_camera = new std::vector<Camera*>(10);
+std::vector<Camera*> Camera::m_camera = std::vector<Camera*>(10);
 
-Camera* Camera::GetCamera(int index)
+Camera* Camera::GetCamera(int index)				// Quite the awful multiton here. Easy, not very good if getting cameras above 10.
 {
-	if(m_camera->at(index) == nullptr)
-		m_camera->at(index) = new Camera();
-	return m_camera->at(index);
+	if(m_camera.at(index) == nullptr)
+		m_camera.at(index) = new Camera();
+	return m_camera.at(index);
 }
 
 Camera::Camera()

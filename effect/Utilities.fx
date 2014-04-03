@@ -13,9 +13,9 @@
 
 // COLORS
 #define WHITE3 float3(1.0f, 1.0f, 1.0f)
-#define BLACK3 float3(0.0f, 0.0f, 0.0f)
-#define RED3   float3(1.0f, 0.0f, 0.0f)
-#define GREEN3 float3(0.0f, 1.0f, 0.0f)
+#define BLACK3 float3(0.0f, 0.0f, 1.0f)
+#define RED3   float3(1.0f, 0.0f, 1.0f)
+#define GREEN3 float3(0.0f, 1.0f, 1.0f)
 #define BLUE3  float3(0.0f, 0.0f, 1.0f)
 #define TEAL3  float3(0.0f, 1.0f, 1.0f)
 #define GREY3  float3(0.2f, 0.2f, 0.2f)
@@ -27,7 +27,7 @@
 #define BLUE4  float4(0.0f, 0.0f, 1.0f, 1.0f)
 #define ORANGE4  float4(1.0f, 0.55f, 0.0f, 1.0f)
 #define TEAL4  float4(0.0f, 1.0f, 1.0f, 1.0f)
-#define GREY4 float4(0.2f, 0.2f, 0.2f, 1.0f)
+#define GREY4 float4(0.1f, 0.1f, 0.1f, 1.0f)
 // END OF COLORS
 
 #pragma pack_matrix(row_major)
@@ -39,8 +39,7 @@ struct Material // 12
 	float isReflective;		// 4
 	float3 specular;
 	float reflectivefactor;		// 4
-	//	float refractive;
-//	float isRefractive;
+
 };
 
 // Shininess is larger for surfaces that are smoother and more mirror-like. When this constant is large the specular highlight is small.
@@ -48,7 +47,10 @@ struct Material // 12
 struct PointLightData	// 4
 {
 	float4 position;	// 4
-	float4 color;
+	float4 color;		// 4
+	float4 ambient;		// 3
+	float4 diffuse;		// 3
+	float4 specular;	// 3
 };
 
 struct SphereStruct	// 20
@@ -78,29 +80,33 @@ struct TriangleDescription // 16
 	Material material;	// 12
 };
 
-cbuffer EveryFrameBuffer : register(c0) // 40
+cbuffer EveryFrameBuffer : register(c0) // 36
 {
 	float4	 cameraPosition;		// 4
 	float4x4 inverseProjection;		// 16
 	float4x4 inverseView;			// 16
-	//	float4 screenVariable;
 }
 
-cbuffer PrimitiveBuffer: register(c1)	// 48 floats, 192 bytes
+cbuffer PrimitiveBuffer: register(c1)
 {
-	SphereStruct	Sphere[SPHERE_COUNT];	// 20*3 = 60
-	//	float4			countVariable;			// 4
+	SphereStruct	Sphere[SPHERE_COUNT];
 }
 
-cbuffer LightBuffer : register(c2)			// 
+/*
+cbuffer OnePerDispatch: register(c3)
 {
-	float4 ambientLight;					// 4
-//	float light_count;						//
-//	float4 diffuseLight;					// 4
-//	float PADDING1;
-//	float4 specularLight;					// 4
-//	float PADDING2;
-	PointLightData PointLight[LIGHT_COUNT];	// 20 * 3
+	int x_dispatch_count;
+	int y_dispatch_count;
+	float client_width;
+
+}
+*/
+
+
+cbuffer LightBuffer : register(c2)
+{
+//	float4 ambientLight;					// 3
+	PointLightData PointLight[LIGHT_COUNT];	// 8 * 3
 }
 
 RWTexture2D<float4> output								: register(u0);

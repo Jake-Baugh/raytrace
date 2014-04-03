@@ -347,11 +347,11 @@ float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in
 		bool l_isLitByLight = IsLitByLight(p_ray, p_primitiveIndex, p_primitiveType, i);
 		if (l_isLitByLight == true) // Thus is lit
 		{
-			l_illumination += CalcLight(p_material, p_ray.origin, cameraPosition, p_collideNormal, PointLight[i]);
+			l_illumination += CalcLight(p_material, p_ray.origin, cameraPosition, p_collideNormal, PointLight[i]) * PointLight[i].color;
 		}
 	}
 
-//	l_color += float4(p_material.ambient, 1.0f) *  ambientLight; // Add ambient
+	l_illumination += float4(p_material.ambient, 1.0f);
 	l_illumination *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
 	return l_illumination;
 }
@@ -416,14 +416,16 @@ void main( uint3 threadID : SV_DispatchThreadID)
 	Ray l_ray = createRay(threadID.x, threadID.y);
 	l_finalColor = Trace(l_ray);
 	
+	/*
 	float a;
 	// Normalizing after highest value	
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
 	a = max(a, 1.0f);
+	*/
+	normalize(l_finalColor);
 
-
-	l_finalColor /= a;
+//	l_finalColor /= a;
 
 	output[threadID.xy] = l_finalColor;
 }

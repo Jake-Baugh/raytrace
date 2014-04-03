@@ -139,7 +139,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	// Create window
 	g_hInst = hInstance; 
-	RECT rc = { 0, 0, 800, 800 };
+	RECT rc = { 0, 0, 800, 800};
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	
 	if(!(g_hWnd = CreateWindow("BTH_D3D_Template", "BTH - Direct3D 11.0 Template",
@@ -327,11 +327,6 @@ void FillCameraBuffer()
 	l_eachFrameData.inverseProjection	= l_inverseProjection;
 	l_eachFrameData.inverseView			= l_inverseView;
 	
-
-//	l_eachFrameData.screenWidth			= 800.0f;
-//	l_eachFrameData.screenHeight		= 800.0f;
-//	l_eachFrameData.padding1			= 0;
-//	l_eachFrameData.padding2			= 0;
 	*(CustomPrimitiveStruct::EachFrameDataStructure*)mappedResource.pData = l_eachFrameData;
 	g_DeviceContext->Unmap(g_EveryFrameBuffer, 0);
 }
@@ -360,11 +355,6 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	g_DeviceContext->Map(g_PrimitivesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &PrimitivesResources);
 	CustomPrimitiveStruct::Primitive l_primitive;
 		
-//	l_primitive.SphereCount = SPHERE_COUNT;
-//	l_primitive.TriangleCount = TRIANGLE_COUNT;
-//	l_primitive.TriangleCountFromObject = -1;
-//	l_primitive.padding1 = -1;
-	
 	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 500.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
 	l_primitive.Sphere[0].Color					= XMFLOAT3(1.0f, 0.0f, 0.0f);
@@ -379,57 +369,16 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		float ambient = 1.0f;
-		float diffuse = 0.2f;
-		float specular = 0.8f;
+		float ambient = 0.0f;
+		float diffuse = 0.0f;
+		float specular = 0.1f;
 		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
-		l_primitive.Sphere[i].Material.shininess = 30.0f;
-		l_primitive.Sphere[i].Material.isReflective = 1.0f;
+		l_primitive.Sphere[i].Material.shininess = 50.0f;
+		l_primitive.Sphere[i].Material.isReflective = 0.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
-
 	}
-
-	/*
-	l_primitive.Triangle[0].Color				= XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f);
-	l_primitive.Triangle[0].Position0			= XMFLOAT4(400.0f,	-50.0f,		700.0f, 1.0f);
-	l_primitive.Triangle[0].Position1			= XMFLOAT4(400.0f,	 50.0f,	700.0f, 1.0f);
-	l_primitive.Triangle[0].Position2			= XMFLOAT4(400.0f,	-50.0f,		800.0f, 1.0f);
-
-	l_primitive.Triangle[1].Color				= XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
-	l_primitive.Triangle[1].Position0			= XMFLOAT4(400.0f,	50.0f,		700.0f, 1.0f);
-	l_primitive.Triangle[1].Position1			= XMFLOAT4(400.0f,	 50.0f,	800.0f, 1.0f);
-	l_primitive.Triangle[1].Position2			= XMFLOAT4(400.0f,	-50.0f,		800.0f, 1.0f);
-	
-	l_primitive.Triangle[2].Color				= XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f);
-	l_primitive.Triangle[2].Position0			= XMFLOAT4(-200.0f,	-300.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[2].Position1			= XMFLOAT4(200.0f,	-300.0f,		400.0f, 1.0f);
-	l_primitive.Triangle[2].Position2			= XMFLOAT4(-200.0f,	-300.0f,		800.0f, 1.0f);
-
-	l_primitive.Triangle[3].Color				= XMFLOAT4(1.0f, 1.0f, 0.5f, 1.0f);
-	l_primitive.Triangle[3].Position0			= XMFLOAT4(-150.0f,	-250.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[3].Position1			= XMFLOAT4(150.0f,	-250.0f,		300.0f, 1.0f);
-	l_primitive.Triangle[3].Position2			= XMFLOAT4(-150.0f,	-250.0f,		600.0f, 1.0f);
-
-	l_primitive.Triangle[4].Color				= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	l_primitive.Triangle[4].Position0			= XMFLOAT4(-3000.0f,	-500.0f,		0.0f, 1.0f);
-	l_primitive.Triangle[4].Position1			= XMFLOAT4(1500.0f,	-500.0f,		1500.0f, 1.0f);
-	l_primitive.Triangle[4].Position2			= XMFLOAT4(-3000.0f,	-500.0f,		3000.0f, 1.0f);
-
-
-	for(int i = 0; i < l_primitive.TriangleCount; i++)
-	{
-		l_primitive.Triangle[i].Material.ambient = 0.5f;
-		l_primitive.Triangle[i].Material.diffuse = 0.8f;
-		l_primitive.Triangle[i].Material.specular = 0.8f;
-		l_primitive.Triangle[i].Material.shininess = 30.0f;
-		l_primitive.Triangle[i].Material.reflectiveFactor = 0.5f;
-		l_primitive.Triangle[i].Material.refractiveFactor = 0.0f;
-		l_primitive.Triangle[i].Material.isReflective = 1;
-		l_primitive.Triangle[i].Material.isRefractive = -1;
-	}
-	*/
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
@@ -459,18 +408,14 @@ void FillLightBuffer()
 	g_DeviceContext->Map(g_LightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &LightResources);
 
 	CustomLightStruct::LightBuffer l_light;
-
-//	l_light.lightCount = LIGHT_COUNT;
-	l_light.ambientLight =	XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-//	l_light.diffuseLight =  XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//	l_light.specularLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//	l_light.PADDING1 = -1.0f;
-//	l_light.PADDING2 = -1.0f;
-
+		
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
-		l_light.pointLight[i].position	= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color		= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
+		l_light.pointLight[i].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].specularLight = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
