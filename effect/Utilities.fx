@@ -109,10 +109,20 @@ cbuffer OnePerDispatch: register(c3)
 }
 
 
+/*
+b	Constant buffer
+t	Texture and texture buffer
+c	Buffer offset
+s	Sampler
+u	Unordered Access View
+http://msdn.microsoft.com/en-us/library/windows/desktop/dd607359(v=vs.85).aspx
+*/
+
 RWTexture2D<float4> output								: register(u0);
-RWTexture2D<float4> temp								: register(u1);
+RWStructuredBuffer<float4> temp							: register(u1);
+
 StructuredBuffer<float4> AllVertex						: register(t0);
-//StructuredBuffer<float2> AllTexCoord					: register(t1);
 StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t1);
 StructuredBuffer<float3> AllNormal						: register(t2);
+//StructuredBuffer<float2> AllTexCoord					: register(t3);
 // END OF INPARAMETERS

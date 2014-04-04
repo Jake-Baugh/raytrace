@@ -130,7 +130,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.NormalIndex = normal_index1 - 1;
 
 			float ambient = 0.001f;
-			float diffuse = 0.7f;
+			float diffuse = 1.0f;
 			float specular = 0.01f;
 
 			l_triangleDesc.Material.ambient = XMFLOAT3(ambient, ambient, ambient);

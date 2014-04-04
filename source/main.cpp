@@ -9,6 +9,9 @@
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
+#define CLIENT_WIDTH 800
+#define CLIENT_HEIGHT 800
+
 
 struct OnePerDispatch
 {
@@ -18,6 +21,12 @@ struct OnePerDispatch
 	float client_height;
 };
 
+
+/*
+	This file is a mess.
+	Functionss definitions in wrong order, no real naming conventions, huge functions and functionality in wrong places.
+	Most things could've been moved out from this file. Buuuuuut, hey. You tell yourself it's easier if you put everything in the same file while learning new things.
+*/
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -38,6 +47,8 @@ ID3D11Buffer*				g_TexCoordBuffer		= nullptr;
 ID3D11Buffer*				g_objectBuffer			= nullptr;
 ID3D11Buffer*				g_normalBuffer			= nullptr;
 ID3D11Buffer*				g_dispatchBuffer		= nullptr;
+ID3D11Buffer*				g_tempBuffer			= nullptr;	
+ID3D11UnorderedAccessView*	g_tempUAV				= nullptr;
 
 
 
@@ -52,8 +63,9 @@ ID3D11ShaderResourceView* g_TexCoord_SRV;
 ID3D11ShaderResourceView* g_TriangleDesc_SRV;
 ID3D11ShaderResourceView* g_Normal_SRV;
 
-ComputeShader*				g_ComputeShader = nullptr;
-ComputeShader*				g_ComputeShader2 = nullptr;
+ComputeShader*				RayTracingRender	= nullptr;
+ComputeShader*				SuperSampleRender	= nullptr;
+ComputeShader*				GPUPICK				= nullptr;
 
 D3D11Timer*					g_Timer					= NULL;
 
@@ -80,10 +92,13 @@ HRESULT				CreateCameraBuffer();
 void				FillCameraBuffer();
 HRESULT				CreateDispatchBuffer();
 void				UpdateDispatchBuffer(int l_x, int l_y);
+HRESULT				CreateTempBufferAndUAV();
+void				GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY);
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
+
 
 
 //--------------------------------------------------------------------------------------
@@ -154,7 +169,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	// Create window
 	g_hInst = hInstance; 
-	RECT rc = { 0, 0, 1600, 1600 };
+	RECT rc = { 0, 0, CLIENT_WIDTH, CLIENT_HEIGHT };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	
 	if(!(g_hWnd = CreateWindow("BTH_D3D_Template", "BTH - Direct3D 11.0 Template",
@@ -211,6 +226,12 @@ HRESULT Init()
 	hr = CreateDispatchBuffer();
 	if (FAILED(hr))
 		return hr;
+
+	hr = CreateTempBufferAndUAV();
+	if (FAILED(hr))
+		return hr;
+
+	FillPrimitiveBuffer(0.0f);
 
 	return S_OK;
 }
@@ -301,11 +322,13 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	hr = g_Device->CreateUnorderedAccessView( pBackBuffer, NULL, &g_BackBufferUAV );
 
 	//create helper sys and compute shader instance
-	g_ComputeShader = new ComputeShader();
-	g_ComputeShader->Init(L"effect\\BasicCompute.fx", NULL, "main", NULL, g_Device, g_DeviceContext);
+	RayTracingRender = new ComputeShader();
+	RayTracingRender->Init(L"effect\\BasicCompute.fx", NULL, "RayTrace", NULL, g_Device, g_DeviceContext);
 
-	g_ComputeShader2 = new ComputeShader();
-	g_ComputeShader->Init(L"effect\\BasicCompute.fx", NULL, "main2", NULL, g_Device, g_DeviceContext);
+	SuperSampleRender = new ComputeShader();
+	SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, "RenderToBackBuffer", NULL, g_Device, g_DeviceContext);
+
+	//GPUPICK = new 
 
 
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
@@ -386,7 +409,7 @@ HRESULT	CreateDispatchBuffer()
 	dispatch_buffer_desc.ByteWidth = ByteWidth;
 	hr = g_Device->CreateBuffer(&dispatch_buffer_desc, NULL, &g_dispatchBuffer);
 
-	UpdateDispatchBuffer(0,0);
+
 
 	return hr;
 }
@@ -404,6 +427,37 @@ void UpdateDispatchBuffer(int l_x, int l_y)
 
 	*(OnePerDispatch*)mappedResource.pData = g_OnePerDispatch;
 	g_DeviceContext->Unmap(g_dispatchBuffer, 0);
+}
+
+HRESULT	CreateTempBufferAndUAV()
+{
+	HRESULT hr = S_OK;
+	int ByteWidth;
+	
+	// RAW VERTEX SAVING
+	D3D11_BUFFER_DESC temp_buffer_desc;
+	temp_buffer_desc.BindFlags				= D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	temp_buffer_desc.Usage					= D3D11_USAGE_DEFAULT;
+	temp_buffer_desc.CPUAccessFlags			= 0;
+	temp_buffer_desc.MiscFlags				= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	ByteWidth								= 1600*1600 * sizeof(XMFLOAT4);
+	temp_buffer_desc.ByteWidth = ByteWidth;
+	temp_buffer_desc.StructureByteStride = sizeof(XMFLOAT4);
+	hr = g_Device->CreateBuffer(&temp_buffer_desc, NULL, &g_tempBuffer);
+	if (FAILED(hr))
+		return hr;
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC temp_buffer_UAV_desc;
+	temp_buffer_UAV_desc.Buffer.FirstElement	= 0;
+	temp_buffer_UAV_desc.Buffer.Flags			= 0;
+	temp_buffer_UAV_desc.Buffer.NumElements		= 1600*1600;
+	temp_buffer_UAV_desc.Format					= DXGI_FORMAT_UNKNOWN;
+	temp_buffer_UAV_desc.ViewDimension			= D3D11_UAV_DIMENSION_BUFFER;
+	hr = g_Device->CreateUnorderedAccessView(g_tempBuffer, &temp_buffer_UAV_desc, &g_tempUAV);
+	if (FAILED(hr))
+		return hr;
+
+	return hr;
 }
 
 void FillPrimitiveBuffer(float l_deltaTime)
@@ -473,7 +527,7 @@ void FillLightBuffer()
 		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
-		l_light.pointLight[i].lightRadius	= 5000.0f;
+		l_light.pointLight[i].lightRadius	= 50000.0f;
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -587,7 +641,7 @@ HRESULT CreateObjectBuffer()
 	ByteWidth						=	g_allTrianglesTexCoord.size() * sizeof(XMFLOAT2); 
 	RawTexCoord.ByteWidth			=	ByteWidth;
 	RawTexCoord.StructureByteStride =	sizeof(XMFLOAT2);
-//	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
+	hr = g_Device->CreateBuffer( &RawTexCoord, &l_data, &g_TexCoordBuffer);	
 	if(FAILED(hr))
 		return hr;	
 	D3D11_SHADER_RESOURCE_VIEW_DESC TexCoord_SRV_Desc;
@@ -597,7 +651,7 @@ HRESULT CreateObjectBuffer()
 	TexCoord_SRV_Desc.Buffer.NumElements = g_allTrianglesTexCoord.size();
 	TexCoord_SRV_Desc.Format = DXGI_FORMAT_UNKNOWN;
 	TexCoord_SRV_Desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-//	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
+	hr = g_Device->CreateShaderResourceView(g_TexCoordBuffer, &TexCoord_SRV_Desc, &g_TexCoord_SRV);
 	if (FAILED(hr))
 		return hr;
 
@@ -655,6 +709,11 @@ HRESULT CreateObjectBuffer()
 	return hr;
 }
 
+void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
+{
+
+}
+
 HRESULT Update(float deltaTime)
 {
 	if(GetAsyncKeyState('W') & 0x8000)
@@ -707,79 +766,60 @@ HRESULT Update(float deltaTime)
 
 	Camera::GetCamera(g_cameraIndex)->rebuildView();	
 	
-	FillCameraBuffer();
-	FillLightBuffer();
-	FillPrimitiveBuffer(deltaTime);
+	FillCameraBuffer();				//
+	FillLightBuffer();				//
+//	FillPrimitiveBuffer(deltaTime); // Used in old version to move spheres
 	
 	return S_OK;
 }
 
 HRESULT Render(float deltaTime)
 {
-	ID3D11UnorderedAccessView* uav[] = {g_BackBufferUAV};
-	ID3D11Buffer* ppCB[] = {g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer};
-	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV};
+	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV, g_tempUAV };
+	ID3D11Buffer* ppCB[] = { g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer };
+	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV/*, g_TexCoord_SRV */ };
 
-	g_DeviceContext->CSSetUnorderedAccessViews(0, 1, uav, 0);
-//	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_DeviceContext->CSSetUnorderedAccessViews(0, 2, uav, 0);
+	//	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
 	g_DeviceContext->CSSetShaderResources(0, 3, srv);
 
-	g_ComputeShader->Set();
-//	g_Timer->Start();
 
-	
+	g_Timer->Start();
+	for (int y = 0; y < 4; y++)
+	{	
+		for (int x = 0; x < 4; x++)
+		{
+			RayTracingRender->Set();
+			UpdateDispatchBuffer(x, y);
+			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB); // Send all buffers because I was lazy at the beginning. However, now it works.
+																   // Could not get it only to send one buffer, dont remember why.
+			g_DeviceContext->Dispatch(25, 25, 1);
+			RayTracingRender->Unset();
+		}
+	}
 
-	UpdateDispatchBuffer(0, 0);
-	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
-	g_DeviceContext->Dispatch(25, 25, 1); // Top left
-	g_ComputeShader->Unset();
-
-	
-	// 
-	UpdateDispatchBuffer(1, 0);
-	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
-	g_ComputeShader->Set();
-	g_DeviceContext->Dispatch( 25, 25, 1 );
-	g_ComputeShader->Unset();
-
-	// 
-	UpdateDispatchBuffer(0, 1);
-	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
-	g_ComputeShader->Set();
+	SuperSampleRender->Set();
 	g_DeviceContext->Dispatch(25, 25, 1);
-	g_ComputeShader->Unset();
+	SuperSampleRender->Unset();
 
-	// 
-	UpdateDispatchBuffer(1, 1);
-	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
-	g_ComputeShader->Set();
-	g_DeviceContext->Dispatch(25, 25, 1);
-	g_ComputeShader->Unset();
-	
-//	g_ComputeShader2->Set();
-//	g_DeviceContext->Dispatch(25, 25, 1);
-//	g_ComputeShader2->Unset();
-
-//	g_Timer->Stop();
-//	/g_ComputeShader->Unset();
-
+	g_Timer->Stop();
 
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
 	
-	/*
-	float x = Camera::GetCamera(g_cameraIndex)->GetPosition().x;
-	float y = Camera::GetCamera(g_cameraIndex)->GetPosition().y;
-	float z = Camera::GetCamera(g_cameraIndex)->GetPosition().z;
+	// Dont remember why, but 
+//	float x = Camera::GetCamera(g_cameraIndex)->GetPosition().x;
+//	float y = Camera::GetCamera(g_cameraIndex)->GetPosition().y;
+//	float z = Camera::GetCamera(g_cameraIndex)->GetPosition().z;
 
 	char title[256];
 	sprintf_s(
 		title,
 		sizeof(title),
-		"BTH - DirectCompute raytracing - Dispatch time: %f - camera_position = %f %f %f",
-		g_Timer->GetTime(), x, y, z
-	);
-	SetWindowText(g_hWnd, title);*/
+		"BTH - DirectCompute raytracing - Dispatch time: %f ",
+		g_Timer->GetTime());
+	SetWindowText(g_hWnd, title);
+	
 
 	return S_OK;
 }
@@ -821,9 +861,11 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 
 			dx = l_mousePos.x - m_oldMousePos.x;
 			dy = l_mousePos.y - m_oldMousePos.y;
-			Camera::GetCamera(g_cameraIndex)->pitch(		dy * MOUSE_SENSE);
-			Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
+			//Camera::GetCamera(g_cameraIndex)->pitch(		dy * MOUSE_SENSE);
+			//Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
+
+			GpuPickingBySendingRay(l_mousePos.x, l_mousePos.x);
 		}
 		break;
 	default:

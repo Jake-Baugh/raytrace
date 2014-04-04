@@ -9,10 +9,8 @@
 Ray createRay(uint x, uint y)
 {
 	Ray l_ray;
-	l_ray.origin = cameraPosition;// +float4(1.0f, 1.0f, 1.0f, 1.0f);
+	l_ray.origin = cameraPosition;
  
-//	float4x4 invproj = inverseProjection;
-//	float4x4 invView = inverseView;
 
 	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
 	double normalized_y = (1 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
@@ -238,12 +236,10 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	}
 
 	////////////////////////////// Checks which primitive is closest
-
 	if((l_sphereHit != -1 && l_triangleHit != -1 && l_distanceToClosestSphere < l_distanceToClosestTriangle) || l_sphereHit != -1 && l_triangleHit == -1)
 	{			
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_distanceToClosestSphere - VERY_SMALL_NUMBER) * p_ray.direction;
-//		p_ray.distance += length(l_collidePos - p_ray.origin);
 
 		// Out variables
 		p_out_collideNormal		= normalize(l_collidePos - Sphere[l_sphereindex].midPos); // Reverse normal
@@ -259,7 +255,6 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	{	
 		// Reflect code
 		l_collidePos = p_ray.origin + (l_distanceToClosestTriangle - VERY_SMALL_NUMBER) * p_ray.direction;
-//		p_ray.distance += length(l_collidePos - p_ray.origin);
 		
 		// Out variables		
 		p_out_collideNormal		= float4(TriangleNormalCounterClockwise(l_triangleindex), 0.0f); // Do not normalize this. Already normalized
@@ -271,12 +266,8 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 		p_ray.origin			= l_collidePos;
 		p_ray.direction			= float4(reflect(p_ray.direction.xyz, -p_out_collideNormal.xyz), 0.0f);
 	}	
-	else // This is a debug place, should never happen.
+	else // Hit nothing
 	{
-		// Out variables		
-//		p_out_collideNormal		= float4(-1.0f, -1.0f,-1.0f,-1.0f);
-//		p_out_material			= Sphere[0].material;
-//		p_out_primitiveIndex	= -1;
 		p_out_primitiveType		= PRIMITIVE_NOTHING;
 	}
 
@@ -320,7 +311,6 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.reflectivefactor;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		//return 1.0f;
 		return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
 	return 0;
 }
@@ -330,7 +320,6 @@ float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
-		//return 1.0f;
 		return AllTriangleDesc[p_primitiveIndex].material.isReflective;
 	return 0;
 }
@@ -363,7 +352,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 1
+#define max_number_of_bounces 3
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -409,43 +398,48 @@ float4 Trace(in Ray p_ray)
 	return colorIllumination;
 }
 
-[numthreads(32, 32, 1)]
-void main( uint3 threadID : SV_DispatchThreadID)
+[numthreads(16, 16, 1)]
+void RayTrace( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	Ray l_ray = createRay(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
+	int x_coord = threadID.x + 400 * x_dispatch_count;
+	int y_coord = threadID.y + 400 * y_dispatch_count; // 400 because making 1/16, 16 times times, of 1600x1600
+
+	Ray l_ray = createRay(x_coord, y_coord);
 	l_finalColor = Trace(l_ray);
 	
-	/*
+	
 	float a;
 	// Normalizing after highest value	
 	a = max(l_finalColor.x, l_finalColor.y);
 	a = max(a, l_finalColor.z);
 	a = max(a, 1.0f);
-	*/
-	normalize(l_finalColor);
+	l_finalColor /= a;
+	
+	int array_width = 1600;
 
-//	l_finalColor /= a;
-	int2 a = int2(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
-	output[a] = l_finalColor;
+	temp[x_coord + y_coord*array_width] = l_finalColor;
 }
 
 [numthreads(32, 32, 1)]
-void main2(uint3 threadID : SV_DispatchThreadID)
+void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 {
-	uint2 counter;
-	for (counter.y = threadID.y * 32; counter.y < threadID.y * 32 + 32; counter.y++)
-	{
-		for (counter.x = threadID.x * 32; counter.x < threadID.x * 32 + 32; counter.x++)
-		{
-			output[counter.xy] =	normalize(temp[counter.xy * 2]); // + top right + bot left + bot right
-		}
-	}
+	int2 coord;
+	coord.x = threadID.x; 
+	coord.y = threadID.y;
+	
+	int x = coord.x * 2;
+	int y = ((coord.y * 2) * 1600) -1;
 
-//	//	l_finalColor /= a;
-//	int2 a = int2(threadID.x + 800 * x_dispatch_count, threadID.y + 800 * y_dispatch_count);
-//		output[a] = l_finalColor;
+	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	l_finalColor =	temp[x + y]				+ temp[x+1 + y]	+			// Topleft		// Topright
+					temp[x + y + 1 * 1600]	+ temp[x+1 + y + 1*1600];	// Botleft		// Botright
+
+	output[coord.xy] = l_finalColor/4.0f;
 }
+
+
 
 
 /*
