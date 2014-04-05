@@ -274,6 +274,7 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	return p_ray;
 }
 
+// NOT IMPLEMENTED
 float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 {
 	float n1, n2;
@@ -294,6 +295,41 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 	*/
 }
 
+float GetTriangleArea(float3 point0, float3 point1, float3 point2)
+{
+	float3 border0, border1, border3;
+	border0 = length(point0 - point1);
+	border1 = length(point0 - point2);
+	border2 = length(point1 - point2);
+
+	return 0.5f * (border0*border1*border2); // Herons Formula
+}
+
+float4 GetTriangleTexture(in uint p_primitiveIndex, float3 intersectPos)
+{
+	// Får kolla att två sidor inte är lika långa. Är dem lika långa så kan man använda dem, s1*s1/2, halva kvadratarean
+	TriangleDescription l_triangleDescription = AllTriangleDesc[p_primitiveIndex];
+
+	float totalArea = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point1, l_triangleDescription.point2);
+	
+	float area0, area1, area2;
+	
+	area0 = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point1, intersectPos);
+	area1 = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point2, intersectPos);
+	area2 = GetTriangleArea(l_triangleDescription.point1, l_triangleDescription.point2,	l_triangleDescription.point0);
+
+	float b0, b1, b2;
+	b0 = area0 / totalArea;
+	b1 = area1 / totalArea;
+	b2 = area2 / totalArea;
+
+
+	
+// http://www.ems-i.com/gmshelp/Interpolation/Interpolation_Schemes/Inverse_Distance_Weighted/Computation_of_Interpolation_Weights.htm
+
+
+	return GREY4;
+}
 
 float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
 {
