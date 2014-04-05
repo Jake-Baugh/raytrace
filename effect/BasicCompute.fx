@@ -308,6 +308,7 @@ float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 float4 GetTriangleTexture(in uint p_primitiveIndex, float3 intersectPos)
 {
 	// Får kolla att två sidor inte är lika långa. Är dem lika långa så kan man använda dem, s1*s1/2, halva kvadratarean
+	
 	TriangleDescription l_triangleDescription = AllTriangleDesc[p_primitiveIndex];
 
 	float totalArea = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point1, l_triangleDescription.point2);
