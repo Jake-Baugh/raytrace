@@ -48,6 +48,7 @@ ID3D11Buffer*				g_objectBuffer			= nullptr;
 ID3D11Buffer*				g_normalBuffer			= nullptr;
 ID3D11Buffer*				g_dispatchBuffer		= nullptr;
 ID3D11Buffer*				g_tempBuffer			= nullptr;	
+ID3D11Buffer*				g_smallBoxTexBuffer		= nullptr;
 ID3D11UnorderedAccessView*	g_tempUAV				= nullptr;
 
 
@@ -58,10 +59,11 @@ std::vector<XMFLOAT2> g_allTrianglesTexCoord;// = nullptr;
 std::vector<CustomPrimitiveStruct::TriangleDescription> g_allTrianglesIndex;
 std::vector<XMFLOAT3> g_allTriangleNormal;
 
-ID3D11ShaderResourceView* g_Vertex_SRV;
-ID3D11ShaderResourceView* g_TexCoord_SRV;
-ID3D11ShaderResourceView* g_TriangleDesc_SRV;
-ID3D11ShaderResourceView* g_Normal_SRV;
+ID3D11ShaderResourceView* g_Vertex_SRV			= nullptr; 
+ID3D11ShaderResourceView* g_TexCoord_SRV		= nullptr;
+ID3D11ShaderResourceView* g_TriangleDesc_SRV	= nullptr;
+ID3D11ShaderResourceView* g_Normal_SRV			= nullptr;
+ID3D11ShaderResourceView* g_smallBoxTexSRV		= nullptr;
 
 ComputeShader*				RayTracingRender	= nullptr;
 ComputeShader*				SuperSampleRender	= nullptr;
@@ -94,6 +96,7 @@ HRESULT				CreateDispatchBuffer();
 void				UpdateDispatchBuffer(int l_x, int l_y);
 HRESULT				CreateTempBufferAndUAV();
 void				GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY);
+HRESULT				SetSmallBoxTexture();
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -230,6 +233,10 @@ HRESULT Init()
 	hr = CreateTempBufferAndUAV();
 	if (FAILED(hr))
 		return hr;
+
+//	hr = SetSmallBoxTexture();
+//	if (FAILED(hr))
+//		return hr;
 
 	FillPrimitiveBuffer(0.0f);
 
@@ -480,14 +487,14 @@ void FillPrimitiveBuffer(float l_deltaTime)
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
-		float ambient = 0.001f;
+		float ambient = 0.1f;
 		float diffuse = 0.7f;
 		float specular = 0.01f;
 		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
 		l_primitive.Sphere[i].Material.shininess = 50.0f;
-		l_primitive.Sphere[i].Material.isReflective = 0.0f;
+		l_primitive.Sphere[i].Material.isReflective = 1.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 	}
 
@@ -712,6 +719,38 @@ HRESULT CreateObjectBuffer()
 void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
 {
 
+}
+
+HRESULT SetSmallBoxTexture()
+{
+	HRESULT hr = S_OK;
+
+	////////
+	// RAW VERTEX SAVING
+	D3D11_BUFFER_DESC smallbox_buffer_desc;
+	smallbox_buffer_desc.BindFlags				= D3D11_BIND_SHADER_RESOURCE;
+	smallbox_buffer_desc.Usage					= D3D11_USAGE_DEFAULT;
+	smallbox_buffer_desc.CPUAccessFlags			= 0;
+	smallbox_buffer_desc.MiscFlags				= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+//	smallbox_buffer_desc.ByteWidth				= sizeof();
+	smallbox_buffer_desc.StructureByteStride	= sizeof(XMFLOAT4);
+	hr = g_Device->CreateBuffer(&smallbox_buffer_desc, NULL, &g_smallBoxTexBuffer);
+	if (FAILED(hr))
+		return hr;
+	D3D11_SHADER_RESOURCE_VIEW_DESC smallbox_SRV_desc;
+	ZeroMemory(&smallbox_SRV_desc, sizeof(smallbox_SRV_desc));
+	smallbox_SRV_desc.Buffer.ElementOffset	= 0;
+	smallbox_SRV_desc.Buffer.FirstElement	= 0;
+	smallbox_SRV_desc.Buffer.NumElements	= g_allTrianglesVertex.size();
+	smallbox_SRV_desc.Format				= DXGI_FORMAT_UNKNOWN;
+	smallbox_SRV_desc.ViewDimension			= D3D11_SRV_DIMENSION_BUFFEREX;
+	hr = g_Device->CreateShaderResourceView(g_smallBoxTexBuffer, &smallbox_SRV_desc, &g_smallBoxTexSRV);
+	if (FAILED(hr))
+		return hr;
+
+	// I AM HERE : TODO Fix so the code above actually can be used to bind a texture to the pipeline. This is still just copy paste
+
+	return hr;
 }
 
 HRESULT Update(float deltaTime)

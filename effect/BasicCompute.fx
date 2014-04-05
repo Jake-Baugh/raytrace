@@ -438,19 +438,3 @@ void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 
 	output[coord.xy] = l_finalColor/4.0f;
 }
-
-
-
-
-/*
-
-
-	Tankar
-		Octatree
-		Supersampling
-			http://paulbourke.net/miscellaneous/aliasing/
-		Hashtable som använder pekare som nyckel
-		Boundingbox för varje objekt för snabbare koll.
-
-
-*/
