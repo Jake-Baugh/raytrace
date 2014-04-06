@@ -313,7 +313,7 @@ float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 	
 	// Herons Formula // http://en.wikipedia.org/wiki/Heron%27s_formula
 	float s = 0.5f * (border0+border1+border2); //  semiperimeter 
-	float area = sqrt(s * (s - border0) * (s - border1) * (s - border0));	
+	float area = sqrt(s * (s - border0) * (s - border1) * (s - border2));	
 
 	return area;
 }
