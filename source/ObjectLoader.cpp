@@ -122,11 +122,12 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Point1 = point_index1-1;
 			l_triangleDesc.Point2 = point_index2-1;
 			l_triangleDesc.Point3 = point_index3-1;
-			/*
+			
 			l_triangleDesc.TexCoord1 = texCoord_index1-1;
 			l_triangleDesc.TexCoord2 = texCoord_index2-1;
 			l_triangleDesc.TexCoord3 = texCoord_index3-1;
-			*/
+			l_triangleDesc.PADDING1 = 1.0f;
+			
 			l_triangleDesc.NormalIndex = normal_index1 - 1;
 
 			float ambient = 0.001f;
@@ -138,12 +139,8 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Material.specular = XMFLOAT3(specular, specular, specular);
 			l_triangleDesc.Material.shininess = 1.0f;
 			l_triangleDesc.Material.isReflective = 1.0f;
-			l_triangleDesc.Material.reflectiveFactor = 0.1f;
-//			l_triangleDesc.Material.refractiveFactor = 0.0f;
-//			l_triangleDesc.Material.isRefractive = -1;
-//			l_triangleDesc.PADDING1 = 1.0f;
-		//	l_triangleDesc.PADDING2 = 1.0f;
-//			l_triangleDesc.PADDING3 = 1.0f;
+			l_triangleDesc.Material.reflectiveFactor = 0.0f;
+					
 
 
 			// TODO remove hardcoded

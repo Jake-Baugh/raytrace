@@ -6,6 +6,7 @@
 #include "Light.h"
 #include "Camera.h"
 #include "ObjectLoader.h"
+#include "DDSTextureLoader/DDSTextureLoader.h"
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
@@ -234,9 +235,9 @@ HRESULT Init()
 	if (FAILED(hr))
 		return hr;
 
-//	hr = SetSmallBoxTexture();
-//	if (FAILED(hr))
-//		return hr;
+	hr = SetSmallBoxTexture();
+	if (FAILED(hr))
+		return hr;
 
 	FillPrimitiveBuffer(0.0f);
 
@@ -725,30 +726,7 @@ HRESULT SetSmallBoxTexture()
 {
 	HRESULT hr = S_OK;
 
-	////////
-	// RAW VERTEX SAVING
-	D3D11_BUFFER_DESC smallbox_buffer_desc;
-	smallbox_buffer_desc.BindFlags				= D3D11_BIND_SHADER_RESOURCE;
-	smallbox_buffer_desc.Usage					= D3D11_USAGE_DEFAULT;
-	smallbox_buffer_desc.CPUAccessFlags			= 0;
-	smallbox_buffer_desc.MiscFlags				= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-//	smallbox_buffer_desc.ByteWidth				= sizeof();
-	smallbox_buffer_desc.StructureByteStride	= sizeof(XMFLOAT4);
-	hr = g_Device->CreateBuffer(&smallbox_buffer_desc, NULL, &g_smallBoxTexBuffer);
-	if (FAILED(hr))
-		return hr;
-	D3D11_SHADER_RESOURCE_VIEW_DESC smallbox_SRV_desc;
-	ZeroMemory(&smallbox_SRV_desc, sizeof(smallbox_SRV_desc));
-	smallbox_SRV_desc.Buffer.ElementOffset	= 0;
-	smallbox_SRV_desc.Buffer.FirstElement	= 0;
-	smallbox_SRV_desc.Buffer.NumElements	= g_allTrianglesVertex.size();
-	smallbox_SRV_desc.Format				= DXGI_FORMAT_UNKNOWN;
-	smallbox_SRV_desc.ViewDimension			= D3D11_SRV_DIMENSION_BUFFEREX;
-	hr = g_Device->CreateShaderResourceView(g_smallBoxTexBuffer, &smallbox_SRV_desc, &g_smallBoxTexSRV);
-	if (FAILED(hr))
-		return hr;
-
-	// I AM HERE : TODO Fix so the code above actually can be used to bind a texture to the pipeline. This is still just copy paste
+	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/Box_Texture.dds", nullptr, &g_smallBoxTexSRV);
 
 	return hr;
 }
@@ -816,11 +794,11 @@ HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV, g_tempUAV };
 	ID3D11Buffer* ppCB[] = { g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer };
-	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV/*, g_TexCoord_SRV */ };
+	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV, g_TexCoord_SRV, g_smallBoxTexSRV};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 2, uav, 0);
 	//	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
-	g_DeviceContext->CSSetShaderResources(0, 3, srv);
+	g_DeviceContext->CSSetShaderResources(0, 5, srv);
 
 
 	g_Timer->Start();

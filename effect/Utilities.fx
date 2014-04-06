@@ -70,12 +70,12 @@ struct TriangleDescription // 16
 	float Point2;		// 1
 	float normalIndex;	// 1
 	
-	/*
-	float TexCoord0;	// 1
-	float TexCoord1;	// 1
-	float TexCoord2;	// 1
-	float padding2;		// 1
-	*/
+	
+	float TexCoordIndex0;	// 1
+	float TexCoordIndex1;	// 1
+	float TexCoordIndex2;	// 1
+	float padding1;			// 1
+	
 
 //	float padding3;		// 1
 	Material material;	// 12
@@ -124,5 +124,12 @@ RWStructuredBuffer<float4> temp							: register(u1);
 StructuredBuffer<float4> AllVertex						: register(t0);
 StructuredBuffer<TriangleDescription> AllTriangleDesc	: register(t1);
 StructuredBuffer<float3> AllNormal						: register(t2);
-//StructuredBuffer<float2> AllTexCoord					: register(t3);
-// END OF INPARAMETERS
+StructuredBuffer<float2> AllTexCoord					: register(t3);
+Texture2D BoxTexture									: register(t4);
+
+SamplerState MeshTextureSampler
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};

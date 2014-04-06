@@ -210,7 +210,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 }
 
 #define VERY_SMALL_NUMBER 0.001f
-Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType) 
+Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType)
 {	
 	// Variables used by all intersections
 	float4 l_collidePos;
@@ -297,48 +297,71 @@ float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
 
 float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 {
-	float3 border0, border1, border3;
+	float border0, border1, border2;
 	border0 = length(point0 - point1);
 	border1 = length(point0 - point2);
 	border2 = length(point1 - point2);
 
-	return 0.5f * (border0*border1*border2); // Herons Formula
+	/*
+	float temp1, temp2;
+	if ((temp1 = border0) == (temp2 = border1) || (temp1 = border0) == (temp2 = border2) || (temp1 = border1) == (temp2 = border2)) // if two sides are equally long you can cheat
+	{
+		return temp1 * temp2 / 2; // Half square area
+	}
+	*/
+	
+	
+	// Herons Formula // http://en.wikipedia.org/wiki/Heron%27s_formula
+	float s = 0.5f * (border0+border1+border2); //  semiperimeter 
+	float area = sqrt(s * (s - border0) * (s - border1) * (s - border0));	
+
+	return area;
 }
 
-float4 GetTriangleTexture(in uint p_primitiveIndex, float3 intersectPos)
+// Barycentric interpolation
+float2 GetTriangleTextureCoordinates(in uint p_primitiveIndex, in float3 p_intersectPos)
 {
 	// Får kolla att två sidor inte är lika långa. Är dem lika långa så kan man använda dem, s1*s1/2, halva kvadratarean
-	
+
 	TriangleDescription l_triangleDescription = AllTriangleDesc[p_primitiveIndex];
 
-	float totalArea = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point1, l_triangleDescription.point2);
-	
+	float totalArea = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point1], AllVertex[l_triangleDescription.Point2]);
+
 	float area0, area1, area2;
-	
-	area0 = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point1, intersectPos);
-	area1 = GetTriangleArea(l_triangleDescription.point0, l_triangleDescription.point2, intersectPos);
-	area2 = GetTriangleArea(l_triangleDescription.point1, l_triangleDescription.point2,	l_triangleDescription.point0);
+
+	area0 = GetTriangleArea(AllVertex[l_triangleDescription.Point1], AllVertex[l_triangleDescription.Point2], p_intersectPos);
+	area1 = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point2], p_intersectPos);
+	area2 = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point1], p_intersectPos);
 
 	float b0, b1, b2;
 	b0 = area0 / totalArea;
 	b1 = area1 / totalArea;
-	b2 = area2 / totalArea;
-
-
+	b2 = area2 / totalArea; // Perform this action last. 
 	
-// http://www.ems-i.com/gmshelp/Interpolation/Interpolation_Schemes/Inverse_Distance_Weighted/Computation_of_Interpolation_Weights.htm
+	float2 texcoord0 = AllTexCoord[l_triangleDescription.TexCoordIndex0];
+	float2 texcoord1 = AllTexCoord[l_triangleDescription.TexCoordIndex1];
+	float2 texcoord2 = AllTexCoord[l_triangleDescription.TexCoordIndex2];
 
+		return b0*texcoord0 + b1*texcoord1 + b2*texcoord2;// *l_triangleDescription.padding1;
 
-	return GREY4;
+	// http://www.ems-i.com/gmshelp/Interpolation/Interpolation_Schemes/Inverse_Distance_Weighted/Computation_of_Interpolation_Weights.htm
 }
 
-float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType)
+float4 GetTriangleTexture(in uint p_primitiveIndex, in float3 p_intersectPos)
+{
+	float2 uv = GetTriangleTextureCoordinates(p_primitiveIndex, p_intersectPos);
+
+	return BoxTexture.SampleLevel(MeshTextureSampler, uv, 0);
+}
+
+float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType, in float3 p_intersectPos)
 {
 	if (p_primitiveType == PRIMITIVE_SPHERE)			// Sphere
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
-		return GREY4; // All triangles are hardcoded atm
+		return GetTriangleTexture(p_primitiveIndex, p_intersectPos);
+		//return GREY4; // All triangles are hardcoded atm
 	}
 	return BLACK4;
 }
@@ -365,8 +388,6 @@ float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in
 {
 	float4 l_illumination = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-//	float4 l_primitiveColor = GetPrimitiveColor(p_primitiveIndex, p_primitiveType);
-
 	for (uint i = 0; i < LIGHT_COUNT; i++) // for each light
 	{	
 		// Light and shadows
@@ -378,7 +399,7 @@ float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in
 	}
 
 	l_illumination += float4(p_material.ambient, 1.0f);
-	l_illumination *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType); // Illuminate color
+	l_illumination *= GetPrimitiveColor(p_primitiveIndex, p_primitiveType, p_ray.origin.xyz);			// add color
 	return l_illumination;
 }
 
@@ -389,13 +410,14 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 1
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
 	float4 colorIllumination = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	float4 l_collideNormal;
+	float4 l_intersectPosition;
 	Material l_material;
 	uint l_primitiveIndex;
 	uint l_primitiveType;
@@ -404,8 +426,9 @@ float4 Trace(in Ray p_ray)
 
 	if (l_primitiveType != PRIMITIVE_NOTHING) // As long as it is SOMETHING 
 	{
-		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material); // Get shade 
+		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);	// Get illumination 
 	}
+
 //	else
 //		return colorIllumination;
 	

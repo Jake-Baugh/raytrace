@@ -2,7 +2,7 @@
 #define _STDAFX__H
 
 #include <windows.h>
-#include <D3D11.h>
+#include <D3D11_1.h>
 #include <DirectXMath.h>
 
 #include <string>

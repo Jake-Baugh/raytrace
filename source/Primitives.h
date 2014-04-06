@@ -41,10 +41,10 @@ namespace CustomPrimitiveStruct
 		float Point2;
 		float Point3;
 		float NormalIndex;
-		/*float TexCoord1;
+		float TexCoord1;
 		float TexCoord2;
 		float TexCoord3;
-		float PADDING2;*/
+		float PADDING1;
 
 		Material Material;
 	};
