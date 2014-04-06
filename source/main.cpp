@@ -51,6 +51,8 @@ ID3D11Buffer*				g_dispatchBuffer		= nullptr;
 ID3D11Buffer*				g_tempBuffer			= nullptr;	
 ID3D11Buffer*				g_smallBoxTexBuffer		= nullptr;
 ID3D11UnorderedAccessView*	g_tempUAV				= nullptr;
+ID3D11Buffer*				g_gpuPickingRayBuffer	= nullptr;
+
 
 
 
@@ -66,14 +68,17 @@ ID3D11ShaderResourceView* g_TriangleDesc_SRV	= nullptr;
 ID3D11ShaderResourceView* g_Normal_SRV			= nullptr;
 ID3D11ShaderResourceView* g_smallBoxTexSRV		= nullptr;
 
+ID3D11ShaderResourceView* g_GpuRay_SRV			= nullptr;
+
 ComputeShader*				RayTracingRender	= nullptr;
 ComputeShader*				SuperSampleRender	= nullptr;
-ComputeShader*				GPUPICK				= nullptr;
+//ComputeShader*				GPUPICK				= nullptr;
 
 D3D11Timer*					g_Timer					= NULL;
 
 int							g_Width, g_Height;
 int							g_cameraIndex = 0;
+bool						g_mouse_clicked		= false;
 
 POINT						m_oldMousePos;
 OnePerDispatch				g_OnePerDispatch;
@@ -98,6 +103,7 @@ void				UpdateDispatchBuffer(int l_x, int l_y);
 HRESULT				CreateTempBufferAndUAV();
 void				GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY);
 HRESULT				SetSmallBoxTexture();
+HRESULT				CreateGpuPickRayBuffer();
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -241,6 +247,10 @@ HRESULT Init()
 
 	FillPrimitiveBuffer(0.0f);
 
+	hr = CreateGpuPickRayBuffer();
+	if (FAILED(hr))
+		return hr;
+
 	return S_OK;
 }
 HRESULT InitializeDXDeviceAndSwapChain()
@@ -331,12 +341,16 @@ HRESULT InitializeDXDeviceAndSwapChain()
 
 	//create helper sys and compute shader instance
 	RayTracingRender = new ComputeShader();
-	RayTracingRender->Init(L"effect\\BasicCompute.fx", NULL, "RayTrace", NULL, g_Device, g_DeviceContext);
+	hr = RayTracingRender->Init(L"effect\\BasicCompute.fx", NULL, "RayTrace", NULL, g_Device, g_DeviceContext);
 
 	SuperSampleRender = new ComputeShader();
-	SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, "RenderToBackBuffer", NULL, g_Device, g_DeviceContext);
+	hr = SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, "RenderToBackBuffer", NULL, g_Device, g_DeviceContext);
 
-	//GPUPICK = new 
+//	GPUPICK = new ComputeShader();
+//	hr = GPUPICK->Init(L"effect\\BasicCompute.fx", NULL, "GPUPICKING", NULL, g_Device, g_DeviceContext);
+
+	if (FAILED(hr))
+		return hr;
 
 
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
@@ -354,7 +368,7 @@ HRESULT CreateCameraBuffer()
 	CameraData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	CameraData.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
 	CameraData.MiscFlags			=	0;
-	ByteWidth						=	sizeof(CustomPrimitiveStruct::EachFrameDataStructure);	// 144 byte
+	ByteWidth						=	sizeof(CustomPrimitiveStruct::EachFrameDataStructure);
 	CameraData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer( &CameraData, NULL, &g_EveryFrameBuffer);
 
@@ -395,7 +409,7 @@ HRESULT CreatePrimitiveBuffer()
 	PrimitiveData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	PrimitiveData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	PrimitiveData.MiscFlags			=	0;
-	ByteWidth						=	sizeof(CustomPrimitiveStruct::Primitive); // 192
+	ByteWidth						=	sizeof(CustomPrimitiveStruct::Primitive);
 	PrimitiveData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer(&PrimitiveData, NULL, &g_PrimitivesBuffer);
 
@@ -532,10 +546,10 @@ void FillLightBuffer()
 	{
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
 		l_light.pointLight[i].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
-		l_light.pointLight[i].lightRadius	= 50000.0f;
+//		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
+//		l_light.pointLight[i].lightRadius	= 50000.0f;
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -583,9 +597,9 @@ HRESULT LoadMesh(char* p_path)
 			g_allTrianglesIndex.at(i).Point1 += allVertexSize;
 			g_allTrianglesIndex.at(i).Point2 += allVertexSize;
 			g_allTrianglesIndex.at(i).Point3 += allVertexSize;
-//			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
-//			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
-//			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).TexCoord1 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).TexCoord2 += allTexCoordSize;
+			g_allTrianglesIndex.at(i).TexCoord3 += allTexCoordSize;
 			g_allTrianglesIndex.at(i).NormalIndex += allTrianglesNormalSize;
 		}
 	}
@@ -717,9 +731,32 @@ HRESULT CreateObjectBuffer()
 	return hr;
 }
 
+struct GPU_PICK_RAY
+{
+	int GPU_PICK_X;
+	int GPU_PICK_Y;
+	int GPU_PICK_padding1;
+	int GPU_PICK_padding2;
+};
+
 void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
 {
+	D3D11_MAPPED_SUBRESOURCE GPURAY;
+	g_DeviceContext->Map(g_gpuPickingRayBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &GPURAY);
 
+	GPU_PICK_RAY l_data;
+	l_data.GPU_PICK_X = l_mousePosX;
+	l_data.GPU_PICK_Y = l_mousePosY;
+	l_data.GPU_PICK_padding1 = 1;
+	l_data.GPU_PICK_padding2 = 1;
+
+
+	*(GPU_PICK_RAY*)GPURAY.pData = l_data;
+	g_DeviceContext->Unmap(g_gpuPickingRayBuffer, 0);
+
+//	GPUPICK->Set();
+//	g_DeviceContext->Dispatch(1, 1, 1);
+//	GPUPICK->Unset();
 }
 
 HRESULT SetSmallBoxTexture()
@@ -728,6 +765,21 @@ HRESULT SetSmallBoxTexture()
 
 	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/Box_Texture.dds", nullptr, &g_smallBoxTexSRV);
 
+	return hr;
+}
+
+HRESULT	CreateGpuPickRayBuffer()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC GpuPickBuffer_desc;
+	GpuPickBuffer_desc.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER;
+	GpuPickBuffer_desc.Usage				=	D3D11_USAGE_DYNAMIC; 
+	GpuPickBuffer_desc.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
+	GpuPickBuffer_desc.MiscFlags			=	0;
+	GpuPickBuffer_desc.ByteWidth			=	sizeof(GPU_PICK_RAY);
+	hr = g_Device->CreateBuffer(&GpuPickBuffer_desc, NULL, &g_gpuPickingRayBuffer);
+	
 	return hr;
 }
 
@@ -787,19 +839,25 @@ HRESULT Update(float deltaTime)
 	FillLightBuffer();				//
 //	FillPrimitiveBuffer(deltaTime); // Used in old version to move spheres
 	
+	
 	return S_OK;
 }
 
 HRESULT Render(float deltaTime)
 {
 	ID3D11UnorderedAccessView* uav[] = { g_BackBufferUAV, g_tempUAV };
-	ID3D11Buffer* ppCB[] = { g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer };
+	ID3D11Buffer* ppCB[] = { g_EveryFrameBuffer, g_PrimitivesBuffer, g_LightBuffer, g_dispatchBuffer};
 	ID3D11ShaderResourceView* srv[] = { g_Vertex_SRV, g_TriangleDesc_SRV, g_Normal_SRV, g_TexCoord_SRV, g_smallBoxTexSRV};
 
 	g_DeviceContext->CSSetUnorderedAccessViews(0, 2, uav, 0);
-	//	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
+	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
 	g_DeviceContext->CSSetShaderResources(0, 5, srv);
 
+//	if (g_mouse_clicked)
+//	{
+//		
+//		g_mouse_clicked = false;
+//	}
 
 	g_Timer->Start();
 	for (int y = 0; y < 4; y++)
@@ -836,7 +894,6 @@ HRESULT Render(float deltaTime)
 		"BTH - DirectCompute raytracing - Dispatch time: %f ",
 		g_Timer->GetTime());
 	SetWindowText(g_hWnd, title);
-	
 
 	return S_OK;
 }
@@ -851,8 +908,13 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	POINT l_mousePos;
 	int dx,dy;
 
+
 	switch (message) 
 	{
+//	case MK_LBUTTON:
+//		g_mouse_clicked = true;
+//		GpuPickingBySendingRay(m_oldMousePos.x, m_oldMousePos.y);
+//		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		EndPaint(hWnd, &ps);
@@ -871,20 +933,18 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 		}
 		break;
 	case WM_MOUSEMOVE:
-		if(wParam & MK_LBUTTON)
-		{
+//		if(wParam & MK_LBUTTON)
+//		{
 			l_mousePos.x = (int)LOWORD(lParam);
 			l_mousePos.y = (int)HIWORD(lParam);
-
+			
 			dx = l_mousePos.x - m_oldMousePos.x;
 			dy = l_mousePos.y - m_oldMousePos.y;
-			//Camera::GetCamera(g_cameraIndex)->pitch(		dy * MOUSE_SENSE);
-			//Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
+			GpuPickingBySendingRay(l_mousePos.x, l_mousePos.y);
+		//	Camera::GetCamera(g_cameraIndex)->pitch(	dy * MOUSE_SENSE);
+		//	Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
-
-			GpuPickingBySendingRay(l_mousePos.x, l_mousePos.x);
-		}
-		break;
+//		}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

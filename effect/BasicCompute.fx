@@ -12,8 +12,8 @@ Ray createRay(uint x, uint y)
 	l_ray.origin = cameraPosition;
  
 
-	double normalized_x = ((x / 800.0) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
-	double normalized_y = (1 - (y / 800.0) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
+	double normalized_x = ((x / client_width) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
+	double normalized_y = (1 - (y / client_height) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
 
 	float4 imagePoint = mul(float4(normalized_x, normalized_y, 1.0f, 1.0f), inverseProjection);
 	imagePoint /= imagePoint.w;
@@ -325,13 +325,13 @@ float2 GetTriangleTextureCoordinates(in uint p_primitiveIndex, in float3 p_inter
 
 	TriangleDescription l_triangleDescription = AllTriangleDesc[p_primitiveIndex];
 
-	float totalArea = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point1], AllVertex[l_triangleDescription.Point2]);
+	float totalArea = GetTriangleArea(AllVertex[l_triangleDescription.Point0].xyz, AllVertex[l_triangleDescription.Point1].xyz, AllVertex[l_triangleDescription.Point2].xyz);
 
 	float area0, area1, area2;
 
-	area0 = GetTriangleArea(AllVertex[l_triangleDescription.Point1], AllVertex[l_triangleDescription.Point2], p_intersectPos);
-	area1 = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point2], p_intersectPos);
-	area2 = GetTriangleArea(AllVertex[l_triangleDescription.Point0], AllVertex[l_triangleDescription.Point1], p_intersectPos);
+	area0 = GetTriangleArea(AllVertex[l_triangleDescription.Point1].xyz, AllVertex[l_triangleDescription.Point2].xyz, p_intersectPos);
+	area1 = GetTriangleArea(AllVertex[l_triangleDescription.Point0].xyz, AllVertex[l_triangleDescription.Point2].xyz, p_intersectPos);
+	area2 = GetTriangleArea(AllVertex[l_triangleDescription.Point0].xyz, AllVertex[l_triangleDescription.Point1].xyz, p_intersectPos);
 
 	float b0, b1, b2;
 	b0 = area0 / totalArea;
@@ -342,7 +342,7 @@ float2 GetTriangleTextureCoordinates(in uint p_primitiveIndex, in float3 p_inter
 	float2 texcoord1 = AllTexCoord[l_triangleDescription.TexCoordIndex1];
 	float2 texcoord2 = AllTexCoord[l_triangleDescription.TexCoordIndex2];
 
-		return b0*texcoord0 + b1*texcoord1 + b2*texcoord2;// *l_triangleDescription.padding1;
+		return b0*texcoord0 + b1*texcoord1 + b2*texcoord2 * l_triangleDescription.padding1;
 
 	// http://www.ems-i.com/gmshelp/Interpolation/Interpolation_Schemes/Inverse_Distance_Weighted/Computation_of_Interpolation_Weights.htm
 }
@@ -360,8 +360,10 @@ float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType, in f
 		return float4(Sphere[p_primitiveIndex].color, 0.0f);
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
-		return GetTriangleTexture(p_primitiveIndex, p_intersectPos);
-		//return GREY4; // All triangles are hardcoded atm
+		float4 add_color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+//		if (p_primitiveIndex == TRIANGLE_INDEX_SELECTED)
+//			add_color = float4(1.0f, 0.2f, 0.2f, 1.0f);
+		return GetTriangleTexture(p_primitiveIndex, p_intersectPos) * add_color;
 	}
 	return BLACK4;
 }
@@ -428,9 +430,6 @@ float4 Trace(in Ray p_ray)
 	{
 		colorIllumination += Shade(l_nextRay, l_primitiveIndex, l_primitiveType, l_collideNormal, l_material);	// Get illumination 
 	}
-
-//	else
-//		return colorIllumination;
 	
 	uint l_isReflective;
 	float l_reflectiveFactor = 1.0f;
@@ -498,3 +497,28 @@ void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 
 	output[coord.xy] = l_finalColor/4.0f;
 }
+
+
+/*
+[numthreads(1, 1, 1)]
+void GPUPICKING(uint3 threadID : SV_DispatchThreadID)
+{
+	//int2 a = int2(0, 0);
+//	output[a] = ORANGE4;
+//	TRIANGLE_INDEX_SELECTED = 0;
+	
+	//int2 a = int2(0,0);
+	
+	Ray l_ray = createRay(GPU_PICK_X, GPU_PICK_Y);
+
+	float4 l_collideNormal;
+	float4 l_intersectPosition;
+	Material l_material;
+	uint l_primitiveIndex;
+	uint l_primitiveType;
+
+	Jump(l_ray, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
+	TRIANGLE_INDEX_SELECTED = l_primitiveIndex * GPU_PICK_padding1 * GPU_PICK_padding2;
+}
+*/
+

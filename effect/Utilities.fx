@@ -48,10 +48,10 @@ struct PointLightData	// 4
 {
 	float4 position;	// 4
 	float4 color;		// 4
-	float4 ambient;		// 4
-	float4 diffuse;		// 4
-	float3 specular;	// 3
-	float  lightRadius; // 1
+//	float4 ambient;		// 4
+//	float4 diffuse;		// 4
+//	float3 specular;	// 3
+//	float  lightRadius; // 1 // atm hardcoded at 50´000
 };
 
 struct SphereStruct	// 20
@@ -69,8 +69,7 @@ struct TriangleDescription // 16
 	float Point1;		// 1
 	float Point2;		// 1
 	float normalIndex;	// 1
-	
-	
+		
 	float TexCoordIndex0;	// 1
 	float TexCoordIndex1;	// 1
 	float TexCoordIndex2;	// 1
@@ -108,6 +107,16 @@ cbuffer OnePerDispatch: register(c3)
 	float client_height;
 }
 
+/*
+cbuffer GPU_PICK_DATA: register(c4)
+{
+	int GPU_PICK_X;
+	int GPU_PICK_Y;
+	int GPU_PICK_padding1;
+	int GPU_PICK_padding2;
+}
+*/
+
 
 /*
 b	Constant buffer
@@ -133,3 +142,6 @@ SamplerState MeshTextureSampler
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
+
+
+//groupshared int TRIANGLE_INDEX_SELECTED = 0;

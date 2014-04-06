@@ -11,10 +11,10 @@ namespace CustomLightStruct
 	{
 		XMFLOAT4 position;
 		XMFLOAT4 color;	
-		XMFLOAT4 ambientLight;
-		XMFLOAT4 diffuseLight;
-		XMFLOAT3 specularLight;
-		float	 lightRadius;
+//		XMFLOAT4 ambientLight;
+//		XMFLOAT4 diffuseLight;
+//		XMFLOAT3 specularLight;
+//		float	 lightRadius;
 	};
 
 	struct LightBuffer
