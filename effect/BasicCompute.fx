@@ -148,6 +148,12 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uin
 	}
 }
 
+
+	/*
+		Rework this to take distance to light and set origin from object and check if anything is closer than the light.
+		Right now I check from lightsource to object to see if anything intersects before the object.
+	*/
+
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
 bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in uint p_lightIndex)
 {
@@ -167,6 +173,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
 	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
 	
+
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
@@ -371,7 +378,7 @@ float GetReflectiveFactor(in uint p_primitiveIndex, in uint p_primitiveType)
 		return Sphere[p_primitiveIndex].material.reflectivefactor;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 		return AllTriangleDesc[p_primitiveIndex].material.reflectivefactor;
-	return 0;
+	return 0.0f;
 }
 
 float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
@@ -380,7 +387,7 @@ float GetReflective(in uint p_primitiveIndex, in uint p_primitiveType)
 		return Sphere[p_primitiveIndex].material.isReflective;
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 		return AllTriangleDesc[p_primitiveIndex].material.isReflective;
-	return 0;
+	return 0.0f;
 }
 
 float4 Shade(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in float4 p_collideNormal, in Material p_material)

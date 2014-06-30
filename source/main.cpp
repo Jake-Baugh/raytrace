@@ -52,9 +52,7 @@ ID3D11Buffer*				g_tempBuffer			= nullptr;
 ID3D11Buffer*				g_smallBoxTexBuffer		= nullptr;
 ID3D11UnorderedAccessView*	g_tempUAV				= nullptr;
 ID3D11Buffer*				g_gpuPickingRayBuffer	= nullptr;
-
-
-
+ID3D11SamplerState*			g_samplerState			= nullptr;
 
 // Triangle mesh variables
 std::vector<XMFLOAT4> g_allTrianglesVertex;// = nullptr;
@@ -108,6 +106,7 @@ HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
+HRESULT				SetSampler();
 
 
 
@@ -249,6 +248,10 @@ HRESULT Init()
 
 	hr = CreateGpuPickRayBuffer();
 	if (FAILED(hr))
+		return hr;
+
+	hr = SetSampler();
+	if(FAILED(hr))
 		return hr;
 
 	return S_OK;
@@ -490,21 +493,21 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		
 	l_primitive.Sphere[0].MidPosition			= XMFLOAT4 (0.0f, 500.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[0].Radius				= 200.0f;
-	l_primitive.Sphere[0].Color					= XMFLOAT3(1.0f, 0.0f, 0.0f);
+	l_primitive.Sphere[0].Color					= XMFLOAT3(0.0f, 0.0f, 0.50f);
 	
 	l_primitive.Sphere[1].MidPosition			= XMFLOAT4 (-900.0f, 500.0f, 700.0f, 1.0f);
 	l_primitive.Sphere[1].Radius				= 200.0f;
-	l_primitive.Sphere[1].Color					= XMFLOAT3(0.0f, 0.0f, 1.0f);
+	l_primitive.Sphere[1].Color					= XMFLOAT3(0.50f, 0.0f, 0.0f);
 
 	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(0.0f, 1000, 0.0f, 0.0f);
 	l_primitive.Sphere[2].Radius				= 200.0f;
-	l_primitive.Sphere[2].Color					= XMFLOAT3(1.0f, 0.55f, 0.0f);
+	l_primitive.Sphere[2].Color					= XMFLOAT3(0.0f, 0.50f, 0.0f);
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
 		float ambient = 0.1f;
 		float diffuse = 0.7f;
-		float specular = 0.01f;
+		float specular = 1.0f;
 		l_primitive.Sphere[i].Material.ambient = XMFLOAT3(ambient, ambient, ambient);
 		l_primitive.Sphere[i].Material.diffuse = XMFLOAT3(diffuse, diffuse, diffuse);
 		l_primitive.Sphere[i].Material.specular = XMFLOAT3(specular, specular, specular);
@@ -545,7 +548,7 @@ void FillLightBuffer()
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color			= XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+		l_light.pointLight[i].color			= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 //		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 //		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 //		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
@@ -961,4 +964,26 @@ char* FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel)
 		return "10.0";
 
 	return "Unknown";
+}
+
+
+
+HRESULT SetSampler()
+{
+	D3D11_SAMPLER_DESC sampler_desc;
+	ZeroMemory(&sampler_desc, sizeof(sampler_desc));
+	sampler_desc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampler_desc.AddressU		= D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.AddressV		= D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.AddressW		= D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampler_desc.MinLOD			= 0;
+	sampler_desc.MaxLOD			= D3D11_FLOAT32_MAX;
+
+	HRESULT hr = g_Device->CreateSamplerState(&sampler_desc, &g_samplerState);
+	if (FAILED(hr))
+		return hr;
+
+	g_DeviceContext->CSSetSamplers(0, 1, &g_samplerState);
+	return hr;	
 }

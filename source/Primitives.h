@@ -4,7 +4,6 @@
 #include "stdafx.h"
 
 #define SPHERE_COUNT 3
-#define TRIANGLE_COUNT 5
 
 namespace CustomPrimitiveStruct
 {
@@ -52,8 +51,6 @@ namespace CustomPrimitiveStruct
 	struct Primitive
 	{
 		SphereStruct		Sphere[SPHERE_COUNT];
-//		float SphereCount;
-
 	};
 }
 

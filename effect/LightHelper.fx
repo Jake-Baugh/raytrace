@@ -56,7 +56,7 @@ float4 CalcLight(Material M, float4 HitPosition, float4 CameraPosition, float4 S
 	float4 L = l_lightData.position - HitPosition; // vectorTowardsLightFromHit
 	float d = length(L);
 
-	float r = 50000.0f; //l_lightData.lightRadius;	
+	float r = 5000.0f; //l_lightData.lightRadius;	
 	float a = 1.0f / (r*r);
 	float b = 2.0f/r;
 	float c = 1.0f;
