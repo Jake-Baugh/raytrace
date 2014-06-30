@@ -127,7 +127,7 @@ class TriangleIntersect : IntersectInterface
 const SphereIntersect sphereIntersect;
 const TriangleIntersect triangleIntersect;
 
-void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive)
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive, in float p_smallestDistance)
 {	
 	p_hitPrimitive = -1;	
 	float temp = 0.0f;
@@ -143,17 +143,22 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uin
 			{
 				p_distanceToClosestPrimitive = temp;				// Save the new lowest distance
 				p_closestPrimitiveIndex = i;						// Save the index to the lowest primitive
+				/*if(p_smallestDistance != -1)
+				{
+					if(p_distanceToClosestPrimitive < p_smallestDistance)
+					{
+						return;
+					}
+				}*/
 			}
 		}
 	}
 }
 
-
-	/*
-		Rework this to take distance to light and set origin from object and check if anything is closer than the light.
-		Right now I check from lightsource to object to see if anything intersects before the object.
-	*/
-
+/*
+	Rework this to take distance to light and set origin from object and check if anything is closer than the light.
+	Right now I check from lightsource to object to see if anything intersects before the object.
+*/
 // Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
 bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in uint p_lightIndex)
 {
@@ -163,18 +168,32 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	uint l_TriangleHit;
 	
 	// Vector from light source
-	Ray l_lightSourceRay;
-	l_lightSourceRay.origin = PointLight[p_lightIndex].position;
-	l_lightSourceRay.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
+	Ray l_towardsLightSource; // 
+	//l_towardsLightSource.origin =  p_ray.origin;
+	l_towardsLightSource.origin = PointLight[p_lightIndex].position;
+	
+	//l_towardsLightSource.direction = normalize(PointLight[p_lightIndex].position - p_ray.origin);
+	l_towardsLightSource.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
+
+	//float l_distancetoLight = distance(PointLight[p_lightIndex].position, p_ray.origin);
 
 	uint triangle_amount;
 	AllTriangleDesc.GetDimensions(triangle_amount, l_closestSphereIndex); // Needed to send something as second paramter!! (?)!
 
-	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
-	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
-	
+	// Modifies function to return first element that is closer than last parameter
+	//GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, l_distancetoLight);
+	GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, -1);
 
-		
+	//GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, l_distancetoLight);
+	GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, -1);
+
+	/*
+	// return if there's something closer
+	if(l_distanceToClosestSphere > l_distancetoLight || l_distanceToClosestTriangle > l_distancetoLight)
+	{
+		return true;
+	}*/	
+	
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
 		if (p_primitiveType == PRIMITIVE_TRIANGLE) // Bouncing of a triangle
@@ -212,6 +231,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 			return true; // Triangle is lit
 		}
 	}
+
 	return false;
 }
 
@@ -231,8 +251,8 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	uint triangle_amount;
 	AllTriangleDesc.GetDimensions(triangle_amount, l_sphereindex); // Needed to send something as second paramter!! (?)!
 
-	GetClosestPrimitive(p_ray, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_sphereindex, l_distanceToClosestSphere); // Sphere
-	GetClosestPrimitive(p_ray, triangleIntersect, triangle_amount, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle); // Triangle
+	GetClosestPrimitive(p_ray, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_sphereindex, l_distanceToClosestSphere, -1); // Sphere
+	GetClosestPrimitive(p_ray, triangleIntersect, triangle_amount, l_triangleHit, l_triangleindex, l_distanceToClosestTriangle, -1); // Triangle
 	
 	// Checks to se if any triangle or sphere was hit at all
 	if(l_distanceToClosestTriangle == 0.0f && l_distanceToClosestSphere == 0.0f) 
