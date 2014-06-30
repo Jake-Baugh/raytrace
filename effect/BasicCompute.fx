@@ -9,8 +9,7 @@
 Ray createRay(uint x, uint y)
 {
 	Ray l_ray;
-	l_ray.origin = cameraPosition;
- 
+	l_ray.origin = cameraPosition; 
 
 	double normalized_x = ((x / client_width) - 0.5) * 2.0;					// HARDCODED SCREENSIZE
 	double normalized_y = (1 - (y / client_height) - 0.5) * 2.0;				// HARDCODED SCREENSIZE
@@ -302,15 +301,13 @@ float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 	border1 = length(point0 - point2);
 	border2 = length(point1 - point2);
 
-	/*
+	
 	float temp1, temp2;
 	if ((temp1 = border0) == (temp2 = border1) || (temp1 = border0) == (temp2 = border2) || (temp1 = border1) == (temp2 = border2)) // if two sides are equally long you can cheat
 	{
 		return temp1 * temp2 / 2; // Half square area
 	}
-	*/
-	
-	
+			
 	// Herons Formula // http://en.wikipedia.org/wiki/Heron%27s_formula
 	float s = 0.5f * (border0+border1+border2); //  semiperimeter 
 	float area = sqrt(s * (s - border0) * (s - border1) * (s - border2));	
@@ -342,7 +339,7 @@ float2 GetTriangleTextureCoordinates(in uint p_primitiveIndex, in float3 p_inter
 	float2 texcoord1 = AllTexCoord[l_triangleDescription.TexCoordIndex1];
 	float2 texcoord2 = AllTexCoord[l_triangleDescription.TexCoordIndex2];
 
-		return b0*texcoord0 + b1*texcoord1 + b2*texcoord2 * l_triangleDescription.padding1;
+	return b0*texcoord0 + b1*texcoord1 + b2*texcoord2 * l_triangleDescription.padding1;
 
 	// http://www.ems-i.com/gmshelp/Interpolation/Interpolation_Schemes/Inverse_Distance_Weighted/Computation_of_Interpolation_Weights.htm
 }
@@ -412,7 +409,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 1
+#define max_number_of_bounces 3
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -453,7 +450,6 @@ float4 Trace(in Ray p_ray)
 		else // Not reflective at all
 			break;
 	}
-
 	return colorIllumination;
 }
 
@@ -466,8 +462,7 @@ void RayTrace( uint3 threadID : SV_DispatchThreadID)
 
 	Ray l_ray = createRay(x_coord, y_coord);
 	l_finalColor = Trace(l_ray);
-	
-	
+		
 	float a;
 	// Normalizing after highest value	
 	a = max(l_finalColor.x, l_finalColor.y);
@@ -521,4 +516,3 @@ void GPUPICKING(uint3 threadID : SV_DispatchThreadID)
 	TRIANGLE_INDEX_SELECTED = l_primitiveIndex * GPU_PICK_padding1 * GPU_PICK_padding2;
 }
 */
-

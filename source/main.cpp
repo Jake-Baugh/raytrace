@@ -545,7 +545,7 @@ void FillLightBuffer()
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		l_light.pointLight[i].color			= XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 //		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 //		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 //		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);

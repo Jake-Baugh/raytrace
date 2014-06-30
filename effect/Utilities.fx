@@ -73,8 +73,7 @@ struct TriangleDescription // 16
 	float TexCoordIndex0;	// 1
 	float TexCoordIndex1;	// 1
 	float TexCoordIndex2;	// 1
-	float padding1;			// 1
-	
+	float padding1;			// 1	
 
 //	float padding3;		// 1
 	Material material;	// 12
@@ -91,7 +90,6 @@ cbuffer PrimitiveBuffer: register(c1)
 {
 	SphereStruct	Sphere[SPHERE_COUNT];
 }
-
 
 cbuffer LightBuffer : register(c2)
 {

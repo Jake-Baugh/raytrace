@@ -1,8 +1,6 @@
 #include "RayStruct.fx"
 #include "Utilities.fx"
 
-
-
 /*	COMMENT 1
 L, which is the direction vector from the point on the surface toward each light source (m specifies the light source),
 N, which is the normal at this point on the surface,
@@ -12,7 +10,6 @@ V, which is the direction pointing towards the viewer (such as a virtual camera)
 // Source
 http://en.wikipedia.org/wiki/Phong_reflection_model#Description
 */
-
 
 /* COMMENT 2
 Your specular contribution is actually going to be the same for front and back faces because GLSL reflect is insensitive to the sign of the normal. From this reference:
@@ -43,7 +40,6 @@ http://imdoingitwrong.wordpress.com/2011/01/31/light-attenuation/
 float4 calcPhongLighting(Material M, float4 L, float4 N, float4 R, float4 V)
 {
 	float4 l_specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
 
 	float4 l_diffuse = saturate(dot(L, N));
 
