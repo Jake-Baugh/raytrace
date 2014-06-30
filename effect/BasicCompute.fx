@@ -175,32 +175,33 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	//l_towardsLightSource.direction = normalize(PointLight[p_lightIndex].position - p_ray.origin);
 	l_towardsLightSource.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
 
-	//float l_distancetoLight = distance(PointLight[p_lightIndex].position, p_ray.origin);
+//	float l_distancetoLight = distance(p_ray.origin, PointLight[p_lightIndex].position);
+//	l_distanceToClosestSphere = l_distancetoLight + 1;
+//	l_distanceToClosestTriangle = l_distancetoLight + 1;
 
 	uint triangle_amount;
 	AllTriangleDesc.GetDimensions(triangle_amount, l_closestSphereIndex); // Needed to send something as second paramter!! (?)!
 
-	// Modifies function to return first element that is closer than last parameter
 	//GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, l_distancetoLight);
 	GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, -1);
 
 	//GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, l_distancetoLight);
 	GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, -1);
 
-	/*
+	 /*
 	// return if there's something closer
-	if(l_distanceToClosestSphere > l_distancetoLight || l_distanceToClosestTriangle > l_distancetoLight)
-	{
-		return true;
-	}*/	
-	
+	if (l_distanceToClosestSphere < l_distancetoLight || l_distanceToClosestTriangle < l_distancetoLight)
+		return false;
+	return true;
+	*/
+	 
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
 		if (p_primitiveType == PRIMITIVE_TRIANGLE) // Bouncing of a triangle
 		{
 			if(l_distanceToClosestTriangle < l_distanceToClosestSphere) // Triangle is closest
 			{
-				if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is the closest
+				//if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle that I bounced of is the closest
 				{
 					return true; // Triangle is lit
 				}
@@ -210,7 +211,7 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 		{
 			if(l_distanceToClosestSphere < l_distanceToClosestTriangle) // Sphere is the closest
 			{
-				if(p_primitiveIndex == l_closestSphereIndex)  
+				//if(p_primitiveIndex == l_closestSphereIndex)  
 				{
 					return true; // Sphere is lit
 				}
@@ -219,20 +220,20 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	}
 	else if(l_sphereHit != -1 && l_TriangleHit == -1) // Only a sphere was hit
 	{
-		if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
+		//if(p_primitiveIndex == l_closestSphereIndex)	// The sphere I am at is the closest
 		{		
 			return true; // Sphere is lit
 		}
 	}
 	else if(l_sphereHit == -1 && l_TriangleHit != -1) // Only a triangle was hit
 	{
-		if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
+		//if(p_primitiveIndex == l_closestTriangleIndex)	// The triangle I am at is the closest
 		{
 			return true; // Triangle is lit
 		}
 	}
 
-	return false;
+	return false;	
 }
 
 #define VERY_SMALL_NUMBER 0.001f
