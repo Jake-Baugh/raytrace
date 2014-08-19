@@ -10,8 +10,8 @@
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
-#define CLIENT_WIDTH 800
-#define CLIENT_HEIGHT 800
+#define CLIENT_WIDTH 400.0f
+#define CLIENT_HEIGHT 400.0f
 
 
 struct OnePerDispatch
@@ -21,7 +21,6 @@ struct OnePerDispatch
 	float client_width;
 	float client_height;
 };
-
 
 /*
 	This file is a mess.
@@ -98,9 +97,7 @@ void				FillCameraBuffer();
 HRESULT				CreateDispatchBuffer();
 void				UpdateDispatchBuffer(int l_x, int l_y);
 HRESULT				CreateTempBufferAndUAV();
-void				GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY);
 HRESULT				SetSmallBoxTexture();
-HRESULT				CreateGpuPickRayBuffer();
 HRESULT				Render(float deltaTime);
 HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -244,10 +241,6 @@ HRESULT Init()
 		return hr;
 
 	FillPrimitiveBuffer(0.0f);
-
-	hr = CreateGpuPickRayBuffer();
-	if (FAILED(hr))
-		return hr;
 
 	hr = SetSampler();
 	if(FAILED(hr))
@@ -438,8 +431,8 @@ void UpdateDispatchBuffer(int l_x, int l_y)
 	g_DeviceContext->Map(g_dispatchBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
 	OnePerDispatch g_OnePerDispatch;
-	g_OnePerDispatch.client_width = 1600.0f;
-	g_OnePerDispatch.client_height = 1600.0f;
+	g_OnePerDispatch.client_width = CLIENT_WIDTH;
+	g_OnePerDispatch.client_height = CLIENT_HEIGHT;
 	g_OnePerDispatch.x_dispatch_count = l_x;
 	g_OnePerDispatch.y_dispatch_count = l_y;
 
@@ -458,7 +451,7 @@ HRESULT	CreateTempBufferAndUAV()
 	temp_buffer_desc.Usage					= D3D11_USAGE_DEFAULT;
 	temp_buffer_desc.CPUAccessFlags			= 0;
 	temp_buffer_desc.MiscFlags				= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	ByteWidth								= 1600*1600 * sizeof(XMFLOAT4);
+	ByteWidth								= (CLIENT_WIDTH * CLIENT_HEIGHT) * 4 * sizeof(XMFLOAT4);
 	temp_buffer_desc.ByteWidth = ByteWidth;
 	temp_buffer_desc.StructureByteStride = sizeof(XMFLOAT4);
 	hr = g_Device->CreateBuffer(&temp_buffer_desc, NULL, &g_tempBuffer);
@@ -468,7 +461,7 @@ HRESULT	CreateTempBufferAndUAV()
 	D3D11_UNORDERED_ACCESS_VIEW_DESC temp_buffer_UAV_desc;
 	temp_buffer_UAV_desc.Buffer.FirstElement	= 0;
 	temp_buffer_UAV_desc.Buffer.Flags			= 0;
-	temp_buffer_UAV_desc.Buffer.NumElements		= 1600*1600;
+	temp_buffer_UAV_desc.Buffer.NumElements		= (CLIENT_WIDTH * CLIENT_HEIGHT) * 4;
 	temp_buffer_UAV_desc.Format					= DXGI_FORMAT_UNKNOWN;
 	temp_buffer_UAV_desc.ViewDimension			= D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_tempBuffer, &temp_buffer_UAV_desc, &g_tempUAV);
@@ -722,51 +715,12 @@ HRESULT CreateObjectBuffer()
 	return hr;
 }
 
-struct GPU_PICK_RAY
-{
-	int GPU_PICK_X;
-	int GPU_PICK_Y;
-	int GPU_PICK_padding1;
-	int GPU_PICK_padding2;
-};
-
-void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
-{
-	D3D11_MAPPED_SUBRESOURCE GPURAY;
-	g_DeviceContext->Map(g_gpuPickingRayBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &GPURAY);
-
-	GPU_PICK_RAY l_data;
-	l_data.GPU_PICK_X = l_mousePosX;
-	l_data.GPU_PICK_Y = l_mousePosY;
-	l_data.GPU_PICK_padding1 = 1;
-	l_data.GPU_PICK_padding2 = 1;
-
-
-	*(GPU_PICK_RAY*)GPURAY.pData = l_data;
-	g_DeviceContext->Unmap(g_gpuPickingRayBuffer, 0);
-}
-
 HRESULT SetSmallBoxTexture()
 {
 	HRESULT hr = S_OK;
 
 	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/box_texture_aluminium.dds", nullptr, &g_smallBoxTexSRV);
 
-	return hr;
-}
-
-HRESULT	CreateGpuPickRayBuffer()
-{
-	HRESULT hr = S_OK;
-
-	D3D11_BUFFER_DESC GpuPickBuffer_desc;
-	GpuPickBuffer_desc.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER;
-	GpuPickBuffer_desc.Usage				=	D3D11_USAGE_DYNAMIC; 
-	GpuPickBuffer_desc.CPUAccessFlags		=	D3D11_CPU_ACCESS_WRITE;
-	GpuPickBuffer_desc.MiscFlags			=	0;
-	GpuPickBuffer_desc.ByteWidth			=	sizeof(GPU_PICK_RAY);
-	hr = g_Device->CreateBuffer(&GpuPickBuffer_desc, NULL, &g_gpuPickingRayBuffer);
-	
 	return hr;
 }
 
@@ -846,15 +800,15 @@ HRESULT Render(float deltaTime)
 		{
 			RayTracingRender->Set();
 			UpdateDispatchBuffer(x, y);
-			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB); // Send all buffers because I was lazy at the beginning. However, now it works.
-																   // Could not get it only to send one buffer, dont remember why.
-			g_DeviceContext->Dispatch(25, 25, 1);
+			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);		// Send all buffers because I was lazy at the beginning. However, it works now.
+																	// Could not get it it to work with only one buffer, do not know why. It's all logic... should be...
+			g_DeviceContext->Dispatch(13, 13, 1);
 			RayTracingRender->Unset();
 		}
 	}
 
 	SuperSampleRender->Set();
-	g_DeviceContext->Dispatch(25, 25, 1);
+	g_DeviceContext->Dispatch(13, 13, 1);
 	SuperSampleRender->Unset();
 
 	g_Timer->Stop();
@@ -914,7 +868,6 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 			
 			dx = l_mousePos.x - m_oldMousePos.x;
 			dy = l_mousePos.y - m_oldMousePos.y;
-			GpuPickingBySendingRay(l_mousePos.x, l_mousePos.y);
 		//	Camera::GetCamera(g_cameraIndex)->pitch(	dy * MOUSE_SENSE);
 		//	Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
 			m_oldMousePos = l_mousePos;
@@ -936,8 +889,6 @@ char* FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel)
 
 	return "Unknown";
 }
-
-
 
 HRESULT SetSampler()
 {

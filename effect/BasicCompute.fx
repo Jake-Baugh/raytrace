@@ -216,7 +216,7 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 {	
 	p_out_collideNormal = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	/*
+	/* 	// Only to prevent warnings, however it did not work anyhow.
 	p_out_material.ambient			= float3(0.0f, 0.0f, 0.0f);
 	p_out_material.shininess		= 0.0f;
 	p_out_material.isReflective		= 0.0f;
@@ -224,6 +224,7 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	p_out_material.reflectivefactor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	*/
 
+	// Only to prevent warnings
 	p_out_primitiveIndex = 0;
 	p_out_primitiveType = 0;
 
@@ -400,7 +401,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 2
+#define max_number_of_bounces 3
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -448,6 +449,29 @@ float4 Trace(in Ray p_ray)
 void RayTrace( uint3 threadID : SV_DispatchThreadID)
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	int x_coord = threadID.x + client_width/2 * x_dispatch_count;
+	int y_coord = threadID.y + client_width/2 * y_dispatch_count; // 400 because making 1/16, 16 times times, of 1600x1600
+
+	Ray l_ray = createRay(x_coord, y_coord);
+	l_finalColor = Trace(l_ray);
+		
+	float a;
+	// Normalizing after highest value	
+	a = max(l_finalColor.x, l_finalColor.y);
+	a = max(a, l_finalColor.z);
+	a = max(a, 1.0f);
+	l_finalColor /= a;
+	
+	int array_width = client_width*2;
+
+	temp[x_coord + y_coord*array_width] = l_finalColor;
+}
+
+
+[numthreads(16, 16, 1)]
+void RayTraceWithMultisampling( uint3 threadID : SV_DispatchThreadID)
+{
+	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	int x_coord = threadID.x + 400 * x_dispatch_count;
 	int y_coord = threadID.y + 400 * y_dispatch_count; // 400 because making 1/16, 16 times times, of 1600x1600
 
@@ -466,20 +490,25 @@ void RayTrace( uint3 threadID : SV_DispatchThreadID)
 	temp[x_coord + y_coord*array_width] = l_finalColor;
 }
 
+
 [numthreads(32, 32, 1)]
 void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 {
 	int2 coord;
 	coord.x = threadID.x; 
 	coord.y = threadID.y;
+
+	uint numstructs, stride;
+	temp.GetDimensions(numstructs, stride);
+	uint array_width = sqrt(numstructs);
 	
-	int x = coord.x * 2;
-	int y = ((coord.y * 2) * 1600) -1;
+	uint x = coord.x * 2;
+	uint y = ((coord.y * 2) * array_width) -1;
 
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	l_finalColor =	temp[x + y]				+ temp[x+1 + y]	+			// Topleft		// Topright
-					temp[x + y + 1 * 1600]	+ temp[x+1 + y + 1*1600];	// Botleft		// Botright
+	l_finalColor =	temp[x + y]				+ temp[x+1 + y]	+							// Topleft		// Topright
+					temp[x + y + 1 * array_width]	+ temp[x+1 + y + 1*array_width];	// Botleft		// Botright
 
 	output[coord.xy] = l_finalColor/4.0f;
 }

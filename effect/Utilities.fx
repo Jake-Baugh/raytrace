@@ -100,17 +100,6 @@ cbuffer OnePerDispatch: register(c3)
 }
 
 /*
-cbuffer GPU_PICK_DATA: register(c4)
-{
-	int GPU_PICK_X;
-	int GPU_PICK_Y;
-	int GPU_PICK_padding1;
-	int GPU_PICK_padding2;
-}
-*/
-
-
-/*
 b	Constant buffer
 t	Texture and texture buffer
 c	Buffer offset
