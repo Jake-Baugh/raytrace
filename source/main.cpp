@@ -70,7 +70,6 @@ ID3D11ShaderResourceView* g_GpuRay_SRV			= nullptr;
 
 ComputeShader*				RayTracingRender	= nullptr;
 ComputeShader*				SuperSampleRender	= nullptr;
-//ComputeShader*				GPUPICK				= nullptr;	// GPUPICKing code
 
 D3D11Timer*					g_Timer					= NULL;
 
@@ -349,12 +348,8 @@ HRESULT InitializeDXDeviceAndSwapChain()
 	SuperSampleRender = new ComputeShader();
 	hr = SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, "RenderToBackBuffer", NULL, g_Device, g_DeviceContext);
 
-//	GPUPICK = new ComputeShader();
-//	hr = GPUPICK->Init(L"effect\\BasicCompute.fx", NULL, "GPUPICKING", NULL, g_Device, g_DeviceContext);
-
 	if (FAILED(hr))
 		return hr;
-
 
 	g_Timer = new D3D11Timer(g_Device, g_DeviceContext);
 	return S_OK;
@@ -433,9 +428,7 @@ HRESULT	CreateDispatchBuffer()
 	ByteWidth = sizeof(OnePerDispatch);
 	dispatch_buffer_desc.ByteWidth = ByteWidth;
 	hr = g_Device->CreateBuffer(&dispatch_buffer_desc, NULL, &g_dispatchBuffer);
-
-
-
+	
 	return hr;
 }
 
@@ -549,10 +542,6 @@ void FillLightBuffer()
 	{
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
 		l_light.pointLight[i].color			= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-//		l_light.pointLight[i].ambientLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//		l_light.pointLight[i].diffuseLight	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//		l_light.pointLight[i].specularLight = XMFLOAT3(0.1f, 0.1f, 0.1f);
-//		l_light.pointLight[i].lightRadius	= 50000.0f;
 	}
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
@@ -729,8 +718,7 @@ HRESULT CreateObjectBuffer()
 	hr = g_Device->CreateShaderResourceView(g_normalBuffer, &Normal_SRV_Desc, &g_Normal_SRV);
 	if (FAILED(hr))
 		return hr;
-
-
+	
 	return hr;
 }
 
@@ -756,11 +744,6 @@ void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
 
 	*(GPU_PICK_RAY*)GPURAY.pData = l_data;
 	g_DeviceContext->Unmap(g_gpuPickingRayBuffer, 0);
-
-	// GPU PICKING CODE
-//	GPUPICK->Set();
-//	g_DeviceContext->Dispatch(1, 1, 1);
-//	GPUPICK->Unset();
 }
 
 HRESULT SetSmallBoxTexture()
@@ -841,8 +824,6 @@ HRESULT Update(float deltaTime)
 	
 	FillCameraBuffer();				//
 	FillLightBuffer();				//
-//	FillPrimitiveBuffer(deltaTime); // Used in old version to move spheres
-	
 	
 	return S_OK;
 }
@@ -857,11 +838,6 @@ HRESULT Render(float deltaTime)
 	g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);
 	g_DeviceContext->CSSetShaderResources(0, 5, srv);
 
-//	if (g_mouse_clicked)
-//	{
-//		
-//		g_mouse_clicked = false;
-//	}
 
 	g_Timer->Start();
 	for (int y = 0; y < 4; y++)
@@ -885,11 +861,6 @@ HRESULT Render(float deltaTime)
 
 	if(FAILED(g_SwapChain->Present(0, 0)))
 		return E_FAIL;
-	
-	// Dont remember why, but 
-//	float x = Camera::GetCamera(g_cameraIndex)->GetPosition().x;
-//	float y = Camera::GetCamera(g_cameraIndex)->GetPosition().y;
-//	float z = Camera::GetCamera(g_cameraIndex)->GetPosition().z;
 
 	char title[256];
 	sprintf_s(
@@ -911,7 +882,6 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	HDC hdc;
 	POINT l_mousePos;
 	int dx,dy;
-
 
 	switch (message) 
 	{

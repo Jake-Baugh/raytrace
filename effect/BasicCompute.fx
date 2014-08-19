@@ -127,7 +127,7 @@ class TriangleIntersect : IntersectInterface
 const SphereIntersect sphereIntersect;
 const TriangleIntersect triangleIntersect;
 
-void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, inout float p_distanceToClosestPrimitive, in float p_smallestDistance)
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, inout float p_distanceToClosestPrimitive)
 {	
 	p_hitPrimitive = -1;	
 	float temp = 0.0f;
@@ -169,8 +169,6 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 
 	GetClosestPrimitive(l_lightSourceRay, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere);
 	GetClosestPrimitive(l_lightSourceRay, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle);
-	
-
 		
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
@@ -216,14 +214,26 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 #define VERY_SMALL_NUMBER 0.001f
 Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_material, out uint p_out_primitiveIndex, out uint p_out_primitiveType)
 {	
+	p_out_collideNormal = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	/*
+	p_out_material.ambient			= float3(0.0f, 0.0f, 0.0f);
+	p_out_material.shininess		= 0.0f;
+	p_out_material.isReflective		= 0.0f;
+	p_out_material.specular			= float3(0.0f, 0.0f, 0.0f);
+	p_out_material.reflectivefactor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	*/
+
+	p_out_primitiveIndex = 0;
+	p_out_primitiveType = 0;
+
 	// Variables used by all intersections
 	float4 l_collidePos;
 		
 	uint l_sphereindex = 0;	
 	uint l_triangleindex = 0;
 	float l_distanceToClosestSphere	= 0.0f;
-	float l_distanceToClosestTriangle = 0.0f;
-	
+	float l_distanceToClosestTriangle = 0.0f;	
 	uint l_sphereHit, l_triangleHit;
 
 	uint triangle_amount;
@@ -276,27 +286,6 @@ Ray Jump(inout Ray p_ray, out float4 p_out_collideNormal, out Material p_out_mat
 	}
 
 	return p_ray;
-}
-
-// NOT IMPLEMENTED
-float4 ThrowRefractionRays(in Ray p_ray, in float4 p_collidNormal)
-{
-	float n1, n2;
-	float angle1, angle2;
-	
-	/*
-	cos(angle) = vec1 * vec2 / |vec1|*|vec2|
-	angle = arccos (vec1* vec2)
-
-	n1 = 1.0f // vacuum
-	n2 = 1.5f // glass
-	angle1 = angle between infallsvektor och normal
-	angle2 = angle between normal och utfallsvinkel
-
-	n1 * sin(angle1) = n2 * sin(angle2)
-	sin(angle2) = n1 * sin(angle1) / n2
-	angle2 = arcsin(n1 * sin(angle1) / n2)
-	*/
 }
 
 float GetTriangleArea(float3 point0, float3 point1, float3 point2)
@@ -362,8 +351,6 @@ float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType, in f
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
 		float4 add_color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-//		if (p_primitiveIndex == TRIANGLE_INDEX_SELECTED)		// GPU PICKING CODE
-//			add_color = float4(1.0f, 0.2f, 0.2f, 1.0f);
 		return GetTriangleTexture(p_primitiveIndex, p_intersectPos) * add_color;
 	}
 	return BLACK4;
@@ -496,27 +483,3 @@ void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 
 	output[coord.xy] = l_finalColor/4.0f;
 }
-
-
-/*
-[numthreads(1, 1, 1)]
-void GPUPICKING(uint3 threadID : SV_DispatchThreadID)
-{
-	//int2 a = int2(0, 0);
-//	output[a] = ORANGE4;
-//	TRIANGLE_INDEX_SELECTED = 0;
-	
-	//int2 a = int2(0,0);
-	
-	Ray l_ray = createRay(GPU_PICK_X, GPU_PICK_Y);
-
-	float4 l_collideNormal;
-	float4 l_intersectPosition;
-	Material l_material;
-	uint l_primitiveIndex;
-	uint l_primitiveType;
-
-	Jump(l_ray, l_collideNormal, l_material, l_primitiveIndex, l_primitiveType); // First jump. From screen to first object
-	TRIANGLE_INDEX_SELECTED = l_primitiveIndex * GPU_PICK_padding1 * GPU_PICK_padding2;
-}
-*/
