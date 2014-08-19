@@ -51,7 +51,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 
 	ifstream lStream;
 
-	lStream.open("ROOM.obj");
+	lStream.open("ROOM_without_wall.obj");
 
 	char lBuffer[1024];
 

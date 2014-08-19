@@ -70,7 +70,7 @@ ID3D11ShaderResourceView* g_GpuRay_SRV			= nullptr;
 
 ComputeShader*				RayTracingRender	= nullptr;
 ComputeShader*				SuperSampleRender	= nullptr;
-//ComputeShader*				GPUPICK				= nullptr;
+//ComputeShader*				GPUPICK				= nullptr;	// GPUPICKing code
 
 D3D11Timer*					g_Timer					= NULL;
 
@@ -527,7 +527,7 @@ HRESULT CreateLightBuffer()
 	int ByteWidth;
 
 	D3D11_BUFFER_DESC LightData;
-	LightData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER ;
+	LightData.BindFlags			=	D3D11_BIND_CONSTANT_BUFFER;
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
@@ -593,7 +593,7 @@ HRESULT LoadMesh(char* p_path)
 		g_allTrianglesIndex.push_back(l_triangleDescription->at(i));
 	
 	// Update triangle descriptions indexes
-	if(allVertexSize != 0) // No idea to increase everything with 0
+	if(allVertexSize != 0) // No point to increase everything with 0
 	{
 		for(UINT i = allTrianglesIndexSize; i < g_allTrianglesIndex.size(); i++)
 		{
@@ -757,6 +757,7 @@ void GpuPickingBySendingRay(UINT l_mousePosX, UINT l_mousePosY)
 	*(GPU_PICK_RAY*)GPURAY.pData = l_data;
 	g_DeviceContext->Unmap(g_gpuPickingRayBuffer, 0);
 
+	// GPU PICKING CODE
 //	GPUPICK->Set();
 //	g_DeviceContext->Dispatch(1, 1, 1);
 //	GPUPICK->Unset();
@@ -766,7 +767,7 @@ HRESULT SetSmallBoxTexture()
 {
 	HRESULT hr = S_OK;
 
-	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/Box_Texture.dds", nullptr, &g_smallBoxTexSRV);
+	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/box_texture_aluminium.dds", nullptr, &g_smallBoxTexSRV);
 
 	return hr;
 }

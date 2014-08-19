@@ -127,7 +127,7 @@ class TriangleIntersect : IntersectInterface
 const SphereIntersect sphereIntersect;
 const TriangleIntersect triangleIntersect;
 
-void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, out float p_distanceToClosestPrimitive, in float p_smallestDistance)
+void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uint p_amount, out uint p_hitPrimitive, out uint p_closestPrimitiveIndex, inout float p_distanceToClosestPrimitive, in float p_smallestDistance)
 {	
 	p_hitPrimitive = -1;	
 	float temp = 0.0f;
@@ -143,13 +143,13 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uin
 			{
 				p_distanceToClosestPrimitive = temp;				// Save the new lowest distance
 				p_closestPrimitiveIndex = i;						// Save the index to the lowest primitive
-				/*if(p_smallestDistance != -1)
+				if(p_smallestDistance != -1)
 				{
 					if(p_distanceToClosestPrimitive < p_smallestDistance)
 					{
 						return;
 					}
-				}*/
+				}
 			}
 		}
 	}
@@ -159,7 +159,6 @@ void GetClosestPrimitive(in Ray p_ray, in IntersectInterface p_intersect, in uin
 	Rework this to take distance to light and set origin from object and check if anything is closer than the light.
 	Right now I check from lightsource to object to see if anything intersects before the object.
 */
-// Make this function return true or false. Let other functions handle the coloring. Also then remove color and material from parameterlist
 bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveType, in uint p_lightIndex)
 {
 	uint l_closestSphereIndex, l_closestTriangleIndex;
@@ -167,34 +166,51 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 	uint l_sphereHit;
 	uint l_TriangleHit;
 	
-	// Vector from light source
+	// Vector towards light source
 	Ray l_towardsLightSource; // 
-	//l_towardsLightSource.origin =  p_ray.origin;
-	l_towardsLightSource.origin = PointLight[p_lightIndex].position;
+	l_towardsLightSource.origin =  p_ray.origin;
+	//l_towardsLightSource.origin = PointLight[p_lightIndex].position;
 	
-	//l_towardsLightSource.direction = normalize(PointLight[p_lightIndex].position - p_ray.origin);
-	l_towardsLightSource.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
+	l_towardsLightSource.direction = normalize(PointLight[p_lightIndex].position - p_ray.origin);
+	//l_towardsLightSource.direction = normalize(p_ray.origin - PointLight[p_lightIndex].position);
 
-//	float l_distancetoLight = distance(p_ray.origin, PointLight[p_lightIndex].position);
-//	l_distanceToClosestSphere = l_distancetoLight + 1;
-//	l_distanceToClosestTriangle = l_distancetoLight + 1;
+	float l_distancetoLight = distance(p_ray.origin, PointLight[p_lightIndex].position);
+	l_distanceToClosestSphere = l_distancetoLight + 1;
+	l_distanceToClosestTriangle = l_distancetoLight + 1;
 
 	uint triangle_amount;
 	AllTriangleDesc.GetDimensions(triangle_amount, l_closestSphereIndex); // Needed to send something as second paramter!! (?)!
 
-	//GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, l_distancetoLight);
-	GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, -1);
+	GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, l_distancetoLight);
+	//GetClosestPrimitive(l_towardsLightSource, sphereIntersect, SPHERE_COUNT, l_sphereHit, l_closestSphereIndex, l_distanceToClosestSphere, -1);
 
-	//GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, l_distancetoLight);
-	GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, -1);
+	GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, l_distancetoLight);
+	//GetClosestPrimitive(l_towardsLightSource, triangleIntersect, triangle_amount, l_TriangleHit, l_closestTriangleIndex, l_distanceToClosestTriangle, -1);
 
+	// return if there's something closer than light
+	bool l_isHit = false;
+	if (l_distanceToClosestSphere < l_distancetoLight) 
+	{
+		if(p_primitiveIndex == l_closestSphereIndex)
+			l_isHit = false;
+			//return false;
+		l_isHit = true;
+		//return true;
+	}
+	else if (l_distanceToClosestTriangle < l_distancetoLight) 
+	{
+		if(p_primitiveIndex == l_closestTriangleIndex)
+			l_isHit = false;
+			//return false;
+		l_isHit = true;
+		//return true;
+	}
+	//return false;
+	return l_isHit;
+	
+	
+	
 	 /*
-	// return if there's something closer
-	if (l_distanceToClosestSphere < l_distancetoLight || l_distanceToClosestTriangle < l_distancetoLight)
-		return false;
-	return true;
-	*/
-	 
 	if(l_sphereHit != -1 && l_TriangleHit != -1) // Both a triangle and a sphere has been hit
 	{
 		if (p_primitiveType == PRIMITIVE_TRIANGLE) // Bouncing of a triangle
@@ -232,8 +248,10 @@ bool IsLitByLight(in Ray p_ray, in uint p_primitiveIndex, in uint p_primitiveTyp
 			return true; // Triangle is lit
 		}
 	}
-
+	
 	return false;	
+	*/
+	
 }
 
 #define VERY_SMALL_NUMBER 0.001f
@@ -329,7 +347,6 @@ float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 	border1 = length(point0 - point2);
 	border2 = length(point1 - point2);
 
-	
 	float temp1, temp2;
 	if ((temp1 = border0) == (temp2 = border1) || (temp1 = border0) == (temp2 = border2) || (temp1 = border1) == (temp2 = border2)) // if two sides are equally long you can cheat
 	{
@@ -361,7 +378,7 @@ float2 GetTriangleTextureCoordinates(in uint p_primitiveIndex, in float3 p_inter
 	float b0, b1, b2;
 	b0 = area0 / totalArea;
 	b1 = area1 / totalArea;
-	b2 = area2 / totalArea; // Perform this action last. 
+	b2 = area2 / totalArea;
 	
 	float2 texcoord0 = AllTexCoord[l_triangleDescription.TexCoordIndex0];
 	float2 texcoord1 = AllTexCoord[l_triangleDescription.TexCoordIndex1];
@@ -386,7 +403,7 @@ float4 GetPrimitiveColor(in uint p_primitiveIndex, in uint p_primitiveType, in f
 	else if (p_primitiveType == PRIMITIVE_TRIANGLE)		// Triangle
 	{
 		float4 add_color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-//		if (p_primitiveIndex == TRIANGLE_INDEX_SELECTED)
+//		if (p_primitiveIndex == TRIANGLE_INDEX_SELECTED)		// GPU PICKING CODE
 //			add_color = float4(1.0f, 0.2f, 0.2f, 1.0f);
 		return GetTriangleTexture(p_primitiveIndex, p_intersectPos) * add_color;
 	}
@@ -437,7 +454,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
