@@ -7,11 +7,12 @@
 #include "Camera.h"
 #include "ObjectLoader.h"
 #include "DDSTextureLoader/DDSTextureLoader.h"
+#include "ResolutionStruct.h"
 
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
-#define CLIENT_WIDTH 800
-#define CLIENT_HEIGHT 800
+//#define CLIENT_WIDTH 800
+//#define CLIENT_HEIGHT 800
 
 
 struct OnePerDispatch
@@ -21,7 +22,6 @@ struct OnePerDispatch
 	float client_width;
 	float client_height;
 };
-
 
 /*
 	This file is a mess.
@@ -80,6 +80,8 @@ bool						g_mouse_clicked		= false;
 POINT						m_oldMousePos;
 OnePerDispatch				g_OnePerDispatch;
 
+Resolution::ResolutionData	g_resolutionData;
+
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
@@ -115,6 +117,10 @@ HRESULT				SetSampler();
 //--------------------------------------------------------------------------------------
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
+	// FIRST THING TO DO, CHOOSE RESOLUTION
+	g_resolutionData = Resolution::GetResolution(Resolution::A800x800);
+
+
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
 		return 0;
 
@@ -177,7 +183,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	// Create window
 	g_hInst = hInstance; 
-	RECT rc = { 0, 0, CLIENT_WIDTH, CLIENT_HEIGHT };
+	RECT rc = { 0, 0, g_resolutionData.width, g_resolutionData.height};
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	
 	if(!(g_hWnd = CreateWindow("BTH_D3D_Template", "BTH - Direct3D 11.0 Template",
@@ -199,7 +205,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 // Create Direct3D device and swap chain
 //--------------------------------------------------------------------------------------
 HRESULT Init()
-{
+{	
 	HRESULT hr;
 	hr = InitializeDXDeviceAndSwapChain();
 	if(FAILED(hr))	return hr;
@@ -255,6 +261,7 @@ HRESULT Init()
 
 	return S_OK;
 }
+
 HRESULT InitializeDXDeviceAndSwapChain()
 {
 	HRESULT hr = S_OK;;
@@ -438,8 +445,8 @@ void UpdateDispatchBuffer(int l_x, int l_y)
 	g_DeviceContext->Map(g_dispatchBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
 	OnePerDispatch g_OnePerDispatch;
-	g_OnePerDispatch.client_width = 1600.0f;
-	g_OnePerDispatch.client_height = 1600.0f;
+	g_OnePerDispatch.client_width = g_resolutionData.width;
+	g_OnePerDispatch.client_height = g_resolutionData.height;
 	g_OnePerDispatch.x_dispatch_count = l_x;
 	g_OnePerDispatch.y_dispatch_count = l_y;
 
@@ -458,7 +465,7 @@ HRESULT	CreateTempBufferAndUAV()
 	temp_buffer_desc.Usage					= D3D11_USAGE_DEFAULT;
 	temp_buffer_desc.CPUAccessFlags			= 0;
 	temp_buffer_desc.MiscFlags				= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	ByteWidth								= 1600*1600 * sizeof(XMFLOAT4);
+	ByteWidth								= g_resolutionData.width * g_resolutionData.height * 4 *  sizeof(XMFLOAT4);
 	temp_buffer_desc.ByteWidth = ByteWidth;
 	temp_buffer_desc.StructureByteStride = sizeof(XMFLOAT4);
 	hr = g_Device->CreateBuffer(&temp_buffer_desc, NULL, &g_tempBuffer);
@@ -468,7 +475,7 @@ HRESULT	CreateTempBufferAndUAV()
 	D3D11_UNORDERED_ACCESS_VIEW_DESC temp_buffer_UAV_desc;
 	temp_buffer_UAV_desc.Buffer.FirstElement	= 0;
 	temp_buffer_UAV_desc.Buffer.Flags			= 0;
-	temp_buffer_UAV_desc.Buffer.NumElements		= 1600*1600;
+	temp_buffer_UAV_desc.Buffer.NumElements		= g_resolutionData.width * g_resolutionData.height * 4;
 	temp_buffer_UAV_desc.Format					= DXGI_FORMAT_UNKNOWN;
 	temp_buffer_UAV_desc.ViewDimension			= D3D11_UAV_DIMENSION_BUFFER;
 	hr = g_Device->CreateUnorderedAccessView(g_tempBuffer, &temp_buffer_UAV_desc, &g_tempUAV);
@@ -524,7 +531,7 @@ HRESULT CreateLightBuffer()
 	LightData.Usage				=	D3D11_USAGE_DYNAMIC; 
 	LightData.CPUAccessFlags	=	D3D11_CPU_ACCESS_WRITE;
 	LightData.MiscFlags			=	0;
-	ByteWidth					=	sizeof(CustomLightStruct::LightBuffer); // 144 byte
+	ByteWidth					=	sizeof(CustomLightStruct::LightBuffer);
 	LightData.ByteWidth			=	ByteWidth;
 	hr = g_Device->CreateBuffer( &LightData, NULL, &g_LightBuffer);
 
@@ -840,21 +847,21 @@ HRESULT Render(float deltaTime)
 
 
 	g_Timer->Start();
-	for (int y = 0; y < 4; y++)
+	for (unsigned int y = 0; y < g_resolutionData.AmountOfYCalls; y++)
 	{	
-		for (int x = 0; x < 4; x++)
+		for (unsigned int x = 0; x < g_resolutionData.AmountOfXCalls; x++)
 		{
 			RayTracingRender->Set();
 			UpdateDispatchBuffer(x, y);
 			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB); // Send all buffers because I was lazy at the beginning. However, now it works.
 																   // Could not get it only to send one buffer, dont remember why.
-			g_DeviceContext->Dispatch(25, 25, 1);
+			g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRaytracingX, g_resolutionData.AmountofThreadGroupWhenRaytracingX, 1);
 			RayTracingRender->Unset();
 		}
 	}
 
 	SuperSampleRender->Set();
-	g_DeviceContext->Dispatch(25, 25, 1);
+	g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRenderingX, g_resolutionData.AmountofThreadGroupWhenRenderingY, 1);
 	SuperSampleRender->Unset();
 
 	g_Timer->Stop();
