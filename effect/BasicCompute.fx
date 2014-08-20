@@ -296,11 +296,13 @@ float GetTriangleArea(float3 point0, float3 point1, float3 point2)
 	border1 = length(point0 - point2);
 	border2 = length(point1 - point2);
 
+	/*	// THIS CODE DOES NOT PRODUCE THE CORRECT RESULT
 	float temp1, temp2;
 	if ((temp1 = border0) == (temp2 = border1) || (temp1 = border0) == (temp2 = border2) || (temp1 = border1) == (temp2 = border2)) // if two sides are equally long you can cheat
 	{
 		return temp1 * temp2 / 2; // Half square area
 	}
+	*/
 			
 	// Herons Formula // http://en.wikipedia.org/wiki/Heron%27s_formula
 	float s = 0.5f * (border0+border1+border2); //  semiperimeter 
