@@ -62,7 +62,6 @@ XMFLOAT4 operator+=(XMFLOAT4 l, XMFLOAT4 r)
 	return a;
 }
 
-
 std::vector<Camera*> Camera::m_camera = std::vector<Camera*>(10);
 
 Camera* Camera::GetCamera(int index)				// Quite the awful multiton here. Easy, not very good if getting cameras above 10.

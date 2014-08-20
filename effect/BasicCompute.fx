@@ -462,15 +462,27 @@ float4 NormalizeColorAfterHighestValue(in float4 p_color)
 	return p_color;
 }
 
-void GenericRayTrace(in uint threadIDx, in uint threadIDy) 
+float4 GenericRayTrace(in uint x, in uint y) 
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	int x_coord = threadIDx + client_width/2 * x_dispatch_count;
-	int y_coord = threadIDy + client_width/2 * y_dispatch_count;
 
-	Ray l_ray = createRay(x_coord, y_coord);
+	Ray l_ray = createRay(x, y);
 	l_finalColor = Trace(l_ray);
 	l_finalColor = NormalizeColorAfterHighestValue(l_finalColor);
+	
+	return l_finalColor;
+}
+
+/*
+ *
+ */
+[numthreads(16, 16, 1)]
+void RayTrace16AndPrepareMultisampling( uint3 threadID : SV_DispatchThreadID)
+{
+	int x_coord = threadID.x + client_width/2 * x_dispatch_count;
+	int y_coord = threadID.y + client_width/2 * y_dispatch_count;
+
+	float4 l_finalColor = GenericRayTrace(x_coord, y_coord);
 
 	int array_width = client_width*2;
 
@@ -478,15 +490,25 @@ void GenericRayTrace(in uint threadIDx, in uint threadIDy)
 }
 
 [numthreads(16, 16, 1)]
-void RayTrace16( uint3 threadID : SV_DispatchThreadID)
+void RayTrace16AndRender( uint3 threadID : SV_DispatchThreadID)
 {
-	GenericRayTrace(threadID.x, threadID.y);
+	int x_coord = threadID.x + client_width/2 * x_dispatch_count;
+	int y_coord = threadID.y + client_width/2 * y_dispatch_count;
+
+	float4 l_finalColor = GenericRayTrace(x_coord, y_coord);
+		
+	output[int2(x_coord, y_coord)] = l_finalColor;
 }
 
 [numthreads(32, 32, 1)]
-void RayTrace32( uint3 threadID : SV_DispatchThreadID)
+void RayTrace32AndRender( uint3 threadID : SV_DispatchThreadID)
 {
-	GenericRayTrace(threadID.x, threadID.y);
+	int x_coord = threadID.x + client_width/2 * x_dispatch_count;
+	int y_coord = threadID.y + client_width/2 * y_dispatch_count;
+
+	float4 l_finalColor = GenericRayTrace(x_coord, y_coord);
+		
+	output[int2(x_coord, y_coord)] = l_finalColor;
 }
 
 [numthreads(32, 32, 1)]
@@ -499,9 +521,6 @@ void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 	uint numstructs, stride;
 	temp.GetDimensions(numstructs, stride);
 	uint array_width = sqrt(numstructs);
-	
-	uint xOffset = (array_width/2 * x_dispatch_count);
-	uint YOffset = (array_width/2 *	y_dispatch_count);
 
 	uint x = coord.x * 2;
 	uint y = ((coord.y * 2) * array_width) - 1;

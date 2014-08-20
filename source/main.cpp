@@ -12,12 +12,6 @@
 #define MOUSE_SENSE 0.0087266f
 #define MOVE_SPEED  450.0f
 
-//#define CLIENT_WIDTH 400.0f
-//#define CLIENT_HEIGHT 400.0f
-
-//#define CLIENT_WIDTH 800
-//#define CLIENT_HEIGHT 800
-
 struct OnePerDispatch
 {
 	int x_dispatch_count;
@@ -633,7 +627,7 @@ HRESULT CreateObjectBuffer()
 	RawVertex.Usage				=	D3D11_USAGE_DEFAULT;
 	RawVertex.CPUAccessFlags	=	0;
 	RawVertex.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	ByteWidth					=	g_allTrianglesVertex.size() * sizeof(XMFLOAT4);	// 128
+	ByteWidth					=	g_allTrianglesVertex.size() * sizeof(XMFLOAT4);
 	RawVertex.ByteWidth			=	ByteWidth;
 	RawVertex.StructureByteStride = sizeof(XMFLOAT4);
 	hr = g_Device->CreateBuffer(&RawVertex, &l_data, &g_vertexBuffer);
@@ -820,19 +814,12 @@ HRESULT Render(float deltaTime)
 		}
 	}
 
-	for (unsigned int y = 0; y < g_resolutionData.RenderCallsY; y++)
-	{	
-		for (unsigned int x = 0; x < g_resolutionData.RenderCallsX; x++)
-		{
-			SuperSampleRender->Set();
-			UpdateDispatchBuffer(x, y);
-			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);		// Send all buffers because I was lazy at the beginning. However, it works now.
-																	// Could not get it only to send one buffer, dont remember why.
-			g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRenderingX, g_resolutionData.AmountofThreadGroupWhenRenderingY, 1);
-			SuperSampleRender->Unset();
-		}
+	// Dont wanna do supersampling with all the 
+	if(g_resolutionData.DoSupersamling) {
+		SuperSampleRender->Set();
+		g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRenderingX, g_resolutionData.AmountofThreadGroupWhenRenderingY, 1);
+		SuperSampleRender->Unset();
 	}
-
 	g_Timer->Stop();
 
 	if(FAILED(g_SwapChain->Present(0, 0)))
