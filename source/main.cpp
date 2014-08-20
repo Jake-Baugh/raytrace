@@ -74,12 +74,10 @@ ID3D11ShaderResourceView* g_GpuRay_SRV			= nullptr;
 ComputeShader*				RayTracingRender	= nullptr;
 ComputeShader*				SuperSampleRender	= nullptr;
 
-D3D11Timer*					g_Timer					= NULL;
-
+D3D11Timer*					g_Timer				= NULL;
 int							g_Width, g_Height;
-int							g_cameraIndex = 0;
+int							g_cameraIndex		= 0;
 bool						g_mouse_clicked		= false;
-
 POINT						m_oldMousePos;
 OnePerDispatch				g_OnePerDispatch;
 
@@ -109,8 +107,6 @@ HRESULT				Update(float deltaTime);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 char*				FeatureLevelToString(D3D_FEATURE_LEVEL featureLevel);
 HRESULT				SetSampler();
-
-
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -347,10 +343,10 @@ HRESULT InitializeDXDeviceAndSwapChain()
 
 	//create helper sys and compute shader instance
 	RayTracingRender = new ComputeShader();
-	hr = RayTracingRender->Init(L"effect\\BasicCompute.fx", NULL, "RayTrace", NULL, g_Device, g_DeviceContext);
+	hr = RayTracingRender->Init(L"effect\\BasicCompute.fx", NULL, g_resolutionData.RayTraceFunctionName, NULL, g_Device, g_DeviceContext);
 
 	SuperSampleRender = new ComputeShader();
-	hr = SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, "RenderToBackBuffer", NULL, g_Device, g_DeviceContext);
+	hr = SuperSampleRender->Init(L"effect\\BasicCompute.fx", NULL, g_resolutionData.RenderFunctionName, NULL, g_Device, g_DeviceContext);
 
 	if (FAILED(hr))
 		return hr;
@@ -549,6 +545,10 @@ void FillLightBuffer()
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
 		l_light.pointLight[i].color			= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	}
+//	l_light.pointLight[0].color			= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+//	l_light.pointLight[0].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//	l_light.pointLight[1].color			= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+//	l_light.pointLight[2].color			= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
@@ -732,7 +732,7 @@ HRESULT SetSmallBoxTexture()
 {
 	HRESULT hr = S_OK;
 
-	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/box_texture_aluminium.dds", nullptr, &g_smallBoxTexSRV);
+	hr = DirectX::CreateDDSTextureFromFile(g_Device, L"texture/Box_Texture.dds", nullptr, &g_smallBoxTexSRV);
 
 	return hr;
 }
@@ -807,9 +807,9 @@ HRESULT Render(float deltaTime)
 
 
 	g_Timer->Start();
-	for (unsigned int y = 0; y < g_resolutionData.AmountOfYCalls; y++)
+	for (unsigned int y = 0; y < g_resolutionData.RayTraceCallsY; y++)
 	{	
-		for (unsigned int x = 0; x < g_resolutionData.AmountOfXCalls; x++)
+		for (unsigned int x = 0; x < g_resolutionData.RayTraceCallsX; x++)
 		{
 			RayTracingRender->Set();
 			UpdateDispatchBuffer(x, y);
@@ -820,9 +820,18 @@ HRESULT Render(float deltaTime)
 		}
 	}
 
-	SuperSampleRender->Set();
-	g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRenderingX, g_resolutionData.AmountofThreadGroupWhenRenderingY, 1);
-	SuperSampleRender->Unset();
+	for (unsigned int y = 0; y < g_resolutionData.RenderCallsY; y++)
+	{	
+		for (unsigned int x = 0; x < g_resolutionData.RenderCallsX; x++)
+		{
+			SuperSampleRender->Set();
+			UpdateDispatchBuffer(x, y);
+			g_DeviceContext->CSSetConstantBuffers(0, 4, ppCB);		// Send all buffers because I was lazy at the beginning. However, it works now.
+																	// Could not get it only to send one buffer, dont remember why.
+			g_DeviceContext->Dispatch(g_resolutionData.AmountofThreadGroupWhenRenderingX, g_resolutionData.AmountofThreadGroupWhenRenderingY, 1);
+			SuperSampleRender->Unset();
+		}
+	}
 
 	g_Timer->Stop();
 

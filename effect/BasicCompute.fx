@@ -401,7 +401,7 @@ bool CloseToZero(in float p_float)
 	return false;
 }
 
-#define max_number_of_bounces 3
+#define max_number_of_bounces 1
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;
@@ -445,51 +445,47 @@ float4 Trace(in Ray p_ray)
 	return colorIllumination;
 }
 
-[numthreads(16, 16, 1)]
-void RayTrace( uint3 threadID : SV_DispatchThreadID)
+float4 NormalizeColorAfterHighestValue(in float4 p_color)  
+{
+	float l_color;
+
+	// Find biggest value 
+	l_color = max(p_color.x,	p_color.y);
+	l_color = max(l_color,	p_color.z);
+	l_color = max(l_color,	1.0f);
+
+	// Divide with found value 
+	p_color /= l_color;
+	
+	return p_color;
+}
+
+void GenericRayTrace(in uint threadIDx, in uint threadIDy) 
 {
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	int x_coord = threadID.x + client_width/2 * x_dispatch_count;
-	int y_coord = threadID.y + client_width/2 * y_dispatch_count; // 400 because making 1/16, 16 times times, of 1600x1600
+	int x_coord = threadIDx + client_width/2 * x_dispatch_count;
+	int y_coord = threadIDy + client_width/2 * y_dispatch_count;
 
 	Ray l_ray = createRay(x_coord, y_coord);
 	l_finalColor = Trace(l_ray);
-		
-	float a;
-	// Normalizing after highest value	
-	a = max(l_finalColor.x, l_finalColor.y);
-	a = max(a, l_finalColor.z);
-	a = max(a, 1.0f);
-	l_finalColor /= a;
-	
+	l_finalColor = NormalizeColorAfterHighestValue(l_finalColor);
+
 	int array_width = client_width*2;
 
 	temp[x_coord + y_coord*array_width] = l_finalColor;
 }
 
-
 [numthreads(16, 16, 1)]
-void RayTraceWithMultisampling( uint3 threadID : SV_DispatchThreadID)
+void RayTrace16( uint3 threadID : SV_DispatchThreadID)
 {
-	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	int x_coord = threadID.x + 400 * x_dispatch_count;
-	int y_coord = threadID.y + 400 * y_dispatch_count; // 400 because making 1/16, 16 times times, of 1600x1600
-
-	Ray l_ray = createRay(x_coord, y_coord);
-	l_finalColor = Trace(l_ray);
-		
-	float a;
-	// Normalizing after highest value	
-	a = max(l_finalColor.x, l_finalColor.y);
-	a = max(a, l_finalColor.z);
-	a = max(a, 1.0f);
-	l_finalColor /= a;
-	
-	int array_width = 1600;
-
-	temp[x_coord + y_coord*array_width] = l_finalColor;
+	GenericRayTrace(threadID.x, threadID.y);
 }
 
+[numthreads(32, 32, 1)]
+void RayTrace32( uint3 threadID : SV_DispatchThreadID)
+{
+	GenericRayTrace(threadID.x, threadID.y);
+}
 
 [numthreads(32, 32, 1)]
 void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
@@ -502,8 +498,11 @@ void RenderToBackBuffer(uint3 threadID : SV_DispatchThreadID)
 	temp.GetDimensions(numstructs, stride);
 	uint array_width = sqrt(numstructs);
 	
+	uint xOffset = (array_width/2 * x_dispatch_count);
+	uint YOffset = (array_width/2 *	y_dispatch_count);
+
 	uint x = coord.x * 2;
-	uint y = ((coord.y * 2) * array_width) -1;
+	uint y = ((coord.y * 2) * array_width) - 1;
 
 	float4 l_finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
