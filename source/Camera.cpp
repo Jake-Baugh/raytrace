@@ -2,7 +2,7 @@
 
 using namespace std;
 
-XMFLOAT4 operator*(XMFLOAT4 l, XMFLOAT4 r) 
+XMFLOAT4 operator*(const XMFLOAT4 &l, const XMFLOAT4 &r) 
 {
     XMVECTOR lvec(XMLoadFloat4(&l));
     XMVECTOR rvec(XMLoadFloat4(&r));
@@ -15,7 +15,7 @@ XMFLOAT4 operator*(XMFLOAT4 l, XMFLOAT4 r)
 	return a;
 }
 
-XMFLOAT4 operator*(XMFLOAT4 l, float r) {
+XMFLOAT4 operator*(const XMFLOAT4 &l, const float &r) {
     
 	XMVECTOR lvec(XMLoadFloat4(&l));
 	
@@ -26,7 +26,7 @@ XMFLOAT4 operator*(XMFLOAT4 l, float r) {
 	return a;
 }
 
-XMFLOAT4 operator*(float l, XMFLOAT4 r) 
+XMFLOAT4 operator*(const float &l, const XMFLOAT4 &r) 
 {
 	XMVECTOR lvec(XMLoadFloat4(&r));
 	
@@ -38,7 +38,7 @@ XMFLOAT4 operator*(float l, XMFLOAT4 r)
 }
 
 
-XMFLOAT4 operator+(XMFLOAT4 l, XMFLOAT4 r) 
+XMFLOAT4 operator+(const XMFLOAT4 &l, const XMFLOAT4 &r) 
 {
     XMVECTOR lvec(XMLoadFloat4(&l));
     XMVECTOR rvec(XMLoadFloat4(&r));
@@ -50,7 +50,7 @@ XMFLOAT4 operator+(XMFLOAT4 l, XMFLOAT4 r)
 	return a;
 }
 
-XMFLOAT4 operator+=(XMFLOAT4 l, XMFLOAT4 r) 
+XMFLOAT4 operator+=(const XMFLOAT4 &l, const XMFLOAT4 &r) 
 {
     XMVECTOR lvec(XMLoadFloat4(&l));
     XMVECTOR rvec(XMLoadFloat4(&r));
