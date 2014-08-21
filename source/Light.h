@@ -1,7 +1,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#define LIGHT_COUNT 3
+#define LIGHT_COUNT 2
 
 namespace CustomLightStruct
 {

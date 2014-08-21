@@ -9,7 +9,7 @@
 #include "DDSTextureLoader/DDSTextureLoader.h"
 #include "ResolutionStruct.h"
 
-#define MOUSE_SENSE 0.0087266f
+#define MOUSE_SENSE 0.00087266f
 #define MOVE_SPEED  450.0f
 
 struct OnePerDispatch
@@ -110,7 +110,11 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 {
 	// FIRST THING TO DO, CHOOSE RESOLUTION
 	g_resolutionData = Resolution::GetResolution(Resolution::A800x800);
-
+	POINT p;
+				p.x = g_resolutionData.width / 2;
+			p.y = g_resolutionData.height / 2;
+			ClientToScreen(g_hWnd, &p);
+			SetCursorPos(p.x,p.y);
 
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
 		return 0;
@@ -474,6 +478,10 @@ HRESULT	CreateTempBufferAndUAV()
 	return hr;
 }
 
+
+float a = 0.0f;
+float b = 0.0f;
+bool goOneway = false;
 void FillPrimitiveBuffer(float l_deltaTime)
 {
 	D3D11_MAPPED_SUBRESOURCE PrimitivesResources;
@@ -488,9 +496,13 @@ void FillPrimitiveBuffer(float l_deltaTime)
 	l_primitive.Sphere[1].Radius				= 200.0f;
 	l_primitive.Sphere[1].Color					= XMFLOAT3(0.50f, 0.0f, 0.0f);
 
-	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(0.0f, 1000, 0.0f, 0.0f);
+	l_primitive.Sphere[2].MidPosition			= XMFLOAT4(500.0f, 500.0f, 2200.0f, 0.0f);
 	l_primitive.Sphere[2].Radius				= 200.0f;
 	l_primitive.Sphere[2].Color					= XMFLOAT3(0.0f, 0.50f, 0.0f);
+
+	l_primitive.Sphere[3].MidPosition			= XMFLOAT4(-1200.0f, 750.0f, 2200.0f, 0.0f);
+	l_primitive.Sphere[3].Radius				= 200.0f;
+	l_primitive.Sphere[3].Color					= XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	for(UINT i = 0; i < SPHERE_COUNT; i++)
 	{
@@ -504,6 +516,27 @@ void FillPrimitiveBuffer(float l_deltaTime)
 		l_primitive.Sphere[i].Material.isReflective = 1.0f;
 		l_primitive.Sphere[i].Material.reflectiveFactor = 1.0f;
 	}
+
+	if(goOneway)
+	{	
+		a += 5;
+		b = sin(a*PI/1000)*1000;
+		if(a > 1000)
+		{
+			goOneway = false;
+		}
+	}
+	else
+	{
+		a -= 5;
+		b = -sin(a*PI/1000)*1000;
+		if(a < 0)
+		{
+			goOneway = true;
+		}
+	}
+	
+	l_primitive.Sphere[0].MidPosition = XMFLOAT4(a, b, 250.0f, 1.0f);
 
 	*(CustomPrimitiveStruct::Primitive*)PrimitivesResources.pData = l_primitive;
 	g_DeviceContext->Unmap(g_PrimitivesBuffer, 0);
@@ -527,6 +560,10 @@ HRESULT CreateLightBuffer()
 	return hr;
 }
 
+
+float c = 0.0f;
+float d = 0.0f;
+bool goOneway2 = false;
 void FillLightBuffer()
 {
 	D3D11_MAPPED_SUBRESOURCE LightResources;
@@ -537,12 +574,35 @@ void FillLightBuffer()
 	for(UINT i = 0; i < LIGHT_COUNT; i++)
 	{
 		l_light.pointLight[i].position		= Camera::GetCamera(i)->GetPosition();
-		l_light.pointLight[i].color			= XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+		l_light.pointLight[i].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-//	l_light.pointLight[0].color			= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-//	l_light.pointLight[0].color			= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//	l_light.pointLight[1].color			= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-//	l_light.pointLight[2].color			= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+
+	
+	if(g_cameraIndex != 0)
+	{
+		if(goOneway)
+		{	
+			c += 5;
+			d = sin(c*PI/1000)*1000;
+			if(c > 1000)
+			{
+				goOneway2 = false;
+			}
+		}
+		else
+		{
+			c -= 5;
+			d = -sin(c*PI/1000)*1000;
+			if(c < 0)
+			{
+				goOneway = true;
+			}
+
+		}
+		l_light.pointLight[0].position		= XMFLOAT4(c, d, 0.0f, 0.0f);
+		Camera::GetCamera(0)->SetPosition(XMFLOAT4(c, d, 0.0f, 0.0f)); 
+	}
+	
 
 	*(CustomLightStruct::LightBuffer*)LightResources.pData = l_light;
 	g_DeviceContext->Unmap(g_LightBuffer, 0);
@@ -648,7 +708,7 @@ HRESULT CreateObjectBuffer()
 	// RAW TEXCOORD
 	l_data.pSysMem = g_allTrianglesTexCoord.data();
 	D3D11_BUFFER_DESC RawTexCoord;
-	RawTexCoord.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;
+	RawTexCoord.BindFlags			=	D3D11_BIND_SHADER_RESOURCE;	
 	RawTexCoord.Usage				=	D3D11_USAGE_DEFAULT; 
 	RawTexCoord.CPUAccessFlags		=	0;
 	RawTexCoord.MiscFlags			=	D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -733,6 +793,36 @@ HRESULT SetSmallBoxTexture()
 
 HRESULT Update(float deltaTime)
 {
+
+	POINT p;
+	if (GetCursorPos(&p))
+	{
+		if(ScreenToClient(g_hWnd, &p))
+		{
+
+			POINT l_mousePos;
+			int dx,dy;
+			l_mousePos.x = p.x;
+			l_mousePos.y = p.y;
+			dx = p.x - g_resolutionData.width / 2;
+			dy = p.y - g_resolutionData.height / 2;
+
+
+//			Camera::GetCamera(g_cameraIndex)->pitch(	dy * MOUSE_SENSE);
+//			Camera::GetCamera(g_cameraIndex)->rotateY(	dx * MOUSE_SENSE);
+		
+			Camera::GetCamera(g_cameraIndex)->update(dx*MOUSE_SENSE, dy*MOUSE_SENSE);
+
+			p.x = g_resolutionData.width / 2;
+			p.y = g_resolutionData.height / 2;
+			ClientToScreen(g_hWnd, &p);
+			SetCursorPos(p.x,p.y);
+			ShowCursor(FALSE);//hides the cursor
+		}	
+	}
+
+
+
 	if(GetAsyncKeyState('W') & 0x8000)
 		Camera::GetCamera(g_cameraIndex)->walk(MOVE_SPEED * deltaTime);
 	if(GetAsyncKeyState('S') & 0x8000)
@@ -743,14 +833,14 @@ HRESULT Update(float deltaTime)
 		Camera::GetCamera(g_cameraIndex)->strafe(MOVE_SPEED *deltaTime);
 	
 	float cameraspeed = 3.0;
-	if(GetAsyncKeyState('Q') & 0x8000)
-		Camera::GetCamera(g_cameraIndex)->rotateY(-cameraspeed * deltaTime);
-	if(GetAsyncKeyState('E') & 0x8000)
-		Camera::GetCamera(g_cameraIndex)->rotateY(cameraspeed * deltaTime);
-	if(GetAsyncKeyState('1') & 0x8000)
-		Camera::GetCamera(g_cameraIndex)->pitch(	-cameraspeed * deltaTime);
-	if(GetAsyncKeyState('2') & 0x8000)
-		Camera::GetCamera(g_cameraIndex)->pitch(	cameraspeed * deltaTime);
+//	if(GetAsyncKeyState('Q') & 0x8000)
+//		Camera::GetCamera(g_cameraIndex)->rotateY(-cameraspeed * deltaTime);
+//	if(GetAsyncKeyState('E') & 0x8000)
+//		Camera::GetCamera(g_cameraIndex)->rotateY(cameraspeed * deltaTime);
+//	if(GetAsyncKeyState('1') & 0x8000)
+//		Camera::GetCamera(g_cameraIndex)->pitch(	-cameraspeed * deltaTime);
+//	if(GetAsyncKeyState('2') & 0x8000)
+//		Camera::GetCamera(g_cameraIndex)->pitch(	cameraspeed * deltaTime);
 	
 	float upndownspeed = 18.0f;
 	if(GetAsyncKeyState(VK_SPACE) & 0x8000)
@@ -780,11 +870,13 @@ HRESULT Update(float deltaTime)
 	if(GetAsyncKeyState(VK_NUMPAD9) & 0x8000)
 			g_cameraIndex = 9;
 
+	
 
 	Camera::GetCamera(g_cameraIndex)->rebuildView();	
 	
 	FillCameraBuffer();				//
 	FillLightBuffer();				//
+	FillPrimitiveBuffer(deltaTime);
 	
 	return S_OK;
 }
@@ -872,14 +964,14 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	case WM_MOUSEMOVE:
 //		if(wParam & MK_LBUTTON)
 //		{
-			l_mousePos.x = (int)LOWORD(lParam);
-			l_mousePos.y = (int)HIWORD(lParam);
+//			l_mousePos.x = (int)LOWORD(lParam);
+//			l_mousePos.y = (int)HIWORD(lParam);
 			
-			dx = l_mousePos.x - m_oldMousePos.x;
-			dy = l_mousePos.y - m_oldMousePos.y;
+//			dx = l_mousePos.x - m_oldMousePos.x;
+//			dy = l_mousePos.y - m_oldMousePos.y;
 		//	Camera::GetCamera(g_cameraIndex)->pitch(	dy * MOUSE_SENSE);
 		//	Camera::GetCamera(g_cameraIndex)->rotateY(	-dx * MOUSE_SENSE);
-			m_oldMousePos = l_mousePos;
+//			m_oldMousePos = l_mousePos;
 //		}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);

@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 
-#define SPHERE_COUNT 3
+#define SPHERE_COUNT 4
 
 namespace CustomPrimitiveStruct
 {

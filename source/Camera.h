@@ -18,6 +18,7 @@ public:
 	void pitch(float angle);
 	void rotateY(float angle);
 	void rebuildView();
+	void update(float jaw, float pitch);
 
 	void MoveY(float p_step);
 

@@ -23,7 +23,7 @@ http://stackoverflow.com/questions/20008089/specular-lighting-appears-on-both-ey
 */
 
 /*
-fatt = 1/(a*d^2 + b*d + c)
+fAtt = 1/(a*d^2 + b*d + c)
 
 d = distance between the light and the surface being shaded
 a = quadratic attenuation factor

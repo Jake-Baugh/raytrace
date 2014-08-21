@@ -52,7 +52,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 
 	ifstream lStream;
 
-	lStream.open("sp.obj");			// TODO remove hardcoded
+	lStream.open("boxnpyr.obj");			// TODO remove hardcoded
 
 	char lBuffer[1024];
 
@@ -140,7 +140,7 @@ HRESULT ObjectLoader::LoadObject(ID3D11DeviceContext* p_deviceContext, char* p_o
 			l_triangleDesc.Material.specular = XMFLOAT3(specular, specular, specular);
 			l_triangleDesc.Material.shininess = 1.0f;
 			l_triangleDesc.Material.isReflective = 1.0f;
-			l_triangleDesc.Material.reflectiveFactor = 0.0f;
+			l_triangleDesc.Material.reflectiveFactor = 0.3f;
 
 			// TODO remove hardcoded
 			l_meshDescription->push_back(l_triangleDesc);
