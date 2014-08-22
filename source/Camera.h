@@ -34,6 +34,9 @@ public:
 	DirectX::XMFLOAT4X4 GetProj()		const{ return m_proj; }
 
 private:
+	float mYaw;
+	float mPitch;
+
 	static std::vector<Camera*> m_camera;
 
 	Camera();
@@ -41,8 +44,12 @@ private:
 
 	DirectX::XMFLOAT4 mPosition;
 	DirectX::XMFLOAT4 mRight;
+	DirectX::XMFLOAT4 mDefaultRight;
+
 	DirectX::XMFLOAT4 mUp;
+	DirectX::XMFLOAT4 mDefaultUp;
 	DirectX::XMFLOAT4 mLook;
+	DirectX::XMFLOAT4 mDefaultLook;
 
 	DirectX::XMFLOAT4X4 m_view;
 	DirectX::XMFLOAT4X4 m_proj;

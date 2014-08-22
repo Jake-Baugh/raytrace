@@ -406,7 +406,7 @@ bool CloseToZero(in float p_float)
 /*
 *	One bounce means we can see the object but no reflection. 2 means: 1 reflection in each object
 */
-#define max_number_of_bounces 1
+#define max_number_of_bounces 2
 float4 Trace(in Ray p_ray)
 {
 	Ray l_nextRay = p_ray;

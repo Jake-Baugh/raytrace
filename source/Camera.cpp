@@ -73,14 +73,21 @@ Camera* Camera::GetCamera(int index)				// Quite the awful multiton here. Easy, 
 
 Camera::Camera()
 {
-	mPosition = XMFLOAT4(0.0f, 0.0f, 250.0f, 1.0f);
-	mRight    = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
-	mUp       = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	mLook     = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	mPosition	= XMFLOAT4(0.0f, 0.0f, 250.0f, 1.0f);
+	mRight		= XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
+	mDefaultRight = mRight;
+	mUp				= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	mDefaultUp	= mUp;
+	mLook		 = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	mDefaultLook = mLook;
+
 
 	XMStoreFloat4x4(&m_view, XMMatrixIdentity());
 	XMStoreFloat4x4(&m_proj, XMMatrixIdentity());
 //	setLens(3.1415f/4.0f, 1.0f, 1.0f, 1000.0f );
+
+	mYaw = PI;
+	mPitch = PI;
 }
 
 Camera::~Camera()
@@ -105,7 +112,7 @@ void Camera::setLens(float fovY, float aspect, float zn, float zf)
 
 void Camera::strafe(float d)
 {
-	mPosition = mPosition + d * mRight;
+	mPosition = mPosition + -d * mRight;
 }
 
 void Camera::walk(float d)
@@ -119,7 +126,7 @@ void Camera::pitch(float angle)
 	
 	R = XMMatrixRotationX(angle);
 
-	XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
+	//XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
 	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mLook), R));
 }
 
@@ -129,19 +136,36 @@ void Camera::rotateY(float angle)
 	R = XMMatrixRotationY(angle);
 
 
-	XMStoreFloat4(&mRight, XMVector4Transform(XMLoadFloat4(&mRight), R));
+//	XMStoreFloat4(&mRight, XMVector4Transform(XMLoadFloat4(&mRight), R));
 	//XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
 	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mLook), R));
 }
 
 void Camera::update(float jaw, float pitch) 
 {
+	mYaw += jaw;
+
+	/*
+	if (mYaw > 360)
+		mYaw = 0.0f;
+	if (mYaw < 0)
+		mYaw = 360.0f;
+	*/
+
+
+	mPitch += -pitch;
+
+//	if (mPitch > PI/2)
+//		mPitch = PI / 2;
+//	if (mPitch < PI * 0.05 )
+//		mPitch = PI * 0.05;
+
 	XMMATRIX R;
-	R = XMMatrixRotationRollPitchYaw(pitch, jaw, 0.0f );
+	R = XMMatrixRotationRollPitchYaw(mPitch, mYaw, 0.0f);
 	
-	XMStoreFloat4(&mRight, XMVector4Transform(XMLoadFloat4(&mRight), R));
-	XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
-	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mLook), R));
+    XMStoreFloat4(&mRight, XMVector4Transform(XMLoadFloat4(&mDefaultRight), R));
+//	XMStoreFloat4(&mUp, XMVector4Transform(XMLoadFloat4(&mUp), R));
+	XMStoreFloat4(&mLook, XMVector4Transform(XMLoadFloat4(&mDefaultLook), R));
 }
 
 void Camera::rebuildView()

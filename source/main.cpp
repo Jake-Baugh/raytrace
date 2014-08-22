@@ -599,8 +599,8 @@ void FillLightBuffer()
 			}
 
 		}
-		l_light.pointLight[0].position		= XMFLOAT4(c, d, 0.0f, 0.0f);
-		Camera::GetCamera(0)->SetPosition(XMFLOAT4(c, d, 0.0f, 0.0f)); 
+		l_light.pointLight[0].position		= XMFLOAT4(c, d, 10.0f, 0.0f);
+		Camera::GetCamera(0)->SetPosition(l_light.pointLight[0].position);
 	}
 	
 
